@@ -1,0 +1,17 @@
+astor
+datasets
+docutils
+GitPython
+jedi
+Jinja2
+matplotlib
+nltk
+numpy
+openai
+pandas
+pyan
+python_Levenshtein
+rank_bm25
+Requests
+tqdm
+zss

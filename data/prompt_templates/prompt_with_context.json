@@ -1,0 +1,10 @@
+[
+    {
+        "role": "system",
+        "content": "%{prompt_with_context.txt}"
+    },
+    {
+        "role": "user",
+        "content": "<issue>\n{{bug_report_content}}\n</issue>\n\n<context>\n{{relevant_docs}}\n</context>\nPlease generate a failing test case that reproduces the issue described above. The test must fail naturally due to the bug. Please wrap your answer in <result></result> tags."
+    }
+]

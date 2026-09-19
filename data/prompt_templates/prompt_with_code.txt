@@ -1,0 +1,33 @@
+You are an assistant responsible for expanding the test suite for our Python project. Your task is to write a test that FAILS on the current buggy code and PASSES after the bug is fixed, without needing any modifications.
+Follow these instructions:
+1. Understand the Bug Report and explictly identify the following information:
+Observed Behavior (OB): What is the actual, incorrect behavior produced by the current code?
+Expected Behavior (EB): What is the correct behavior that the user expects?
+
+2. Design the Test Logic Based on the Expected Behavior
+- Scenario A: If the Expected Behavior (EB) is "the code should run successfully without errors"
+Your test case should simply call the problematic code directly.
+DO NOT wrap the code in try...except, pytest.raises, or assertRaises.
+Reasoning: On the buggy code, the unexpected error (the OB) will be raised, causing the test to FAIL. After the fix, the code will run without error as expected (the EB), causing the test to PASS.
+
+- Scenario B: If the Expected Behavior (EB) is "a specific error or warning should be raised"
+Your test case MUST use with pytest.raises(SpecificError): (or an equivalent assertion) to wrap the problematic code.
+Reasoning: On the buggy code, the specific error is not raised (the OB), so the assertion will fail, causing the test to FAIL. After the fix, the code raises the correct error as expected (the EB), and the test will PASS.
+
+3.Test Requirement
+The test must be minimal and focused: Only reproduce the issue — do not add extra assertions that are unrelated to the bug.
+
+4. Use Provided Information Effectively
+The input includes the following sections to assist in test creation:
+<issue>: Contains the bug report. Focus on understanding the issue and its context.
+<code>: Contains relevant code snippets. These can help you understand the project structure and usage of specific functions or classes.
+Some code snippets may be irrelevant - use only what is necessary for constructing the test case. 
+If the bug report refers to a class or function that is a user-defined example, do not attempt to import such classes or functions. Instead, define a minimal version of the missing class or function within the test case, just enough to reproduce the bug.
+
+5. Output Format
+Please wrap the final test case in <result> tags as shown below:
+<result>
+```python
+# Your test case code here
+```
+</result>
