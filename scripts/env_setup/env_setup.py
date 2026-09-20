@@ -35,23 +35,18 @@ def clone_repo(repo, root_dir, token):
     return repo_dir
 
 PREFIX = ''
+TARGET_REPO = 'pallets/flask'
 
 if __name__ == "__main__":
-    with open('env.txt', 'r') as f:
-        env_list = [line.strip() for line in f.readlines()]
-    with open("tdd.txt", "r") as f:
-        tdd = set(line.strip() for line in f)
-    flag = False
+    env_list = []
+    if Path('env.txt').exists():
+        with open('env.txt', 'r') as f:
+            env_list = [line.strip() for line in f.readlines()]
     try:
         dataset = load_dataset("princeton-nlp/SWE-bench_Verified")["test"]
+        dataset = [instance for instance in dataset if instance['repo'] == TARGET_REPO]
         test_specs = list(map(make_exec_spec, dataset))
         for spec in test_specs:
-            if spec.instance_id not in tdd:
-                continue
-            # if spec.instance_id != "pylint-dev__pylint-7114":
-            #     flag = True
-            # if not flag:
-                # continue
             env_name = PREFIX + spec.env_name
             if not os.path.exists(repo_path(spec.repo)):
                 print(f"clone {repo_path(spec.repo)}")

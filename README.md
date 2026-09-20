@@ -11,6 +11,27 @@ Clone the repository and install the required Python packages:
 pip install -r requirements.txt
 ```
 
+Set API credentials in your shell before running retrieval or generation:
+
+```bash
+export OPENAI_API_KEY='your-api-key'
+# Optional when using a custom OpenAI-compatible endpoint:
+# export OPENAI_BASE_URL='https://your-endpoint/v1'
+```
+
+Both GPT-4o model names use `OPENAI_API_KEY` and `OPENAI_BASE_URL`.
+For Qwen, set `QWEN_API_KEY` and `QWEN_BASE_URL`; for DeepSeek, set
+`DEEPSEEK_API_KEY` and `DEEPSEEK_BASE_URL` to your hosting provider's values.
+Variables are read at process startup. `.env` files are not loaded automatically.
+Environment setup alone does not require an API key.
+
+Additional models: `--model qwen/qwen3.8-27b:free` and `--model z-ai/glm-5.2:free`.
+Qwen uses `QWEN_API_KEY` and `QWEN_BASE_URL`; GLM uses `GLM_API_KEY`
+and `GLM_BASE_URL`. For OpenRouter, set both base URLs to
+`https://openrouter.ai/api/v1` and use your OpenRouter API key for both models.
+The exact `--model` value is sent unchanged for these two models in generation,
+initial retrieval, and reranking; no separate model-ID setting is needed.
+
 2. Setup the SWE-bench Environment
 Initialize the environment necessary for SWE-bench tasks:
 ```

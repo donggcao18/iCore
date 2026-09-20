@@ -268,7 +268,7 @@ class ExecSpec:
         install = self.install
         env_name = self.env_name
         reqs_commands = [
-            "source ~/miniconda3/bin/activate",
+            "source /research/cbim/vast/qt60/miniconda3/bin/activate",
         ]
         # Create conda environment according to install instructinos
         reqs_commands += self.req_install_commands

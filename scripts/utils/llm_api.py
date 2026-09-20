@@ -6,11 +6,14 @@ def query_chat_llm(prompt, model, temperature=0.7):
     # assert model in AVAILABLE_MODEL_INFO, f'Unknown model {model}'
     api_key = API_KEY.get(model, None)
     base_url = BASE_URL.get(model, None)
-    if api_key is None:
-        raise ValueError(f'API key for model {model} is not set. Please set it in API_KEY dictionary.')
+    if not api_key:
+        raise ValueError(f'API key for model {model} is not set. Export the corresponding OPENAI_API_KEY, QWEN_API_KEY, GLM_API_KEY, or DEEPSEEK_API_KEY environment variable before running.')
     if model == 'gpt-4o' or model == 'gpt-4o-2024-08-06':
         client = OpenAI(api_key=api_key, base_url=base_url)
         model_name = 'gpt-4o-2024-08-06'
+    elif model in ('qwen/qwen3.8-27b:free', 'z-ai/glm-5.2:free'):
+        client = OpenAI(api_key=api_key, base_url=base_url, timeout=300)
+        model_name = model
     elif model == 'qwen-32b':
         client = OpenAI(api_key=api_key, base_url=base_url)
         model_name = 'Qwen/Qwen3-32B'

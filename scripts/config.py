@@ -1,20 +1,26 @@
 """
 Configuration for LLM test generator w/ different datasets.
 """
-REPO_ROOT_DIR = '/PATH/TO/swe_repos'
+import os
+
+REPO_ROOT_DIR = '/research/cbim/vast/qt60/any-ssr/utils/iCore/repos'
 ROOT_DIR = '.'
 ENV_NAME_TEMPLATE = 'setup_{name1}_{name2}__{version}'
 
 API_KEY = {
-    'gpt-4o': 'YOUR_API_KEY_FOR_GPT_4O',
-    'gpt-4o-2024-08-06': 'YOUR_API_KEY_FOR_GPT_4O_2024_08_06',
-    'qwen-32b': 'YOUR_API_KEY_FOR_QWEN_32B',
-    'deepseek-v3-0324': 'YOUR_API_KEY_FOR_DEEPSEEK_V3_0324',
+    'gpt-4o': os.getenv('OPENAI_API_KEY'),
+    'gpt-4o-2024-08-06': os.getenv('OPENAI_API_KEY'),
+    'qwen-32b': os.getenv('QWEN_API_KEY'),
+    'qwen/qwen3.8-27b:free': os.getenv('QWEN_API_KEY'),
+    'z-ai/glm-5.2:free': os.getenv('GLM_API_KEY'),
+    'deepseek-v3-0324': os.getenv('DEEPSEEK_API_KEY'),
 }
 
 BASE_URL = {
-    'gpt-4o': '',
-    'gpt-4o-2024-08-06': '',
-    'qwen-32b': '',
-    'deepseek-v3-0324': '',
+    'gpt-4o': os.getenv('OPENAI_BASE_URL') or None,
+    'gpt-4o-2024-08-06': os.getenv('OPENAI_BASE_URL') or None,
+    'qwen-32b': os.getenv('QWEN_BASE_URL') or None,
+    'qwen/qwen3.8-27b:free': os.getenv('QWEN_BASE_URL') or None,
+    'z-ai/glm-5.2:free': os.getenv('GLM_BASE_URL') or None,
+    'deepseek-v3-0324': os.getenv('DEEPSEEK_BASE_URL') or None,
 }
