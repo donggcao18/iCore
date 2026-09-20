@@ -20,9 +20,9 @@ class Test:
         self.name_similarity = 0
         self.bm25_similarity = 0
         self.semantic_similarity = 0
-        self.func_call_similarity = 0
-        self.llm_rerank_file_match = False
-        self.llm_rerank_test_match = False
+        self.call_graph_similarity = 0
+        self.func_calling_file_match = False
+        self.func_calling_test_match = False
         self.score = 0
         self.abs_file_path = os.path.join(repo_path(proj), rel_file_path)
     
@@ -41,9 +41,9 @@ class Test:
             "name_similarity": self.name_similarity,
             "bm25_similarity": self.bm25_similarity,
             "semantic_similarity": self.semantic_similarity,
-            "func_call_similarity": self.func_call_similarity,
-            "llm_rerank_file_match": self.llm_rerank_file_match,
-            "llm_rerank_test_match": self.llm_rerank_test_match,
+            "call_graph_similarity": self.call_graph_similarity,
+            "func_calling_file_match": self.func_calling_file_match,
+            "func_calling_test_match": self.func_calling_test_match,
             "score": self.score
         }
     
@@ -53,7 +53,7 @@ class Test:
         # 3. function calling result
         # 4. function calling result
         self.score = self.semantic_similarity * SEMANTIC_SIMILARITY_THRESHOLD + \
-                    self.func_call_similarity * FUNC_CALL_SIMILARITY_THRESHOLD
+                    self.call_graph_similarity * FUNC_CALL_SIMILARITY_THRESHOLD
         
 def get_function_calling_results(bug_id, related_test_path):
     with open(related_test_path, 'r') as f:

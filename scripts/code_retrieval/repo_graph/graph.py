@@ -3,6 +3,7 @@ import multiprocessing
 import os
 import pickle
 import shutil
+from functools import partial
 
 import jedi
 from scripts.config import REPO_ROOT_DIR, ROOT_DIR
@@ -347,7 +348,7 @@ def initialize_repo(repo_path: str, commit_hash: str):
         print(f"[{os.getpid()}] Stderr: {e.stderr}")
         raise e
 
-def process_single_item(bug_report):
+def process_single_item(bug_report, output_dir):
     """
     This is the function executed by parallel workers.
     Integrates the path processing logic provided and the original graph generation logic.
@@ -380,7 +381,6 @@ def process_single_item(bug_report):
         
         print(f"[{pid}] Graph generation completed for {instance_id}.")
         # 5. Save results
-        output_dir = GRAPH_PATH
         os.makedirs(output_dir, exist_ok=True)
         save_path = os.path.join(output_dir, f'{instance_id}_graph.pkl')
         
@@ -401,6 +401,7 @@ MAX_WORKERS = 16
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--graph_path", type=str, default="./retrieval_results/graphs", help="Path to save the repo graph.")
+    parser.add_argument("--max_workers", type=int, default=MAX_WORKERS)
     parser.add_argument("--swt", action="store_true", default=False, help="Whether to use the SWT-bench dataset.")
     parser.add_argument("--tdd", action="store_true", default=False, help="Whether to use the TDD-bench dataset.")
     args = parser.parse_args()
@@ -427,6 +428,8 @@ if __name__ == '__main__':
     print("Filtering tasks...")
     for bug_report in ds:
         bug_id = bug_report["instance_id"]
+        if bug_id not in (swt if use_swt else tdd):
+            continue
         
         if os.path.exists(os.path.join(graph_path, f"{bug_id}_graph.pkl")):
             continue
@@ -437,9 +440,9 @@ if __name__ == '__main__':
 
     # 3. Parallel execution
     # Use imap_unordered to display real-time progress with tqdm
-    with multiprocessing.Pool(processes=MAX_WORKERS) as pool:
+    with multiprocessing.Pool(processes=args.max_workers) as pool:
         results = list(tqdm(
-            pool.imap_unordered(process_single_item, tasks), 
+            pool.imap_unordered(partial(process_single_item, output_dir=graph_path), tasks),
             total=len(tasks),
             desc="Processing Graphs",
             leave=False
@@ -449,3 +452,5 @@ if __name__ == '__main__':
     for res in results:
         if res.startswith("Error"):
             print(res)
+    if any(res.startswith("Error") for res in results):
+        raise SystemExit(1)
