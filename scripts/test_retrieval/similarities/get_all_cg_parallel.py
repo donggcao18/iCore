@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS call_trees (
 
     # 2. Perform static analysis on the ENTIRE repository once
     print("\n3. Running static analysis on the entire repository... (This may take a moment)")
-    visitor = CallGraphVisitor(test_files, root=repo_dir, pid=pid)
+    visitor = CallGraphVisitor(test_files, root=repo_dir)
     print("   Analysis complete. Call graph constructed.")
 
     # 3. For each test file, identify test functions and build their call trees

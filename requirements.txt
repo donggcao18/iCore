@@ -9,7 +9,7 @@ nltk
 numpy
 openai
 pandas
-pyan
+pyan3
 python_Levenshtein
 rank_bm25
 Requests
