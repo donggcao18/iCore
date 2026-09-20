@@ -4,7 +4,7 @@ import sqlite3
 from typing import Tuple
 from zss import Node as ZssNode, simple_distance
 from pyan.node import Node
-from pyan import CallGraphVisitor
+from pyan.analyzer import CallGraphVisitor
 import json
 from ast import ClassDef, FunctionDef, AsyncFunctionDef
 
