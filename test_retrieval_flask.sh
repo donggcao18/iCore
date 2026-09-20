@@ -2,7 +2,7 @@
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 
-MODEL='z-ai/glm-5.2:free'
+MODEL='qwen/qwen3.8-27b:free'
 KEYWORDS='./retrieval_results/code/flask_keywords.json'
 CODE='./retrieval_results/code/flask_retrieval_results.json'
 TREES='./retrieval_results/swe_test_cgs'
