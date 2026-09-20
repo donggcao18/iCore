@@ -2,22 +2,44 @@ import time
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
-from openai import OpenAI, RateLimitError
+from openai import OpenAI, APIError, RateLimitError
 
 from scripts.config import API_KEY, BASE_URL
 
 def create_chat_completion(client, **kwargs):
-    """Retry HTTP 429 while opening a completion (including streamed requests)."""
+    """Retry transient API errors; buffer streams so failed chunks never escape."""
     client = client.with_options(max_retries=0)
     for attempt in range(5):
         try:
-            return client.chat.completions.create(**kwargs)
-        except RateLimitError as e:
+            response = client.chat.completions.create(**kwargs)
+            if not kwargs.get('stream'):
+                return response
+            # Callers execute tools only after receiving this complete response.
+            # A failed attempt's partial text/tool arguments are discarded.
+            try:
+                return list(response)
+            finally:
+                response.close()
+        except APIError as e:
+            status = getattr(e, 'status_code', None)
+            message = str(e).lower()
+            retryable = (
+                isinstance(e, RateLimitError)
+                or status == 429
+                or (status is not None and 500 <= status < 600)
+                or (status is None and any(text in message for text in (
+                    'temporarily overloaded', 'temporarily unavailable',
+                    'temporarily rate-limited',
+                )))
+            )
+            if not retryable:
+                raise
             if attempt == 4:
-                print('Rate limit persists after 5 attempts.', flush=True)
+                print('Temporary API failure persists after 5 attempts.', flush=True)
                 raise
             delay = min(30 * (2 ** attempt), 120)
-            retry_after = e.response.headers.get('retry-after')
+            error_response = getattr(e, 'response', None)
+            retry_after = error_response.headers.get('retry-after') if error_response is not None else None
             if retry_after:
                 try:
                     server_delay = float(retry_after)
@@ -28,9 +50,9 @@ def create_chat_completion(client, **kwargs):
                         server_delay = 0
                 delay = max(delay, server_delay)
             if delay > 300:
-                print(f'Rate limit requires waiting {delay:.0f}s; stopping. Retry later.', flush=True)
+                print(f'Provider requires waiting {delay:.0f}s; stopping. Retry later.', flush=True)
                 raise
-            print(f'Rate limited; waiting {delay:.0f}s before retry {attempt + 1}/4.', flush=True)
+            print(f'Temporary API failure; waiting {delay:.0f}s before retry {attempt + 1}/4.', flush=True)
             time.sleep(delay)
 
 
