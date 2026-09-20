@@ -2,11 +2,11 @@
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 
-MODEL='qwen/qwen3.8-27b:free'
+MODEL='nvidia/nemotron-3-super-120b-a12b:free'
 KEYWORDS='./retrieval_results/code/flask_keywords.json'
 CODE='./retrieval_results/code/flask_retrieval_results.json'
 TREES='./retrieval_results/swe_test_cgs'
-TESTS='./retrieval_results/test/flas'
+TESTS='./retrieval_results/test/flask_retrieval_results'
 DRAFTS='./data/flask_qwen'
 # One refinement for the first trial; use ITERATIONS=3 for the original count.
 ITERATIONS="${ITERATIONS:-1}"
