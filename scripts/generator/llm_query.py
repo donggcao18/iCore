@@ -155,8 +155,10 @@ def query_times(args, bug_report):
             temperature=args.temperature
         )
         if gen_test is None:
-            # retry
-            continue
+            raise RuntimeError(
+                f'Test generation failed for {bug_report["instance_id"]} with {model}. '
+                'See the API diagnostic above. No new test was saved; rerun to retry.'
+            )
             
         with open(out, 'w', encoding='utf8') as f:
             f.write(gen_test)
