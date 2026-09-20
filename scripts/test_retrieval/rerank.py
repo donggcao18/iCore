@@ -8,6 +8,7 @@ from scripts.utils.llm_api import create_chat_completion
 from scripts.test_retrieval.function_calls import FunctionCalls, get_tools
 from scripts.test_retrieval.initial_retrieval import extract_function_call
 from scripts.test_retrieval.utils import get_related_test
+from scripts.test_retrieval.response_parser import parse_test_selection
 from scripts.utils.git_utils import *
 import json
 import os
@@ -233,27 +234,12 @@ if __name__ == "__main__":
         assert messages[-1]['role'] == 'assistant', bug_id
         content = messages[-1]['content']
         
-        pattern = r"```python(.*?)```"
-        matches = re.findall(pattern, content, re.DOTALL)
-        if matches:
-            content = matches[-1].strip()
-        else:
-            pattern2 = r"```(.*?)```"
-            matches2 = re.findall(pattern2, content, re.DOTALL)
-            if matches2:
-                content = matches2[-1].strip()
-        
-        # Remove comment parts
-        s_clean = re.sub(r"#.*", "", content)  # Remove # and the content following it
-        # if s_clean.endswith(',\n]\n'):
-        #     s_clean = s_clean.replace(',\n]\n', ']\n')
         try:
-            tests = ast.literal_eval(s_clean)
-        
-            # results[bug_id] = tests
-            related_tests[bug_id] = get_related_test(proj, tests)
-        except Exception as e:
-            print(f'{message_path}')
-            raise e
+            tests = parse_test_selection(content)
+        except ValueError as e:
+            raise ValueError(f'{bug_id}: {e} Saved response: {message_path}') from e
+        related_tests[bug_id] = get_related_test(proj, tests)
+        with open(args.output_related_tests_path, 'w') as f:
+            json.dump(related_tests, f, indent=4)
     with open(args.output_related_tests_path, 'w') as f:
         json.dump(related_tests, f, indent=4)
