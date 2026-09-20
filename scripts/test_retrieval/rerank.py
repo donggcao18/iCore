@@ -4,6 +4,7 @@ from pathlib import Path
 import re
 from openai import OpenAI
 from scripts.config import API_KEY, BASE_URL
+from scripts.utils.llm_api import create_chat_completion
 from scripts.test_retrieval.function_calls import FunctionCalls, get_tools
 from scripts.test_retrieval.initial_retrieval import extract_function_call
 from scripts.test_retrieval.utils import get_related_test
@@ -128,7 +129,8 @@ def chat_with_llm(instance, model_name, messages_path, test_similarity_dir, last
 
     
     while True:
-        response = client.chat.completions.create(
+        response = create_chat_completion(
+            client,
             model=model_name,
             messages=messages,
             tools=get_tools(),

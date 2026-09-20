@@ -3,6 +3,7 @@ import copy
 import re
 from openai import OpenAI
 from scripts.config import API_KEY, BASE_URL
+from scripts.utils.llm_api import create_chat_completion
 from scripts.test_retrieval.function_calls import FunctionCalls, get_tools
 from scripts.test_retrieval.utils import get_related_test
 from scripts.utils.git_utils import *
@@ -116,7 +117,8 @@ def chat_with_llm(instance, model_name, messages_path, restart=False):
     error_retries = 0
     while True:
         if first_time:
-            response = client.chat.completions.create(
+            response = create_chat_completion(
+                client,
                 model=model_name,
                 messages=messages,
                 tools=get_tools(),
@@ -127,7 +129,8 @@ def chat_with_llm(instance, model_name, messages_path, restart=False):
             )
             first_time = False
         else:
-            response = client.chat.completions.create(
+            response = create_chat_completion(
+                client,
                 model=model_name,
                 messages=messages,
                 tools=get_tools(),
@@ -247,4 +250,3 @@ if __name__ == "__main__":
         related_tests[bug_id] = get_related_test(proj, tests)
     with open(args.related_tests_path, 'w') as f:
         json.dump(related_tests, f, indent=4)
-    
