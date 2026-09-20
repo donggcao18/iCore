@@ -46,7 +46,7 @@ def run_test(repo_dir_path, test_name, env_name):
     version = env_name.split('__')[-1]
     status = 0
     conda_cmd = f'eval "$(conda shell.bash hook)" && conda activate {env_name} && export PYTHONPATH={repo_dir_path}:$PYTHONPATH && ' + swe_util.swe_test_cmd(proj, version, test_name)
-    test_process = sp.run(conda_cmd, shell=True,
+    test_process = sp.run(conda_cmd, shell=True, executable='bash',
                           capture_output=True, cwd=repo_dir_path, timeout=60)
     if proj == 'django':
         captured_stdout = test_process.stderr.decode()
@@ -199,7 +199,7 @@ def setup_environment(proj, repo_dir_path, env_name):
     
     cmd = f'eval "$(conda shell.bash hook)" && conda activate {env_name} && {setup_cmd}'
 
-    process = sp.run(cmd, shell=True, capture_output=True, cwd=repo_dir_path)
+    process = sp.run(cmd, shell=True, executable='bash', capture_output=True, cwd=repo_dir_path)
     if process.returncode != 0 and 'Successfully installed' not in process.stdout.decode():
         raise ValueError(f'Error setting up environment for {proj}. \n{process.stdout.decode()}\n{cmd}')
 

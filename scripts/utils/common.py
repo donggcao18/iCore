@@ -483,12 +483,12 @@ def file_defines_attr(file_path, attr):
 
 def try_import(repo_path, env_name, node):
     cmd = f'eval "$(conda shell.bash hook)" && conda activate {env_name} && python -c "{node}"'
-    result = sp.run(cmd, shell=True, capture_output=True, cwd=repo_path)
+    result = sp.run(cmd, shell=True, executable='bash', capture_output=True, cwd=repo_path)
     return result.returncode == 0
 
 def install_package(repo_path, env_name, name):
     cmd = f'eval "$(conda shell.bash hook)" && conda activate {env_name} && pip install {name}'
-    result = sp.run(cmd, shell=True, capture_output=True, cwd=repo_path)
+    result = sp.run(cmd, shell=True, executable='bash', capture_output=True, cwd=repo_path)
     return result.returncode == 0
 
 def needed_imports(repo_path, src_dir, gen_test, env_name):
