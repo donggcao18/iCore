@@ -2,7 +2,8 @@ astor
 datasets
 docutils
 GitPython
-jedi
+# Jedi 0.20 dropped Python 3.9 support, which benchmark environments still need.
+jedi==0.19.2
 Jinja2
 matplotlib
 nltk
