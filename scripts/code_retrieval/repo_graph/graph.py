@@ -120,7 +120,7 @@ class Node:
             return node_list
         filter_node = []
         proj = proj.split("/")[-1]
-        project = jedi.Project(path=swe_util.repo_path(proj), environment_path=f"~/miniconda3/envs/{env_name}")
+        project = jedi.Project(path=swe_util.repo_path(proj), environment_path=swe_util.get_conda_python(env_name))
         if modules[0] == proj:
             modules = modules[1:]
         code  = f"from {proj} import {modules[0]}\n{'.'.join(modules)}()"

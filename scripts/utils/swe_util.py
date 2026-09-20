@@ -1,5 +1,8 @@
 import os
 import re
+import json
+import subprocess
+from functools import lru_cache
 from datetime import datetime
 
 from scripts.config import ENV_NAME_TEMPLATE, REPO_ROOT_DIR
@@ -138,9 +141,28 @@ def get_env_name(bug_report):
     version = bug_report['version']
     return ENV_NAME_TEMPLATE.format(name1=proj.split('/')[0], name2=proj.split('/')[1], version=version)
 
+@lru_cache(maxsize=None)
+def get_conda_python(env_name):
+    """Find a named environment in Conda's registered environment locations."""
+    conda = os.environ.get('CONDA_EXE') or 'conda'
+    try:
+        result = subprocess.run(
+            [conda, 'env', 'list', '--json'],
+            check=True, capture_output=True, text=True, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        raise RuntimeError('Cannot locate Conda environments. Activate Conda and check conda env list.') from e
+    for prefix in json.loads(result.stdout)['envs']:
+        prefix = os.path.abspath(os.path.expanduser(prefix))
+        if os.path.basename(os.path.normpath(prefix)) == env_name:
+            python = os.path.join(prefix, 'python.exe' if os.name == 'nt' else 'bin/python')
+            if os.path.isfile(python):
+                return python
+    raise FileNotFoundError(f'No Python found for Conda environment {env_name!r}. Check conda env list and rerun environment setup if needed.')
+
+
 def get_env_path(bug_report):
-    env_name = get_env_name(bug_report)
-    return f'~/miniconda3/envs/{env_name}/bin/python'
+    return get_conda_python(get_env_name(bug_report))
 
 def instance_id_to_proj(instance_id):
     proj = re.sub(r'-\d+$', '', instance_id)
