@@ -64,6 +64,8 @@ def extract_keywords(bug_report, model):
         ]
 
         keywords = query_chat_llm(prompt, model, temperature=0.0)
+        if not keywords:
+            raise ValueError('No model response; rerun to retry this instance.')
         
         logger.info(keywords)
 
@@ -121,7 +123,7 @@ if __name__ == "__main__":
                 continue
             if use_tdd and id not in tdd:
                 continue
-            if id in all_keywords:
+            if id in all_keywords and all_keywords[id] is not None:
                 continue
             keywords = extract_keywords(bug_report, model)
             all_keywords[bug_report["instance_id"]] = keywords
