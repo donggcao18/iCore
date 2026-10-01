@@ -7,19 +7,23 @@ from scripts.utils.swe_util import repo_path
 def get_retrieval_docs(instance_id, retrieval_result_path, all_content = False):
     with open(retrieval_result_path) as f:
         retrieval_results = json.load(f)
-    retrieval_results = retrieval_results[instance_id]
+    retrieval_results = retrieval_results.get(instance_id) or {}
+    if not isinstance(retrieval_results, dict):
+        return ''
     relevant_docs = []
     for keyword, doc in retrieval_results.items():
-        if doc == None:
+        if not isinstance(doc, dict) or not isinstance(doc.get('code_content'), str) or not doc['code_content'].strip():
             continue
-        obj_name = doc['obj_name']
-        node_type = doc['node_type']
-        path = doc['path']
-        code_start_line = doc['code_start_line']
-        code_end_line = doc['code_end_line']
+        obj_name = doc.get('obj_name', keyword)
+        node_type = doc.get('node_type', 'code')
+        path = doc.get('path', '')
+        code_start_line = doc.get('code_start_line')
+        code_end_line = doc.get('code_end_line')
         code_content = doc['code_content']
-        parent_node = doc['parent']
+        parent_node = doc.get('parent')
         if all_content:
+            if not path or not isinstance(code_start_line, int) or not isinstance(code_end_line, int):
+                continue
             with open(path) as f:
                 code_content = f.read()
                 code_content = code_content.split('\n')[code_start_line-1:code_end_line]

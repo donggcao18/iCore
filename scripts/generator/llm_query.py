@@ -70,12 +70,16 @@ def make_messages_from_dataset(exp_name, bug_report, context_code_path, context_
             relevant_docs = get_assertflip_context(bug_id)
         current_query = current_query.replace('{{relevant_docs}}', relevant_docs)
     else:
+        relevant_docs = ''
         if exp_name == 'otter':
             relevant_docs = get_otter_focal_funcs(bug_id, context_code_path)
-            current_query = current_query.replace('{{relevant_docs}}', relevant_docs)
         elif context_code_path:
             relevant_docs = get_retrieval_docs(bug_id, context_code_path)
+        if relevant_docs:
             current_query = current_query.replace('{{relevant_docs}}', relevant_docs)
+        else:
+            current_query = re.sub(r'\n*<code>\s*{{relevant_docs}}\s*</code>', '', current_query)
+            current_query = current_query.replace('{{relevant_docs}}', '')
         related_tests = get_related_test(bug_id, context_test_path) if context_test_path else ''
         if related_tests:
             current_query = current_query.replace('{{related_tests}}', related_tests)

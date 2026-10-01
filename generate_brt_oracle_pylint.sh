@@ -37,13 +37,22 @@ if not ids or len(ids) != len(set(ids)):
     raise SystemExit('The local CSV needs unique Pylint instance IDs.')
 code = json.loads(code_path.read_text(encoding='utf-8'))
 oracle = json.loads(oracle_path.read_text(encoding='utf-8'))
-missing_code = [instance for instance in ids
-                if not isinstance(code.get(instance), dict)
-                or not any(isinstance(node, dict) and node.get('code_content')
-                           for node in code[instance].values())]
+missing_code = [instance for instance in ids if instance not in code]
 if missing_code:
-    raise SystemExit('Missing retrieved code for: ' + ', '.join(missing_code)
-                     + f'. Complete code retrieval before running this script ({code_path}).')
+    raise SystemExit('Missing code-retrieval entries for: ' + ', '.join(missing_code)
+                     + f'. Check that this is the matching retrieval file ({code_path}).')
+invalid_code = [instance for instance in ids
+                if code[instance] is not None and not isinstance(code[instance], dict)]
+if invalid_code:
+    raise SystemExit('Invalid code-retrieval entries for: ' + ', '.join(invalid_code))
+empty_code = [instance for instance in ids
+              if not any(isinstance(node, dict)
+                         and isinstance(node.get('code_content'), str)
+                         and node['code_content'].strip()
+                         for node in (code[instance] or {}).values())]
+if empty_code:
+    print('No usable retrieved code for: ' + ', '.join(empty_code)
+          + '; generating from the issue and any available oracle tests.')
 invalid_tests = [instance for instance in ids
                  if instance not in oracle or
                  (oracle[instance] is not None and not isinstance(oracle[instance], list))]
