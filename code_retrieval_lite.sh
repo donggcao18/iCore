@@ -24,17 +24,16 @@ touch swt.txt
 touch tdd.txt
 mkdir -p "$(dirname "$KEYWORDS")" "$GRAPHS"
 
-# Fail before any expensive/API work if IDs are absent from Lite, or a base
-# checkout/required commit is missing. Graph generation copies these clones;
-# it does not clone them itself.
+# Prepare only the selected repository's base clone before API work. Graph
+# generation copies this clone for each instance; it does not clone from GitHub.
 python - "$REPO" "$SELECTED_IDS" <<'PY'
 from pathlib import Path
-import shlex
 import subprocess
 import sys
 
 from datasets import load_dataset
 from scripts.config import REPO_ROOT_DIR
+from scripts.env_setup.env_setup import clone_repo
 
 repo = sys.argv[1]
 selection_path = Path(sys.argv[2])
@@ -43,17 +42,18 @@ selected = {row['instance_id']: row for row in dataset if row['repo'] == repo}
 if not selected:
     raise SystemExit(f'No instances for {repo} in the Lite test split.')
 
-missing = {}
 invalid_checkouts = []
 missing_commits = []
 for row in selected.values():
     repo = row['repo']
     clone = Path(REPO_ROOT_DIR).expanduser() / repo.split('/')[-1]
+    if not clone.exists():
+        try:
+            clone_repo(repo, REPO_ROOT_DIR, '')
+        except Exception as exc:
+            raise SystemExit(f'Could not clone {repo} to {clone}: {exc}') from exc
     if not (clone / '.git').exists():
-        if clone.exists():
-            invalid_checkouts.append(str(clone))
-        else:
-            missing[repo] = clone
+        invalid_checkouts.append(str(clone))
         continue
     result = subprocess.run(
         ['git', '-C', str(clone), 'cat-file', '-e', row['base_commit'] + '^{commit}'],
@@ -62,10 +62,6 @@ for row in selected.values():
     if result.returncode:
         missing_commits.append(f"{row['instance_id']} ({row['base_commit']}) in {clone}")
 
-if missing:
-    print('Clone the required base repositories before running code retrieval:')
-    for repo, clone in sorted(missing.items()):
-        print('git clone ' + shlex.quote(f'https://github.com/{repo}.git') + ' ' + shlex.quote(str(clone)))
 if invalid_checkouts:
     print('These paths exist but are not Git checkouts; inspect them before cloning:')
     for clone in sorted(set(invalid_checkouts)):
@@ -74,7 +70,7 @@ if missing_commits:
     print('These base commits are not present in the existing clones (fetch full history):')
     for item in missing_commits:
         print('  ' + item)
-if missing or invalid_checkouts or missing_commits:
+if invalid_checkouts or missing_commits:
     raise SystemExit(1)
 
 selection_path.write_text('\n'.join(selected) + '\n')

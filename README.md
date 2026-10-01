@@ -55,8 +55,8 @@ require you to copy IDs into `swt.txt`. Set `REPO=owner/name` for the next
 repository.
 It uses `--swt` throughout and writes `nemo_keywords_lite.json` and
 `nemo_retrieval_results_lite.json` under `retrieval_results/code/`. It checks
-that each required base checkout and commit exists under `REPO_ROOT_DIR` and
-prints clone commands for missing repositories. The current environment setup
+that the selected base checkout and commits exist under `REPO_ROOT_DIR` and
+uses `env_setup.clone_repo()` to clone it when missing. The current environment setup
 entry point is fixed to Flask in Verified; prepare the matching Lite project
 environments separately before running later test retrieval or BRT evaluation.
 

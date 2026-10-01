@@ -29,7 +29,7 @@ def clone_repo(repo, root_dir, token):
     repo_dir = Path(root_dir, f"{repo.split('/')[-1]}/")
     print(repo_dir)
     if not repo_dir.exists():
-        repo_url = f"https://{token}@github.com/{repo}.git"
+        repo_url = f"https://{token}@github.com/{repo}.git" if token else f"https://github.com/{repo}.git"
         print(f"Cloning {repo} to {repo_dir}")
         Repo.clone_from(repo_url, repo_dir)
     return repo_dir
