@@ -1,8 +1,9 @@
-"""Extract Pylint's changed tests as generator-ready oracle retrieval context.
+"""Extract changed tests as generator-ready oracle retrieval context.
 
 The patched output is a hindsight oracle: it includes developer-written tests
-from ``test_patch``. The base output contains only test functions available at
-the buggy commit and is suitable for a leakage-free retrieval comparison.
+from ``test_patch``. The base output contains only matching test functions
+that already existed at the buggy commit; newly added targets have no base test.
+Select a dataset and repository on the command line.
 """
 
 from __future__ import annotations
@@ -19,7 +20,10 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PYLINT_REPO = "pylint-dev/pylint"
+DATASETS = {
+    "lite": "SWE-bench/SWE-bench_Lite",
+    "swt-verified": "eth-sri/SWT-bench_Verified_bm25_27k_zsb",
+}
 DIFF_HEADER = re.compile(r"^diff --git a/(.+) b/(.+)$")
 HUNK_HEADER = re.compile(r"^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@")
 
@@ -60,9 +64,10 @@ def ensure_repo(repo_dir: Path, clone_url: str) -> None:
     run_git("clone", "--filter=blob:none", "--no-checkout", clone_url, str(repo_dir))
 
 
-def read_pylint_rows(csv_path: Path) -> list[dict[str, str]]:
+def read_repo_rows(csv_path: Path, repo: str) -> list[dict[str, str]]:
+    csv.field_size_limit(10_000_000)
     with csv_path.open(encoding="utf-8-sig", newline="") as handle:
-        return [row for row in csv.DictReader(handle) if row["repo"] == PYLINT_REPO]
+        return [row for row in csv.DictReader(handle) if row["repo"] == repo]
 
 
 def parse_patch(patch: str) -> list[FileChange]:
@@ -119,7 +124,7 @@ def source_at_commit(repo_dir: Path, commit: str, path: str) -> str | None:
 
 def patched_sources(repo_dir: Path, commit: str, patch: str, changes: list[FileChange]) -> tuple[dict[str, str | None], dict[str, str]]:
     base: dict[str, str | None] = {}
-    with tempfile.TemporaryDirectory(prefix="pylint-oracle-") as temp_name:
+    with tempfile.TemporaryDirectory(prefix="oracle-") as temp_name:
         temp_dir = Path(temp_name)
         for change in changes:
             old_source = source_at_commit(repo_dir, commit, change.path)
@@ -253,41 +258,90 @@ def write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, indent=4, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def dataset_name(value: str) -> str:
+    for short_name, full_name in DATASETS.items():
+        if value in (short_name, full_name):
+            return short_name
+    raise argparse.ArgumentTypeError(
+        f"Unknown dataset {value!r}; choose lite or swt-verified "
+        "(full Hugging Face IDs also work)"
+    )
+
+
+def repository_name(value: str) -> str:
+    parts = value.split("/")
+    if (len(parts) != 2 or any(part in ("", ".", "..") for part in parts)
+            or not all(re.fullmatch(r"[A-Za-z0-9_.-]+", part) for part in parts)):
+        raise argparse.ArgumentTypeError("--repo must be owner/name, e.g. pylint-dev/pylint")
+    return value
+
+
+def default_paths(dataset: str, repo: str) -> tuple[Path, Path]:
+    name = repo.split("/")[1]
+    if dataset == "lite":
+        return (ROOT / "data/swe-bench-lite/test.csv",
+                ROOT / "retrieval_results/test/oracle" / name)
+    return (ROOT / "data/swt-bench-verified/test.csv",
+            ROOT / "retrieval_results/test/oracle/swt-bench-verified" / name)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--csv", type=Path, default=ROOT / "data/swe-bench-lite/test.csv")
-    parser.add_argument("--repo-dir", type=Path, default=ROOT / "repos/pylint")
-    parser.add_argument("--clone-url", default="https://github.com/pylint-dev/pylint.git")
-    parser.add_argument("--output-dir", type=Path, default=ROOT / "retrieval_results/test/oracle/pylint")
+    parser.add_argument("--dataset", type=dataset_name, required=True,
+                        help="lite or swt-verified; full Hugging Face dataset IDs also work")
+    parser.add_argument("--repo", type=repository_name, required=True,
+                        help="Benchmark repository, e.g. pytest-dev/pytest")
+    parser.add_argument("--csv", type=Path, help="Override the dataset's default local CSV")
+    parser.add_argument("--repo-dir", type=Path, help="Existing clone or destination for a new clone")
+    parser.add_argument("--clone-url", help="Clone URL if --repo-dir does not exist")
+    parser.add_argument("--output-dir", type=Path,
+                        help="Directory for oracle JSON files")
     parser.add_argument("--instance-id", action="append", help="Process only this ID; repeat for several IDs")
     args = parser.parse_args()
 
-    rows = read_pylint_rows(args.csv)
+    repo_name = args.repo.split("/")[1]
+    default_csv, default_output_dir = default_paths(args.dataset, args.repo)
+    csv_path = args.csv or default_csv
+    repo_dir = args.repo_dir or ROOT / "repos" / repo_name
+    clone_url = args.clone_url or f"https://github.com/{args.repo}.git"
+    output_dir = args.output_dir or default_output_dir
+
+    if not csv_path.is_file():
+        hint = (" Export it first with: python -m scripts.export_swt_verified"
+                if args.dataset == "swt-verified" else "")
+        parser.error(f"Dataset CSV not found: {csv_path}.{hint}")
+    rows = read_repo_rows(csv_path, args.repo)
+    if args.dataset == "swt-verified" and any(
+        row.get("source_dataset") != DATASETS["swt-verified"]
+        or not row.get("test_patch", "").startswith("diff --git ")
+        for row in rows
+    ):
+        parser.error("SWT Verified CSV must be normalized by scripts.export_swt_verified")
     if args.instance_id:
         requested = set(args.instance_id)
         rows = [row for row in rows if row["instance_id"] in requested]
         missing = requested - {row["instance_id"] for row in rows}
         if missing:
-            parser.error(f"Unknown Pylint instance IDs: {', '.join(sorted(missing))}")
+            parser.error(f"Unknown {args.repo} instance IDs: {', '.join(sorted(missing))}")
     if not rows:
-        parser.error("No Pylint rows found")
-    ensure_repo(args.repo_dir, args.clone_url)
+        parser.error(f"No {args.repo} rows found")
+    ensure_repo(repo_dir, clone_url)
 
     patched_output: dict[str, list[dict[str, str]]] = {}
     base_output: dict[str, list[dict[str, str]]] = {}
     manifest_output: dict[str, list[dict[str, object]]] = {}
     for row in rows:
         instance_id = row["instance_id"]
-        patched, base, manifest = extract_instance(row, args.repo_dir)
+        patched, base, manifest = extract_instance(row, repo_dir)
         patched_output[instance_id] = patched
         base_output[instance_id] = base
         manifest_output[instance_id] = manifest
         print(f"{instance_id}: {len(patched)} changed tests, {len(base)} available at base")
 
-    write_json(args.output_dir / "related_tests_oracle_patched.json", patched_output)
-    write_json(args.output_dir / "related_tests_oracle_base.json", base_output)
-    write_json(args.output_dir / "oracle_manifest.json", manifest_output)
-    print(f"Wrote oracle context and manifest to {args.output_dir}")
+    write_json(output_dir / "related_tests_oracle_patched.json", patched_output)
+    write_json(output_dir / "related_tests_oracle_base.json", base_output)
+    write_json(output_dir / "oracle_manifest.json", manifest_output)
+    print(f"Wrote oracle context and manifest to {output_dir}")
 
 
 if __name__ == "__main__":
