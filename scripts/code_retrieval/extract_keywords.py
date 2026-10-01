@@ -1,4 +1,5 @@
 import argparse
+import csv
 import os
 from datasets import load_dataset
 import json
@@ -97,6 +98,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="gpt-4o", help="LLM model to use.")
     parser.add_argument("--swt", action="store_true", default=False, help="Whether to use the SWT-bench dataset.")
     parser.add_argument("--tdd", action="store_true", default=False, help="Whether to use the TDD-bench dataset.")
+    parser.add_argument("--dataset_csv", type=str, default=None, help="Read selected instances from a local CSV.")
     args = parser.parse_args()
     model = args.model
     keywords_path = args.keywords_path
@@ -107,7 +109,11 @@ if __name__ == "__main__":
         swt = f.read().strip().split("\n")
     with open("tdd.txt", "r") as f:
         tdd = f.read().strip().split("\n")
-    if use_swt:
+    if args.dataset_csv:
+        csv.field_size_limit(10_000_000)
+        with open(args.dataset_csv, encoding="utf-8-sig", newline="") as f:
+            ds = list(csv.DictReader(f))
+    elif use_swt:
         ds = load_dataset("SWE-bench/SWE-bench_Lite")["test"]
         ds = [bug_report for bug_report in ds if bug_report["instance_id"] in swt]
     elif use_tdd:

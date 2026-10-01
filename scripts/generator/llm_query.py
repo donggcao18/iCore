@@ -187,6 +187,7 @@ if __name__ == '__main__':
                         help='Limit a local CSV run to this repository, e.g. pylint-dev/pylint.')
     args = parser.parse_args()
     if args.dataset_csv:
+        csv.field_size_limit(10_000_000)
         with args.dataset_csv.open(encoding='utf-8-sig', newline='') as f:
             ds = list(csv.DictReader(f))
         if args.repo:

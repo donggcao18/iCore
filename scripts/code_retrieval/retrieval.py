@@ -1,4 +1,5 @@
 import argparse
+import csv
 import os
 import subprocess as sp
 from datasets import load_dataset
@@ -95,12 +96,20 @@ if __name__ == '__main__':
     parser.add_argument("--save_path", type=str, default="./retrieval_results/code/retrieval_results.json", help="Path to save the retrieval results.")
     parser.add_argument("--swt", action="store_true", help="Whether to use the SWT-bench dataset.")
     parser.add_argument("--tdd", action="store_true", help="Whether to use the TDD-bench dataset.")
+    parser.add_argument("--dataset_csv", type=str, default=None, help="Read selected instances from a local CSV.")
     args = parser.parse_args()
     keywords_path = args.keywords_path
     graph_dir = args.graph_dir
     use_swt = args.swt
     use_tdd = args.tdd
-    if use_swt:
+    if args.dataset_csv:
+        csv.field_size_limit(10_000_000)
+        with open(args.dataset_csv, encoding="utf-8-sig", newline="") as f:
+            ds = list(csv.DictReader(f))
+        with open(os.environ.get("SWT_IDS_FILE", "swt.txt"), "r") as f:
+            swt = f.read().strip().split("\n")
+        ds = [bug_report for bug_report in ds if bug_report["instance_id"] in swt]
+    elif use_swt:
         ds = load_dataset("SWE-bench/SWE-bench_Lite")["test"]
         with open(os.environ.get("SWT_IDS_FILE", "swt.txt"), "r") as f:
             swt = f.read().strip().split("\n")
