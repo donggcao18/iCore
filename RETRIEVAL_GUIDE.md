@@ -532,7 +532,7 @@ The last retrieval draft uses `related_tests_3.json`; final BRT generation must 
 | Launcher | Current behavior |
 | --- | --- |
 | [code_retrieval_flask.sh](code_retrieval_flask.sh) | Enforces exactly `pallets__flask-5014`; writes `flask_keywords.json` and `flask_retrieval_results.json`; one graph worker |
-| [code_retrieval_lite.sh](code_retrieval_lite.sh) | Defaults to `REPO=pylint-dev/pylint`; selects all that repo's Lite IDs directly from the dataset, checks its base clone and commits, and writes `nemo_*_lite.json` outputs |
+| [code_retrieval_lite.sh](code_retrieval_lite.sh) | Defaults to `REPO=pylint-dev/pylint`; selects all that repo's Lite IDs directly from the dataset, clones its base repository through `env_setup.clone_repo()` if missing, checks commits, and writes `nemo_*_lite.json` outputs |
 | [test_retrieval_flask.sh](test_retrieval_flask.sh) | Defaults to Verified with `tdd.txt`, `nemo_keywords.json`, and `nemo_retrieval_results.json`; `DATASET=lite REPO=owner/name` reads that repo's saved Lite ID list and the `nemo_*_lite.json` artifacts; one call-tree worker; configurable rounds |
 | [code_retrieval.sh](code_retrieval.sh) | Older launcher: passes `--keywords_path` to the graph builder and `--graph_path` to keyword extraction, neither of which accepts that flag |
 | [test_retrieval.sh](test_retrieval.sh) | Older launcher: call-tree command inherits the `django` project default; similarity repeatedly reads round-one drafts; `${i+1}` is not arithmetic addition in Bash; rerank messages share a directory |

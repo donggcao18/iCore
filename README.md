@@ -60,6 +60,21 @@ uses `env_setup.clone_repo()` to clone it when missing. The current environment 
 entry point is fixed to Flask in Verified; prepare the matching Lite project
 environments separately before running later test retrieval or BRT evaluation.
 
+For the official SWT-bench Verified Pylint subset, use
+[`SWT_VERIFIED_PYLINT_GUIDE.md`](SWT_VERIFIED_PYLINT_GUIDE.md). Its local CSV
+normalizes the source dataset's test/fix patch columns before oracle extraction.
+The same oracle extractor handles either dataset and any selected repository:
+
+```sh
+python -m scripts.test_retrieval.extract_oracle --dataset lite --repo pytest-dev/pytest
+python -m scripts.export_swt_verified
+python -m scripts.test_retrieval.extract_oracle --dataset swt-verified --repo pylint-dev/pylint
+```
+
+Change `--repo` for another project. The exporter creates one normalized
+`data/swt-bench-verified/test.csv` containing every repository; the extractor
+filters that CSV by `--repo`. Lite uses `data/swe-bench-lite/test.csv`.
+
 After preparing those environments, continue with
 `REPO=pylint-dev/pylint DATASET=lite ITERATIONS=3 bash test_retrieval_flask.sh`, then
 `REPO=pylint-dev/pylint DATASET=lite ITERATIONS=3 bash run_brt_flask.sh`. Both launchers use Verified
