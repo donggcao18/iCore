@@ -124,14 +124,21 @@ def get_related_test(instance_id, path, size=-1):
 def get_related_test_list(instance_id, path, size=-1):
     with open(path, 'r') as f:
         results = json.load(f)
-    test_files = results.get(instance_id, [])
+    test_files = results.get(instance_id) or []
+    if not isinstance(test_files, list):
+        return []
     related_tests = []
-    for i, test in enumerate(test_files):
-        file = test["file"]
-        test_name = test["name"]
-        function_content = test["code_content"]
+    for test in test_files:
+        if not isinstance(test, dict):
+            continue
+        file = test.get("file")
+        test_name = test.get("name")
+        function_content = test.get("code_content")
+        if not all(isinstance(value, str) and value.strip()
+                   for value in (file, test_name, function_content)):
+            continue
         related_tests.append(f'- {file} {test_name}\n ```\n{function_content}\n```\n')
-        if size != -1 and i + 1 >= size:
+        if size != -1 and len(related_tests) >= size:
             break
     return related_tests
 

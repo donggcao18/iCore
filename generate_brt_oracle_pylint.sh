@@ -45,19 +45,27 @@ if missing_code:
     raise SystemExit('Missing retrieved code for: ' + ', '.join(missing_code)
                      + f'. Complete code retrieval before running this script ({code_path}).')
 invalid_tests = [instance for instance in ids
-                 if not isinstance(oracle.get(instance), list)]
+                 if instance not in oracle or
+                 (oracle[instance] is not None and not isinstance(oracle[instance], list))]
 if invalid_tests:
     raise SystemExit('Missing or invalid base-oracle entries for: '
                      + ', '.join(invalid_tests))
+skipped = 0
+empty = 0
 for instance in ids:
-    for test in oracle[instance]:
+    usable = 0
+    for test in oracle[instance] or []:
         if (not isinstance(test, dict)
                 or not all(isinstance(test.get(key), str) and test[key].strip()
                            for key in ('name', 'file', 'code_content'))):
-            raise SystemExit(f'Invalid oracle test entry for {instance} in {oracle_path}')
-empty = sum(not oracle[instance] for instance in ids)
+            skipped += 1
+            continue
+        usable += 1
+    empty += usable == 0
+if skipped:
+    print(f'Skipping {skipped} incomplete oracle entries; those instances may use code-only context.')
 print(f'Generating for {len(ids)} Pylint instances; '
-      f'{empty} have no exact test at the base commit.')
+      f'{empty} have no usable test at the base commit.')
 PY
 
 mkdir -p "$OUT_DIR"

@@ -76,9 +76,12 @@ def make_messages_from_dataset(exp_name, bug_report, context_code_path, context_
         elif context_code_path:
             relevant_docs = get_retrieval_docs(bug_id, context_code_path)
             current_query = current_query.replace('{{relevant_docs}}', relevant_docs)
-        if context_test_path:
-            related_tests = get_related_test(bug_id, context_test_path)
+        related_tests = get_related_test(bug_id, context_test_path) if context_test_path else ''
+        if related_tests:
             current_query = current_query.replace('{{related_tests}}', related_tests)
+        else:
+            current_query = re.sub(r'\n*<test>\s*{{related_tests}}\s*</test>', '', current_query)
+            current_query = current_query.replace('{{related_tests}}', '')
     messages[-1]['content'] = current_query
 
     return messages

@@ -3,7 +3,7 @@ import difflib
 import unittest
 from unittest.mock import patch
 
-from scripts.test_retrieval.extract_oracle_pylint import extract_instance, parse_patch
+from scripts.test_retrieval.extract_oracle import default_paths, extract_instance, parse_patch
 
 
 def file_diff(path, before, after, *, new_file=False):
@@ -39,7 +39,7 @@ class OracleExtractionTests(unittest.TestCase):
             "FAIL_TO_PASS": '["tests/test_example.py::TestExample::test_new"]',
         }
         sources = ({path: before, other: None}, {path: after, other: new_file})
-        with patch("scripts.test_retrieval.extract_oracle_pylint.patched_sources", return_value=sources):
+        with patch("scripts.test_retrieval.extract_oracle.patched_sources", return_value=sources):
             patched, base, manifest = extract_instance(row, None)
 
         self.assertEqual([item["name"] for item in patched], [
@@ -62,7 +62,7 @@ class OracleExtractionTests(unittest.TestCase):
             "FAIL_TO_PASS": '["tests/test_fixture.py::test_parameterized[value-2]"]',
         }
         sources = ({path: before}, {path: after})
-        with patch("scripts.test_retrieval.extract_oracle_pylint.patched_sources", return_value=sources):
+        with patch("scripts.test_retrieval.extract_oracle.patched_sources", return_value=sources):
             patched, base, manifest = extract_instance(row, None)
         self.assertEqual(patched[0]["name"], "test_parameterized")
         self.assertEqual(base[0]["name"], "test_parameterized")
@@ -77,6 +77,14 @@ class OracleExtractionTests(unittest.TestCase):
         self.assertEqual(changes[0].old_lines, {1})
         self.assertEqual(changes[0].new_lines, {1})
         self.assertTrue(changes[1].new_file)
+
+    def test_dataset_output_directories_are_parallel(self):
+        lite_csv, lite_output = default_paths("lite", "pylint-dev/pylint")
+        verified_csv, verified_output = default_paths("swt-verified", "pylint-dev/pylint")
+        self.assertEqual(lite_csv.name, "test.csv")
+        self.assertEqual(verified_csv.name, "test.csv")
+        self.assertEqual(lite_output.parts[-3:], ("oracle", "lite", "pylint"))
+        self.assertEqual(verified_output.parts[-3:], ("oracle", "swt-bench-verified", "pylint"))
 
 
 if __name__ == "__main__":
