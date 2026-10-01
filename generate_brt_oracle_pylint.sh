@@ -8,7 +8,7 @@ MODEL="${MODEL:-nvidia/nemotron-3-super-120b-a12b:free}"
 SAMPLES="${SAMPLES:-1}"
 DATASET_CSV="${DATASET_CSV:-./data/swe-bench-lite/test.csv}"
 CODE="${CODE:-./retrieval_results/code/nemo_retrieval_results_lite.json}"
-ORACLE="${ORACLE:-./retrieval_results/test/oracle/pylint/related_tests_oracle_base.json}"
+ORACLE="${ORACLE:-./retrieval_results/test/oracle/lite/pylint/related_tests_oracle_base.json}"
 EXP="${EXP:-nemo_lite_pylint_oracle_exact_base}"
 OUT_DIR="${OUT_DIR:-./data/${EXP}/generated_tests}"
 

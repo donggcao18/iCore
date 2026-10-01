@@ -280,7 +280,7 @@ def default_paths(dataset: str, repo: str) -> tuple[Path, Path]:
     name = repo.split("/")[1]
     if dataset == "lite":
         return (ROOT / "data/swe-bench-lite/test.csv",
-                ROOT / "retrieval_results/test/oracle" / name)
+                ROOT / "retrieval_results/test/oracle/lite" / name)
     return (ROOT / "data/swt-bench-verified/test.csv",
             ROOT / "retrieval_results/test/oracle/swt-bench-verified" / name)
 
