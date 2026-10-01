@@ -1,5 +1,6 @@
 # coding: utf-8
 from pathlib import Path
+import csv
 import os
 import re
 import json
@@ -180,21 +181,30 @@ if __name__ == '__main__':
     parser.add_argument('--swt', default=False, action='store_true')
     parser.add_argument('--tdd', default=False, action='store_true')
     parser.add_argument('--retry', default=False, action='store_true')
+    parser.add_argument('--dataset_csv', type=Path, default=None,
+                        help='Read bug reports from a local benchmark CSV instead of Hugging Face.')
+    parser.add_argument('--repo', default=None,
+                        help='Limit a local CSV run to this repository, e.g. pylint-dev/pylint.')
     args = parser.parse_args()
-    with open('swt.txt', 'r') as f:
-        swt = f.read().strip().split('\n')
-    with open('tdd.txt', 'r') as f:
-        tdd = f.read().strip().split('\n')
-    with open('swt.txt', 'r') as f:
-        skip = f.read().strip().split('\n')
-    if args.swt:
+    if args.dataset_csv:
+        with args.dataset_csv.open(encoding='utf-8-sig', newline='') as f:
+            ds = list(csv.DictReader(f))
+        if args.repo:
+            ds = [bug_report for bug_report in ds if bug_report['repo'] == args.repo]
+        if not ds:
+            parser.error('No benchmark instances match --dataset_csv and --repo')
+    elif args.swt:
+        with open(os.environ.get('SWT_IDS_FILE', 'swt.txt'), 'r') as f:
+            swt = f.read().strip().split('\n')
         ds = load_dataset("SWE-bench/SWE-bench_Lite")["test"]
         ds = [bug_report for bug_report in ds if bug_report["instance_id"] in swt]
     elif args.tdd:
+        with open('tdd.txt', 'r') as f:
+            tdd = f.read().strip().split('\n')
         ds = load_dataset("princeton-nlp/SWE-bench_Verified")["test"]
         ds = [bug_report for bug_report in ds if bug_report["instance_id"] in tdd]
     else:
-        raise NotImplementedError
+        parser.error('Select --dataset_csv, --swt, or --tdd')
 
     if args.from_id == '':
         flag = True

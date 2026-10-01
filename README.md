@@ -3,6 +3,8 @@ This is the replication package of paper "iCoRe: An Iterative Correlation-Aware 
 
 It includes the complete pipeline for setting up the environment, retrieving relevant production and test code, and leveraging LLMs to generate bug reproduction tests.
 
+For a source-linked explanation of both retrieval pipelines, their scoring formulas, outputs, and resume behavior, see [the retrieval guide](RETRIEVAL_GUIDE.md).
+
 # How to Run
 
 1. Install Dependencies
@@ -44,6 +46,24 @@ First, retrieve the relevant production code:
 ```sh
 bash code_retrieval.sh
 ```
+
+For `SWE-bench/SWE-bench_Lite`, run
+`REPO=pylint-dev/pylint bash code_retrieval_lite.sh`. The launcher selects
+all Lite instances for that repository and saves their IDs to
+`retrieval_results/code/lite_selected_pylint-dev__pylint.txt`. It does not
+require you to copy IDs into `swt.txt`. Set `REPO=owner/name` for the next
+repository.
+It uses `--swt` throughout and writes `nemo_keywords_lite.json` and
+`nemo_retrieval_results_lite.json` under `retrieval_results/code/`. It checks
+that each required base checkout and commit exists under `REPO_ROOT_DIR` and
+prints clone commands for missing repositories. The current environment setup
+entry point is fixed to Flask in Verified; prepare the matching Lite project
+environments separately before running later test retrieval or BRT evaluation.
+
+After preparing those environments, continue with
+`REPO=pylint-dev/pylint DATASET=lite ITERATIONS=3 bash test_retrieval_flask.sh`, then
+`REPO=pylint-dev/pylint DATASET=lite ITERATIONS=3 bash run_brt_flask.sh`. Both launchers use Verified
+by default and keep Lite retrieval, drafts, and BRT results in separate paths.
 
 Next, retrieve the relevant test code:
 

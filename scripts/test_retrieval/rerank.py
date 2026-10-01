@@ -197,7 +197,7 @@ if __name__ == "__main__":
     assert os.path.exists(test_similarity_dir)
     assert os.path.exists(last_related_tests_path)
 
-    with open('swt.txt', 'r') as f:
+    with open(os.environ.get('SWT_IDS_FILE', 'swt.txt'), 'r') as f:
         swt = f.read().strip().split('\n')
     with open('tdd.txt', 'r') as f:
         tdd = f.read().strip().split('\n')

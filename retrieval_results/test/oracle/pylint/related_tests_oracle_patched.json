@@ -1,0 +1,69 @@
+{
+    "pylint-dev__pylint-5859": [
+        {
+            "name": "TestFixme.test_non_alphanumeric_codetag",
+            "file": "tests/checkers/unittest_misc.py",
+            "code_content": "class TestFixme(CheckerTestCase):\n    @set_config(notes=[\"???\"])\n    def test_non_alphanumeric_codetag(self) -> None:\n        code = \"\"\"a = 1\n                #???\n                \"\"\"\n        with self.assertAddsMessages(\n            MessageTest(msg_id=\"fixme\", line=2, args=\"???\", col_offset=17)\n        ):\n            self.checker.process_tokens(_tokenize_str(code))"
+        }
+    ],
+    "pylint-dev__pylint-6506": [
+        {
+            "name": "test_unknown_option_name",
+            "file": "tests/config/test_config.py",
+            "code_content": "def test_unknown_option_name(capsys: CaptureFixture) -> None:\n    \"\"\"Check that we correctly raise a message on an unknown option.\"\"\"\n    with pytest.raises(SystemExit):\n        Run([str(EMPTY_MODULE), \"--unknown-option=yes\"], exit=False)\n    output = capsys.readouterr()\n    assert \"usage: pylint\" in output.err\n    assert \"Unrecognized option\" in output.err"
+        },
+        {
+            "name": "test_unknown_short_option_name",
+            "file": "tests/config/test_config.py",
+            "code_content": "def test_unknown_short_option_name(capsys: CaptureFixture) -> None:\n    \"\"\"Check that we correctly raise a message on an unknown short option.\"\"\"\n    with pytest.raises(SystemExit):\n        Run([str(EMPTY_MODULE), \"-Q\"], exit=False)\n    output = capsys.readouterr()\n    assert \"usage: pylint\" in output.err\n    assert \"Unrecognized option\" in output.err"
+        }
+    ],
+    "pylint-dev__pylint-7080": [
+        {
+            "name": "TestRunTC.test_ignore_path_recursive_current_dir",
+            "file": "tests/test_self.py",
+            "code_content": "class TestRunTC:\n    def test_ignore_path_recursive_current_dir(self) -> None:\n        \"\"\"Tests that path is normalized before checked that is ignored. GitHub issue #6964\"\"\"\n        with _test_sys_path():\n            # pytest is including directory HERE/regrtest_data to sys.path which causes\n            # astroid to believe that directory is a package.\n            sys.path = [\n                path\n                for path in sys.path\n                if not os.path.basename(path) == \"regrtest_data\"\n            ]\n            with _test_cwd():\n                os.chdir(join(HERE, \"regrtest_data\", \"directory\"))\n                self._runtest(\n                    [\n                        \".\",\n                        \"--recursive=y\",\n                        \"--ignore-paths=^ignored_subdirectory/.*\",\n                    ],\n                    code=0,\n                )"
+        }
+    ],
+    "pylint-dev__pylint-7114": [
+        {
+            "name": "test_identically_named_nested_module",
+            "file": "tests/lint/unittest_lint.py",
+            "code_content": "def test_identically_named_nested_module(initialized_linter: PyLinter) -> None:\n    with tempdir():\n        create_files([\"identical/identical.py\"])\n        with open(\"identical/identical.py\", \"w\", encoding=\"utf-8\") as f:\n            f.write(\"import imp\")\n        initialized_linter.check([\"identical\"])\n    assert initialized_linter.stats.by_msg[\"deprecated-module\"] == 1"
+        },
+        {
+            "name": "TestImportsChecker.test_relative_beyond_top_level_two",
+            "file": "tests/checkers/unittest_imports.py",
+            "code_content": "class TestImportsChecker(CheckerTestCase):\n    @staticmethod\n    @pytest.mark.xfail(\n        reason=\"epylint manipulates cwd; these tests should not be using epylint\"\n    )\n    def test_relative_beyond_top_level_two() -> None:\n        output, errors = lint.py_run(\n            f\"{os.path.join(REGR_DATA, 'beyond_top_two')} -d all -e relative-beyond-top-level\",\n            return_std=True,\n        )\n        top_level_function = os.path.join(\n            REGR_DATA, \"beyond_top_two/namespace_package/top_level_function.py\"\n        )\n        output2, errors2 = lint.py_run(\n            f\"{top_level_function} -d all -e relative-beyond-top-level\",\n            return_std=True,\n        )\n\n        assert len(output.readlines()) == len(output2.readlines())\n        assert errors.readlines() == errors2.readlines()"
+        }
+    ],
+    "pylint-dev__pylint-7228": [
+        {
+            "name": "test_regex_error",
+            "file": "tests/config/test_config.py",
+            "code_content": "def test_regex_error(capsys: CaptureFixture) -> None:\n    \"\"\"Check that we correctly error when an an option is passed whose value is an invalid regular expression.\"\"\"\n    with pytest.raises(SystemExit):\n        Run(\n            [str(EMPTY_MODULE), r\"--function-rgx=[\\p{Han}a-z_][\\p{Han}a-z0-9_]{2,30}$\"],\n            exit=False,\n        )\n    output = capsys.readouterr()\n    assert (\n        r\"Error in provided regular expression: [\\p{Han}a-z_][\\p{Han}a-z0-9_]{2,30}$ beginning at index 1: bad escape \\p\"\n        in output.err\n    )"
+        },
+        {
+            "name": "test_csv_regex_error",
+            "file": "tests/config/test_config.py",
+            "code_content": "def test_csv_regex_error(capsys: CaptureFixture) -> None:\n    \"\"\"Check that we correctly error when an option is passed and one\n    of its comma-separated regular expressions values is an invalid regular expression.\n    \"\"\"\n    with pytest.raises(SystemExit):\n        Run(\n            [str(EMPTY_MODULE), r\"--bad-names-rgx=(foo{1,3})\"],\n            exit=False,\n        )\n    output = capsys.readouterr()\n    assert (\n        r\"Error in provided regular expression: (foo{1 beginning at index 0: missing ), unterminated subpattern\"\n        in output.err\n    )"
+        }
+    ],
+    "pylint-dev__pylint-7993": [
+        {
+            "name": "test_template_option_with_header",
+            "file": "tests/reporters/unittest_reporting.py",
+            "code_content": "def test_template_option_with_header(linter: PyLinter) -> None:\n    output = StringIO()\n    linter.reporter.out = output\n    linter.config.msg_template = '{{ \"Category\": \"{category}\" }}'\n    linter.open()\n    linter.set_current_module(\"my_mod\")\n\n    linter.add_message(\"C0301\", line=1, args=(1, 2))\n    linter.add_message(\n        \"line-too-long\", line=2, end_lineno=2, end_col_offset=4, args=(3, 4)\n    )\n\n    out_lines = output.getvalue().split(\"\\n\")\n    assert out_lines[1] == '{ \"Category\": \"convention\" }'\n    assert out_lines[2] == '{ \"Category\": \"convention\" }'"
+        },
+        {
+            "name": "test_template_option_non_existing",
+            "file": "tests/reporters/unittest_reporting.py",
+            "code_content": "def test_template_option_non_existing(linter) -> None:\n    \"\"\"Test the msg-template option with non-existent options.\n    This makes sure that this option remains backwards compatible as new\n    parameters do not break on previous versions\n    \"\"\"\n    output = StringIO()\n    linter.reporter.out = output\n    linter.config.msg_template = \"{path}:{line}:{categ}:({a_second_new_option:03d})\"\n    linter.open()\n    with pytest.warns(UserWarning) as records:\n        linter.set_current_module(\"my_mod\")\n        assert len(records) == 2\n        assert \"Don't recognize the argument 'categ'\" in records[0].message.args[0]\n    assert (\n        \"Don't recognize the argument 'a_second_new_option'\"\n        in records[1].message.args[0]\n    )\n\n    linter.add_message(\"C0301\", line=1, args=(1, 2))\n    linter.add_message(\n        \"line-too-long\", line=2, end_lineno=2, end_col_offset=4, args=(3, 4)\n    )\n\n    out_lines = output.getvalue().split(\"\\n\")\n    assert out_lines[1] == \"my_mod:1::()\"\n    assert out_lines[2] == \"my_mod:2::()\""
+        },
+        {
+            "name": "test_deprecation_set_output",
+            "file": "tests/reporters/unittest_reporting.py",
+            "code_content": "def test_deprecation_set_output(recwarn: WarningsRecorder) -> None:\n    \"\"\"TODO remove in 3.0.\"\"\"\n    reporter = BaseReporter()\n    # noinspection PyDeprecation\n    reporter.set_output(sys.stdout)\n    warning = recwarn.pop()\n    assert \"set_output' will be removed in 3.0\" in str(warning)\n    assert reporter.out == sys.stdout"
+        }
+    ]
+}

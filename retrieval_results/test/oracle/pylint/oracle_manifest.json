@@ -1,0 +1,132 @@
+{
+    "pylint-dev__pylint-5859": [
+        {
+            "file": "tests/checkers/unittest_misc.py",
+            "name": "TestFixme.test_non_alphanumeric_codetag",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pylint-dev__pylint-6506": [
+        {
+            "file": "tests/config/test_config.py",
+            "name": "test_unknown_option_name",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": true
+        },
+        {
+            "file": "tests/config/test_config.py",
+            "name": "test_unknown_short_option_name",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": true
+        }
+    ],
+    "pylint-dev__pylint-7080": [
+        {
+            "file": "tests/test_self.py",
+            "name": "TestRunTC.test_ignore_path_recursive_current_dir",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pylint-dev__pylint-7114": [
+        {
+            "file": "tests/lint/unittest_lint.py",
+            "name": "test_identically_named_nested_module",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        },
+        {
+            "file": "tests/checkers/unittest_imports.py",
+            "name": "TestImportsChecker.test_relative_beyond_top_level_two",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        }
+    ],
+    "pylint-dev__pylint-7228": [
+        {
+            "file": "tests/config/test_config.py",
+            "name": "test_regex_error",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        },
+        {
+            "file": "tests/config/test_config.py",
+            "name": "test_csv_regex_error",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pylint-dev__pylint-7993": [
+        {
+            "file": "tests/reporters/unittest_reporting.py",
+            "name": "test_template_option_with_header",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        },
+        {
+            "file": "tests/reporters/unittest_reporting.py",
+            "name": "test_template_option_non_existing",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "tests/reporters/unittest_reporting.py",
+            "name": "test_deprecation_set_output",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        }
+    ]
+}

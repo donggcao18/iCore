@@ -102,7 +102,7 @@ if __name__ == '__main__':
     use_tdd = args.tdd
     if use_swt:
         ds = load_dataset("SWE-bench/SWE-bench_Lite")["test"]
-        with open("swt.txt", "r") as f:
+        with open(os.environ.get("SWT_IDS_FILE", "swt.txt"), "r") as f:
             swt = f.read().strip().split("\n")
         ds = [bug_report for bug_report in ds if bug_report["instance_id"] in swt]
     elif use_tdd:

@@ -103,14 +103,16 @@ if __name__ == "__main__":
     use_swt = args.swt
     use_tdd = args.tdd
 
-    with open("swt.txt", "r") as f:
+    with open(os.environ.get("SWT_IDS_FILE", "swt.txt"), "r") as f:
         swt = f.read().strip().split("\n")
     with open("tdd.txt", "r") as f:
         tdd = f.read().strip().split("\n")
     if use_swt:
         ds = load_dataset("SWE-bench/SWE-bench_Lite")["test"]
+        ds = [bug_report for bug_report in ds if bug_report["instance_id"] in swt]
     elif use_tdd:
         ds = load_dataset("princeton-nlp/SWE-bench_Verified")["test"]
+        ds = [bug_report for bug_report in ds if bug_report["instance_id"] in tdd]
     all_keywords = {}
     if os.path.exists(keywords_path):
         with open(keywords_path, "r") as f:

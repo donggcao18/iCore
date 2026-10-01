@@ -135,7 +135,7 @@ if __name__ == '__main__':
     output_dir = args.output_dir
     injection_path = args.injection_path
     filter_proj = args.proj
-    with open('swt.txt', 'r') as f:
+    with open(os.environ.get('SWT_IDS_FILE', 'swt.txt'), 'r') as f:
         swt = f.read().strip().split('\n')
     with open('tdd.txt', 'r') as f:
         tdd = f.read().strip().split('\n')

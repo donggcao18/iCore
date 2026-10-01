@@ -1,0 +1,36 @@
+{
+    "pylint-dev__pylint-5859": [],
+    "pylint-dev__pylint-6506": [
+        {
+            "name": "test_unknown_option_name",
+            "file": "tests/config/test_config.py",
+            "code_content": "def test_unknown_option_name(capsys: CaptureFixture) -> None:\n    \"\"\"Check that we correctly raise a message on an unknown option.\"\"\"\n    with pytest.raises(_UnrecognizedOptionError):\n        Run([str(EMPTY_MODULE), \"--unknown-option=yes\"], exit=False)\n    output = capsys.readouterr()\n    assert \"E0015: Unrecognized option found: unknown-option=yes\" in output.out"
+        },
+        {
+            "name": "test_unknown_short_option_name",
+            "file": "tests/config/test_config.py",
+            "code_content": "def test_unknown_short_option_name(capsys: CaptureFixture) -> None:\n    \"\"\"Check that we correctly raise a message on an unknown short option.\"\"\"\n    with pytest.raises(_UnrecognizedOptionError):\n        Run([str(EMPTY_MODULE), \"-Q\"], exit=False)\n    output = capsys.readouterr()\n    assert \"E0015: Unrecognized option found: Q\" in output.out"
+        }
+    ],
+    "pylint-dev__pylint-7080": [],
+    "pylint-dev__pylint-7114": [
+        {
+            "name": "TestImportsChecker.test_relative_beyond_top_level_two",
+            "file": "tests/checkers/unittest_imports.py",
+            "code_content": "class TestImportsChecker(CheckerTestCase):\n    @staticmethod\n    def test_relative_beyond_top_level_two() -> None:\n        output, errors = lint.py_run(\n            f\"{os.path.join(REGR_DATA, 'beyond_top_two')} -d all -e relative-beyond-top-level\",\n            return_std=True,\n        )\n        top_level_function = os.path.join(\n            REGR_DATA, \"beyond_top_two/namespace_package/top_level_function.py\"\n        )\n        output2, errors2 = lint.py_run(\n            f\"{top_level_function} -d all -e relative-beyond-top-level\",\n            return_std=True,\n        )\n\n        assert len(output.readlines()) == len(output2.readlines())\n        assert errors.readlines() == errors2.readlines()"
+        }
+    ],
+    "pylint-dev__pylint-7228": [],
+    "pylint-dev__pylint-7993": [
+        {
+            "name": "test_template_option_non_existing",
+            "file": "tests/reporters/unittest_reporting.py",
+            "code_content": "def test_template_option_non_existing(linter) -> None:\n    \"\"\"Test the msg-template option with non-existent options.\n    This makes sure that this option remains backwards compatible as new\n    parameters do not break on previous versions\n    \"\"\"\n    output = StringIO()\n    linter.reporter.out = output\n    linter.config.msg_template = (\n        \"{path}:{line}:{a_new_option}:({a_second_new_option:03d})\"\n    )\n    linter.open()\n    with pytest.warns(UserWarning) as records:\n        linter.set_current_module(\"my_mod\")\n        assert len(records) == 2\n        assert (\n            \"Don't recognize the argument 'a_new_option'\" in records[0].message.args[0]\n        )\n    assert (\n        \"Don't recognize the argument 'a_second_new_option'\"\n        in records[1].message.args[0]\n    )\n\n    linter.add_message(\"C0301\", line=1, args=(1, 2))\n    linter.add_message(\n        \"line-too-long\", line=2, end_lineno=2, end_col_offset=4, args=(3, 4)\n    )\n\n    out_lines = output.getvalue().split(\"\\n\")\n    assert out_lines[1] == \"my_mod:1::()\"\n    assert out_lines[2] == \"my_mod:2::()\""
+        },
+        {
+            "name": "test_deprecation_set_output",
+            "file": "tests/reporters/unittest_reporting.py",
+            "code_content": "def test_deprecation_set_output(recwarn):\n    \"\"\"TODO remove in 3.0.\"\"\"\n    reporter = BaseReporter()\n    # noinspection PyDeprecation\n    reporter.set_output(sys.stdout)\n    warning = recwarn.pop()\n    assert \"set_output' will be removed in 3.0\" in str(warning)\n    assert reporter.out == sys.stdout"
+        }
+    ]
+}
