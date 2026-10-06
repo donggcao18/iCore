@@ -47,7 +47,8 @@ class TestFunction:
 
 def run_git(*args: str, cwd: Path | None = None, check: bool = True) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
-        ["git", *args], cwd=cwd, text=True, encoding="utf-8",
+        ["git", *(["-c", f"safe.directory={cwd.resolve().as_posix()}"] if cwd else []), *args],
+        cwd=cwd, text=True, encoding="utf-8",
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
     )
     if check and result.returncode:

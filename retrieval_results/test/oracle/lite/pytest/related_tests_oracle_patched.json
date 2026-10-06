@@ -1,0 +1,246 @@
+{
+    "pytest-dev__pytest-11143": [
+        {
+            "name": "TestIssue11140.test_constant_not_picked_as_module_docstring",
+            "file": "testing/test_assertrewrite.py",
+            "code_content": "class TestIssue11140:\n    def test_constant_not_picked_as_module_docstring(self, pytester: Pytester) -> None:\n        pytester.makepyfile(\n            \"\"\"\\\n            0\n\n            def test_foo():\n                pass\n            \"\"\"\n        )\n        result = pytester.runpytest()\n        assert result.ret == 0"
+        }
+    ],
+    "pytest-dev__pytest-11148": [
+        {
+            "name": "TestImportPath.test_remembers_previous_imports",
+            "file": "testing/test_pathlib.py",
+            "code_content": "class TestImportPath:\n    def test_remembers_previous_imports(\n        self, simple_module: Path, tmp_path: Path\n    ) -> None:\n        \"\"\"`importlib` mode called remembers previous module (#10341, #10811).\"\"\"\n        module1 = import_path(simple_module, mode=\"importlib\", root=tmp_path)\n        module2 = import_path(simple_module, mode=\"importlib\", root=tmp_path)\n        assert module1 is module2"
+        },
+        {
+            "name": "test_doctest_and_normal_imports_with_importlib",
+            "file": "testing/acceptance_test.py",
+            "code_content": "def test_doctest_and_normal_imports_with_importlib(pytester: Pytester) -> None:\n    \"\"\"\n    Regression test for #10811: previously import_path with ImportMode.importlib would\n    not return a module if already in sys.modules, resulting in modules being imported\n    multiple times, which causes problems with modules that have import side effects.\n    \"\"\"\n    # Uses the exact reproducer form #10811, given it is very minimal\n    # and illustrates the problem well.\n    pytester.makepyfile(\n        **{\n            \"pmxbot/commands.py\": \"from . import logging\",\n            \"pmxbot/logging.py\": \"\",\n            \"tests/__init__.py\": \"\",\n            \"tests/test_commands.py\": \"\"\"\n                import importlib\n                from pmxbot import logging\n\n                class TestCommands:\n                    def test_boo(self):\n                        assert importlib.import_module('pmxbot.logging') is logging\n                \"\"\",\n        }\n    )\n    pytester.makeini(\n        \"\"\"\n        [pytest]\n        addopts=\n            --doctest-modules\n            --import-mode importlib\n        \"\"\"\n    )\n    result = pytester.runpytest_subprocess()\n    result.stdout.fnmatch_lines(\"*1 passed*\")"
+        },
+        {
+            "name": "TestImportPath.test_importmode_importlib",
+            "file": "testing/test_pathlib.py",
+            "code_content": "class TestImportPath:\n    def test_importmode_importlib(\n        self, simple_module: Path, tmp_path: Path, request: pytest.FixtureRequest\n    ) -> None:\n        \"\"\"`importlib` mode does not change sys.path.\"\"\"\n        module = import_path(simple_module, mode=\"importlib\", root=tmp_path)\n        assert module.foo(2) == 42  # type: ignore[attr-defined]\n        assert str(simple_module.parent) not in sys.path\n        assert module.__name__ in sys.modules\n        assert module.__name__ == f\"_src.tests.mymod_{request.node.name}\"\n        assert \"_src\" in sys.modules\n        assert \"_src.tests\" in sys.modules"
+        },
+        {
+            "name": "TestImportPath.test_no_meta_path_found",
+            "file": "testing/test_pathlib.py",
+            "code_content": "class TestImportPath:\n    def test_no_meta_path_found(\n        self, simple_module: Path, monkeypatch: MonkeyPatch, tmp_path: Path\n    ) -> None:\n        \"\"\"Even without any meta_path should still import module.\"\"\"\n        monkeypatch.setattr(sys, \"meta_path\", [])\n        module = import_path(simple_module, mode=\"importlib\", root=tmp_path)\n        assert module.foo(2) == 42  # type: ignore[attr-defined]\n\n        # mode='importlib' fails if no spec is found to load the module\n        import importlib.util\n\n        # Force module to be re-imported.\n        del sys.modules[module.__name__]\n\n        monkeypatch.setattr(\n            importlib.util, \"spec_from_file_location\", lambda *args: None\n        )\n        with pytest.raises(ImportError):\n            import_path(simple_module, mode=\"importlib\", root=tmp_path)"
+        }
+    ],
+    "pytest-dev__pytest-5103": [
+        {
+            "name": "TestAssertionRewrite.test_unroll_expression",
+            "file": "testing/test_assertrewrite.py",
+            "code_content": "class TestAssertionRewrite(object):\n    def test_unroll_expression(self):\n        def f():\n            assert all(x == 1 for x in range(10))\n\n        assert \"0 == 1\" in getmsg(f)"
+        },
+        {
+            "name": "TestAssertionRewrite.test_unroll_generator",
+            "file": "testing/test_assertrewrite.py",
+            "code_content": "class TestAssertionRewrite(object):\n    def test_unroll_generator(self, testdir):\n        testdir.makepyfile(\n            \"\"\"\n            def check_even(num):\n                if num % 2 == 0:\n                    return True\n                return False\n\n            def test_generator():\n                odd_list = list(range(1,9,2))\n                assert all(check_even(num) for num in odd_list)\"\"\"\n        )\n        result = testdir.runpytest()\n        result.stdout.fnmatch_lines([\"*assert False*\", \"*where False = check_even(1)*\"])"
+        },
+        {
+            "name": "TestAssertionRewrite.test_unroll_list_comprehension",
+            "file": "testing/test_assertrewrite.py",
+            "code_content": "class TestAssertionRewrite(object):\n    def test_unroll_list_comprehension(self, testdir):\n        testdir.makepyfile(\n            \"\"\"\n            def check_even(num):\n                if num % 2 == 0:\n                    return True\n                return False\n\n            def test_list_comprehension():\n                odd_list = list(range(1,9,2))\n                assert all([check_even(num) for num in odd_list])\"\"\"\n        )\n        result = testdir.runpytest()\n        result.stdout.fnmatch_lines([\"*assert False*\", \"*where False = check_even(1)*\"])"
+        },
+        {
+            "name": "TestAssertionRewrite.test_for_loop",
+            "file": "testing/test_assertrewrite.py",
+            "code_content": "class TestAssertionRewrite(object):\n    def test_for_loop(self, testdir):\n        testdir.makepyfile(\n            \"\"\"\n            def check_even(num):\n                if num % 2 == 0:\n                    return True\n                return False\n\n            def test_for_loop():\n                odd_list = list(range(1,9,2))\n                for num in odd_list:\n                    assert check_even(num)\n        \"\"\"\n        )\n        result = testdir.runpytest()\n        result.stdout.fnmatch_lines([\"*assert False*\", \"*where False = check_even(1)*\"])"
+        }
+    ],
+    "pytest-dev__pytest-5221": [
+        {
+            "name": "TestShowFixtures.test_show_fixtures",
+            "file": "testing/python/fixtures.py",
+            "code_content": "class TestShowFixtures(object):\n    def test_show_fixtures(self, testdir):\n        result = testdir.runpytest(\"--fixtures\")\n        result.stdout.fnmatch_lines(\n            [\n                \"tmpdir_factory [[]session scope[]]\",\n                \"*for the test session*\",\n                \"tmpdir\",\n                \"*temporary directory*\",\n            ]\n        )"
+        },
+        {
+            "name": "TestShowFixtures.test_show_fixtures_verbose",
+            "file": "testing/python/fixtures.py",
+            "code_content": "class TestShowFixtures(object):\n    def test_show_fixtures_verbose(self, testdir):\n        result = testdir.runpytest(\"--fixtures\", \"-v\")\n        result.stdout.fnmatch_lines(\n            [\n                \"tmpdir_factory [[]session scope[]] -- *tmpdir.py*\",\n                \"*for the test session*\",\n                \"tmpdir -- *tmpdir.py*\",\n                \"*temporary directory*\",\n            ]\n        )"
+        }
+    ],
+    "pytest-dev__pytest-5227": [
+        {
+            "name": "test_log_cli_enabled_disabled",
+            "file": "testing/logging/test_reporting.py",
+            "code_content": "@pytest.mark.parametrize(\"enabled\", [True, False])\ndef test_log_cli_enabled_disabled(testdir, enabled):\n    msg = \"critical message logged by test\"\n    testdir.makepyfile(\n        \"\"\"\n        import logging\n        def test_log_cli():\n            logging.critical(\"{}\")\n    \"\"\".format(\n            msg\n        )\n    )\n    if enabled:\n        testdir.makeini(\n            \"\"\"\n            [pytest]\n            log_cli=true\n        \"\"\"\n        )\n    result = testdir.runpytest()\n    if enabled:\n        result.stdout.fnmatch_lines(\n            [\n                \"test_log_cli_enabled_disabled.py::test_log_cli \",\n                \"*-- live log call --*\",\n                \"CRITICAL *test_log_cli_enabled_disabled.py* critical message logged by test\",\n                \"PASSED*\",\n            ]\n        )\n    else:\n        assert msg not in result.stdout.str()"
+        },
+        {
+            "name": "test_log_cli_default_level",
+            "file": "testing/logging/test_reporting.py",
+            "code_content": "def test_log_cli_default_level(testdir):\n    # Default log file level\n    testdir.makepyfile(\n        \"\"\"\n        import pytest\n        import logging\n        def test_log_cli(request):\n            plugin = request.config.pluginmanager.getplugin('logging-plugin')\n            assert plugin.log_cli_handler.level == logging.NOTSET\n            logging.getLogger('catchlog').info(\"INFO message won't be shown\")\n            logging.getLogger('catchlog').warning(\"WARNING message will be shown\")\n    \"\"\"\n    )\n    testdir.makeini(\n        \"\"\"\n        [pytest]\n        log_cli=true\n    \"\"\"\n    )\n\n    result = testdir.runpytest()\n\n    # fnmatch_lines does an assertion internally\n    result.stdout.fnmatch_lines(\n        [\n            \"test_log_cli_default_level.py::test_log_cli \",\n            \"WARNING*test_log_cli_default_level.py* message will be shown*\",\n        ]\n    )\n    assert \"INFO message won't be shown\" not in result.stdout.str()\n    # make sure that that we get a '0' exit code for the testsuite\n    assert result.ret == 0"
+        },
+        {
+            "name": "test_sections_single_new_line_after_test_outcome",
+            "file": "testing/logging/test_reporting.py",
+            "code_content": "def test_sections_single_new_line_after_test_outcome(testdir, request):\n    \"\"\"Check that only a single new line is written between log messages during\n    teardown/finish.\"\"\"\n    filename = request.node.name + \".py\"\n    testdir.makeconftest(\n        \"\"\"\n        import pytest\n        import logging\n\n        def pytest_runtest_logstart():\n            logging.warning('>>>>> START >>>>>')\n\n        def pytest_runtest_logfinish():\n            logging.warning('<<<<< END <<<<<<<')\n            logging.warning('<<<<< END <<<<<<<')\n    \"\"\"\n    )\n\n    testdir.makepyfile(\n        \"\"\"\n        import pytest\n        import logging\n\n        @pytest.fixture\n        def fix(request):\n            logging.warning(\"log message from setup of {}\".format(request.node.name))\n            yield\n            logging.warning(\"log message from teardown of {}\".format(request.node.name))\n            logging.warning(\"log message from teardown of {}\".format(request.node.name))\n\n        def test_log_1(fix):\n            logging.warning(\"log message from test_log_1\")\n    \"\"\"\n    )\n    testdir.makeini(\n        \"\"\"\n        [pytest]\n        log_cli=true\n    \"\"\"\n    )\n\n    result = testdir.runpytest()\n    result.stdout.fnmatch_lines(\n        [\n            \"{}::test_log_1 \".format(filename),\n            \"*-- live log start --*\",\n            \"*WARNING* >>>>> START >>>>>*\",\n            \"*-- live log setup --*\",\n            \"*WARNING*log message from setup of test_log_1*\",\n            \"*-- live log call --*\",\n            \"*WARNING*log message from test_log_1*\",\n            \"PASSED *100%*\",\n            \"*-- live log teardown --*\",\n            \"*WARNING*log message from teardown of test_log_1*\",\n            \"*-- live log finish --*\",\n            \"*WARNING* <<<<< END <<<<<<<*\",\n            \"*WARNING* <<<<< END <<<<<<<*\",\n            \"=* 1 passed in *=\",\n        ]\n    )\n    assert (\n        re.search(\n            r\"(.+)live log teardown(.+)\\nWARNING(.+)\\nWARNING(.+)\",\n            result.stdout.str(),\n            re.MULTILINE,\n        )\n        is not None\n    )\n    assert (\n        re.search(\n            r\"(.+)live log finish(.+)\\nWARNING(.+)\\nWARNING(.+)\",\n            result.stdout.str(),\n            re.MULTILINE,\n        )\n        is not None\n    )"
+        },
+        {
+            "name": "test_log_cli_level",
+            "file": "testing/logging/test_reporting.py",
+            "code_content": "def test_log_cli_level(testdir):\n    # Default log file level\n    testdir.makepyfile(\n        \"\"\"\n        import pytest\n        import logging\n        def test_log_cli(request):\n            plugin = request.config.pluginmanager.getplugin('logging-plugin')\n            assert plugin.log_cli_handler.level == logging.INFO\n            logging.getLogger('catchlog').debug(\"This log message won't be shown\")\n            logging.getLogger('catchlog').info(\"This log message will be shown\")\n            print('PASSED')\n    \"\"\"\n    )\n    testdir.makeini(\n        \"\"\"\n        [pytest]\n        log_cli=true\n    \"\"\"\n    )\n\n    result = testdir.runpytest(\"-s\", \"--log-cli-level=INFO\")\n\n    # fnmatch_lines does an assertion internally\n    result.stdout.fnmatch_lines(\n        [\n            \"*test_log_cli_level.py*This log message will be shown\",\n            \"PASSED\",  # 'PASSED' on its own line because the log message prints a new line\n        ]\n    )\n    assert \"This log message won't be shown\" not in result.stdout.str()\n\n    # make sure that that we get a '0' exit code for the testsuite\n    assert result.ret == 0\n\n    result = testdir.runpytest(\"-s\", \"--log-level=INFO\")\n\n    # fnmatch_lines does an assertion internally\n    result.stdout.fnmatch_lines(\n        [\n            \"*test_log_cli_level.py* This log message will be shown\",\n            \"PASSED\",  # 'PASSED' on its own line because the log message prints a new line\n        ]\n    )\n    assert \"This log message won't be shown\" not in result.stdout.str()\n\n    # make sure that that we get a '0' exit code for the testsuite\n    assert result.ret == 0"
+        },
+        {
+            "name": "test_log_cli_ini_level",
+            "file": "testing/logging/test_reporting.py",
+            "code_content": "def test_log_cli_ini_level(testdir):\n    testdir.makeini(\n        \"\"\"\n        [pytest]\n        log_cli=true\n        log_cli_level = INFO\n        \"\"\"\n    )\n    testdir.makepyfile(\n        \"\"\"\n        import pytest\n        import logging\n        def test_log_cli(request):\n            plugin = request.config.pluginmanager.getplugin('logging-plugin')\n            assert plugin.log_cli_handler.level == logging.INFO\n            logging.getLogger('catchlog').debug(\"This log message won't be shown\")\n            logging.getLogger('catchlog').info(\"This log message will be shown\")\n            print('PASSED')\n    \"\"\"\n    )\n\n    result = testdir.runpytest(\"-s\")\n\n    # fnmatch_lines does an assertion internally\n    result.stdout.fnmatch_lines(\n        [\n            \"*test_log_cli_ini_level.py* This log message will be shown\",\n            \"PASSED\",  # 'PASSED' on its own line because the log message prints a new line\n        ]\n    )\n    assert \"This log message won't be shown\" not in result.stdout.str()\n\n    # make sure that that we get a '0' exit code for the testsuite\n    assert result.ret == 0"
+        }
+    ],
+    "pytest-dev__pytest-5413": [
+        {
+            "name": "test_excinfo_repr_str",
+            "file": "testing/code/test_excinfo.py",
+            "code_content": "def test_excinfo_repr_str():\n    excinfo = pytest.raises(ValueError, h)\n    assert repr(excinfo) == \"<ExceptionInfo ValueError tblen=4>\"\n    assert str(excinfo) == \"<ExceptionInfo ValueError tblen=4>\""
+        }
+    ],
+    "pytest-dev__pytest-5495": [
+        {
+            "name": "TestAssert_reprcompare.test_bytes_diff_normal",
+            "file": "testing/test_assertion.py",
+            "code_content": "class TestAssert_reprcompare:\n    def test_bytes_diff_normal(self):\n        \"\"\"Check special handling for bytes diff (#5260)\"\"\"\n        diff = callequal(b\"spam\", b\"eggs\")\n\n        assert diff == [\n            \"b'spam' == b'eggs'\",\n            \"At index 0 diff: b's' != b'e'\",\n            \"Use -v to get the full diff\",\n        ]"
+        },
+        {
+            "name": "TestAssert_reprcompare.test_bytes_diff_verbose",
+            "file": "testing/test_assertion.py",
+            "code_content": "class TestAssert_reprcompare:\n    def test_bytes_diff_verbose(self):\n        \"\"\"Check special handling for bytes diff (#5260)\"\"\"\n        diff = callequal(b\"spam\", b\"eggs\", verbose=True)\n        assert diff == [\n            \"b'spam' == b'eggs'\",\n            \"At index 0 diff: b's' != b'e'\",\n            \"Full diff:\",\n            \"- b'spam'\",\n            \"+ b'eggs'\",\n        ]"
+        }
+    ],
+    "pytest-dev__pytest-5692": [
+        {
+            "name": "TestPython.test_hostname_in_xml",
+            "file": "testing/test_junitxml.py",
+            "code_content": "class TestPython:\n    def test_hostname_in_xml(self, testdir):\n        testdir.makepyfile(\n            \"\"\"\n            def test_pass():\n                pass\n        \"\"\"\n        )\n        result, dom = runandparse(testdir)\n        node = dom.find_first_by_tag(\"testsuite\")\n        node.assert_attr(hostname=platform.node())"
+        },
+        {
+            "name": "TestPython.test_timestamp_in_xml",
+            "file": "testing/test_junitxml.py",
+            "code_content": "class TestPython:\n    def test_timestamp_in_xml(self, testdir):\n        testdir.makepyfile(\n            \"\"\"\n            def test_pass():\n                pass\n        \"\"\"\n        )\n        start_time = datetime.now()\n        result, dom = runandparse(testdir)\n        node = dom.find_first_by_tag(\"testsuite\")\n        timestamp = datetime.strptime(node[\"timestamp\"], \"%Y-%m-%dT%H:%M:%S.%f\")\n        assert start_time <= timestamp < datetime.now()"
+        }
+    ],
+    "pytest-dev__pytest-6116": [
+        {
+            "name": "TestCustomConftests.test_pytest_fs_collect_hooks_are_seen",
+            "file": "testing/test_collection.py",
+            "code_content": "class TestCustomConftests:\n    def test_pytest_fs_collect_hooks_are_seen(self, testdir):\n        testdir.makeconftest(\n            \"\"\"\n            import pytest\n            class MyModule(pytest.Module):\n                pass\n            def pytest_collect_file(path, parent):\n                if path.ext == \".py\":\n                    return MyModule(path, parent)\n        \"\"\"\n        )\n        testdir.mkdir(\"sub\")\n        testdir.makepyfile(\"def test_x(): pass\")\n        result = testdir.runpytest(\"--co\")\n        result.stdout.fnmatch_lines([\"*MyModule*\", \"*test_x*\"])"
+        },
+        {
+            "name": "TestCustomConftests.test_pytest_collect_file_from_sister_dir",
+            "file": "testing/test_collection.py",
+            "code_content": "class TestCustomConftests:\n    def test_pytest_collect_file_from_sister_dir(self, testdir):\n        sub1 = testdir.mkpydir(\"sub1\")\n        sub2 = testdir.mkpydir(\"sub2\")\n        conf1 = testdir.makeconftest(\n            \"\"\"\n            import pytest\n            class MyModule1(pytest.Module):\n                pass\n            def pytest_collect_file(path, parent):\n                if path.ext == \".py\":\n                    return MyModule1(path, parent)\n        \"\"\"\n        )\n        conf1.move(sub1.join(conf1.basename))\n        conf2 = testdir.makeconftest(\n            \"\"\"\n            import pytest\n            class MyModule2(pytest.Module):\n                pass\n            def pytest_collect_file(path, parent):\n                if path.ext == \".py\":\n                    return MyModule2(path, parent)\n        \"\"\"\n        )\n        conf2.move(sub2.join(conf2.basename))\n        p = testdir.makepyfile(\"def test_x(): pass\")\n        p.copy(sub1.join(p.basename))\n        p.copy(sub2.join(p.basename))\n        result = testdir.runpytest(\"--co\")\n        result.stdout.fnmatch_lines([\"*MyModule1*\", \"*MyModule2*\", \"*test_x*\"])"
+        }
+    ],
+    "pytest-dev__pytest-7168": [
+        {
+            "name": "test_simple_repr",
+            "file": "testing/io/test_saferepr.py",
+            "code_content": "def test_simple_repr():\n    assert saferepr(1) == \"1\"\n    assert saferepr(None) == \"None\""
+        },
+        {
+            "name": "test_maxsize",
+            "file": "testing/io/test_saferepr.py",
+            "code_content": "def test_maxsize():\n    s = saferepr(\"x\" * 50, maxsize=25)\n    assert len(s) == 25\n    expected = repr(\"x\" * 10 + \"...\" + \"x\" * 10)\n    assert s == expected"
+        },
+        {
+            "name": "test_maxsize_error_on_instance",
+            "file": "testing/io/test_saferepr.py",
+            "code_content": "def test_maxsize_error_on_instance():\n    class A:\n        def __repr__(self):\n            raise ValueError(\"...\")\n\n    s = saferepr((\"*\" * 50, A()), maxsize=25)\n    assert len(s) == 25\n    assert s[0] == \"(\" and s[-1] == \")\""
+        },
+        {
+            "name": "test_exceptions",
+            "file": "testing/io/test_saferepr.py",
+            "code_content": "def test_exceptions():\n    class BrokenRepr:\n        def __init__(self, ex):\n            self.ex = ex\n\n        def __repr__(self):\n            raise self.ex\n\n    class BrokenReprException(Exception):\n        __str__ = None\n        __repr__ = None\n\n    assert \"Exception\" in saferepr(BrokenRepr(Exception(\"broken\")))\n    s = saferepr(BrokenReprException(\"really broken\"))\n    assert \"TypeError\" in s\n    assert \"TypeError\" in saferepr(BrokenRepr(\"string\"))\n\n    none = None\n    try:\n        none()\n    except BaseException as exc:\n        exp_exc = repr(exc)\n    obj = BrokenRepr(BrokenReprException(\"omg even worse\"))\n    s2 = saferepr(obj)\n    assert s2 == (\n        \"<[unpresentable exception ({!s}) raised in repr()] BrokenRepr object at 0x{:x}>\".format(\n            exp_exc, id(obj)\n        )\n    )"
+        },
+        {
+            "name": "test_baseexception",
+            "file": "testing/io/test_saferepr.py",
+            "code_content": "def test_baseexception():\n    \"\"\"Test saferepr() with BaseExceptions, which includes pytest outcomes.\"\"\"\n\n    class RaisingOnStrRepr(BaseException):\n        def __init__(self, exc_types):\n            self.exc_types = exc_types\n\n        def raise_exc(self, *args):\n            try:\n                self.exc_type = self.exc_types.pop(0)\n            except IndexError:\n                pass\n            if hasattr(self.exc_type, \"__call__\"):\n                raise self.exc_type(*args)\n            raise self.exc_type\n\n        def __str__(self):\n            self.raise_exc(\"__str__\")\n\n        def __repr__(self):\n            self.raise_exc(\"__repr__\")\n\n    class BrokenObj:\n        def __init__(self, exc):\n            self.exc = exc\n\n        def __repr__(self):\n            raise self.exc\n\n        __str__ = __repr__\n\n    baseexc_str = BaseException(\"__str__\")\n    obj = BrokenObj(RaisingOnStrRepr([BaseException]))\n    assert saferepr(obj) == (\n        \"<[unpresentable exception ({!r}) \"\n        \"raised in repr()] BrokenObj object at 0x{:x}>\".format(baseexc_str, id(obj))\n    )\n    obj = BrokenObj(RaisingOnStrRepr([RaisingOnStrRepr([BaseException])]))\n    assert saferepr(obj) == (\n        \"<[{!r} raised in repr()] BrokenObj object at 0x{:x}>\".format(\n            baseexc_str, id(obj)\n        )\n    )\n\n    with pytest.raises(KeyboardInterrupt):\n        saferepr(BrokenObj(KeyboardInterrupt()))\n\n    with pytest.raises(SystemExit):\n        saferepr(BrokenObj(SystemExit()))\n\n    with pytest.raises(KeyboardInterrupt):\n        saferepr(BrokenObj(RaisingOnStrRepr([KeyboardInterrupt])))\n\n    with pytest.raises(SystemExit):\n        saferepr(BrokenObj(RaisingOnStrRepr([SystemExit])))\n\n    with pytest.raises(KeyboardInterrupt):\n        print(saferepr(BrokenObj(RaisingOnStrRepr([BaseException, KeyboardInterrupt]))))\n\n    with pytest.raises(SystemExit):\n        saferepr(BrokenObj(RaisingOnStrRepr([BaseException, SystemExit])))"
+        },
+        {
+            "name": "test_buggy_builtin_repr",
+            "file": "testing/io/test_saferepr.py",
+            "code_content": "def test_buggy_builtin_repr():\n    # Simulate a case where a repr for a builtin raises.\n    # reprlib dispatches by type name, so use \"int\".\n\n    class int:\n        def __repr__(self):\n            raise ValueError(\"Buggy repr!\")\n\n    assert \"Buggy\" in saferepr(int())"
+        },
+        {
+            "name": "test_big_repr",
+            "file": "testing/io/test_saferepr.py",
+            "code_content": "def test_big_repr():\n    from _pytest._io.saferepr import SafeRepr\n\n    assert len(saferepr(range(1000))) <= len(\"[\" + SafeRepr(0).maxlist * \"1000\" + \"]\")"
+        },
+        {
+            "name": "test_repr_on_newstyle",
+            "file": "testing/io/test_saferepr.py",
+            "code_content": "def test_repr_on_newstyle():\n    class Function:\n        def __repr__(self):\n            return \"<%s>\" % (self.name)\n\n    assert saferepr(Function())"
+        },
+        {
+            "name": "test_unicode",
+            "file": "testing/io/test_saferepr.py",
+            "code_content": "def test_unicode():\n    val = \"£€\"\n    reprval = \"'£€'\"\n    assert saferepr(val) == reprval"
+        },
+        {
+            "name": "test_pformat_dispatch",
+            "file": "testing/io/test_saferepr.py",
+            "code_content": "def test_pformat_dispatch():\n    assert _pformat_dispatch(\"a\") == \"'a'\"\n    assert _pformat_dispatch(\"a\" * 10, width=5) == \"'aaaaaaaaaa'\"\n    assert _pformat_dispatch(\"foo bar\", width=5) == \"('foo '\\n 'bar')\""
+        },
+        {
+            "name": "test_broken_getattribute",
+            "file": "testing/io/test_saferepr.py",
+            "code_content": "def test_broken_getattribute():\n    \"\"\"saferepr() can create proper representations of classes with\n    broken __getattribute__ (#7145)\n    \"\"\"\n\n    class SomeClass:\n        def __getattribute__(self, attr):\n            raise RuntimeError\n\n        def __repr__(self):\n            raise RuntimeError\n\n    assert saferepr(SomeClass()).startswith(\n        \"<[RuntimeError() raised in repr()] SomeClass object at 0x\"\n    )"
+        }
+    ],
+    "pytest-dev__pytest-7220": [
+        {
+            "name": "test_failure_with_changed_cwd",
+            "file": "testing/test_nodes.py",
+            "code_content": "def test_failure_with_changed_cwd(testdir):\n    \"\"\"\n    Test failure lines should use absolute paths if cwd has changed since\n    invocation, so the path is correct (#6428).\n    \"\"\"\n    p = testdir.makepyfile(\n        \"\"\"\n        import os\n        import pytest\n\n        @pytest.fixture\n        def private_dir():\n            out_dir = 'ddd'\n            os.mkdir(out_dir)\n            old_dir = os.getcwd()\n            os.chdir(out_dir)\n            yield out_dir\n            os.chdir(old_dir)\n\n        def test_show_wrong_path(private_dir):\n            assert False\n    \"\"\"\n    )\n    result = testdir.runpytest()\n    result.stdout.fnmatch_lines([str(p) + \":*: AssertionError\", \"*1 failed in *\"])"
+        }
+    ],
+    "pytest-dev__pytest-7373": [
+        {
+            "name": "TestFunctional.test_reevaluate_dynamic_expr",
+            "file": "testing/test_mark.py",
+            "code_content": "class TestFunctional:\n    def test_reevaluate_dynamic_expr(self, testdir):\n        \"\"\"#7360\"\"\"\n        py_file1 = testdir.makepyfile(\n            test_reevaluate_dynamic_expr1=\"\"\"\n            import pytest\n\n            skip = True\n\n            @pytest.mark.skipif(\"skip\")\n            def test_should_skip():\n                assert True\n        \"\"\"\n        )\n        py_file2 = testdir.makepyfile(\n            test_reevaluate_dynamic_expr2=\"\"\"\n            import pytest\n\n            skip = False\n\n            @pytest.mark.skipif(\"skip\")\n            def test_should_not_skip():\n                assert True\n        \"\"\"\n        )\n\n        file_name1 = os.path.basename(py_file1.strpath)\n        file_name2 = os.path.basename(py_file2.strpath)\n        reprec = testdir.inline_run(file_name1, file_name2)\n        reprec.assertoutcome(passed=1, skipped=1)"
+        }
+    ],
+    "pytest-dev__pytest-7432": [
+        {
+            "name": "TestXFail.test_xfail_run_with_skip_mark",
+            "file": "testing/test_skipping.py",
+            "code_content": "class TestXFail:\n    @pytest.mark.parametrize(\n        \"test_input,expected\",\n        [\n            (\n                [\"-rs\"],\n                [\"SKIPPED [1] test_sample.py:2: unconditional skip\", \"*1 skipped*\"],\n            ),\n            (\n                [\"-rs\", \"--runxfail\"],\n                [\"SKIPPED [1] test_sample.py:2: unconditional skip\", \"*1 skipped*\"],\n            ),\n        ],\n    )\n    def test_xfail_run_with_skip_mark(self, testdir, test_input, expected):\n        testdir.makepyfile(\n            test_sample=\"\"\"\n            import pytest\n            @pytest.mark.skip\n            def test_skip_location() -> None:\n                assert 0\n        \"\"\"\n        )\n        result = testdir.runpytest(*test_input)\n        result.stdout.fnmatch_lines(expected)"
+        }
+    ],
+    "pytest-dev__pytest-7490": [
+        {
+            "name": "TestXFail.test_dynamic_xfail_set_during_runtest_failed",
+            "file": "testing/test_skipping.py",
+            "code_content": "class TestXFail:\n    def test_dynamic_xfail_set_during_runtest_failed(self, testdir: Testdir) -> None:\n        # Issue #7486.\n        p = testdir.makepyfile(\n            \"\"\"\n            import pytest\n            def test_this(request):\n                request.node.add_marker(pytest.mark.xfail(reason=\"xfail\"))\n                assert 0\n        \"\"\"\n        )\n        result = testdir.runpytest(p)\n        result.assert_outcomes(xfailed=1)"
+        },
+        {
+            "name": "TestXFail.test_dynamic_xfail_set_during_runtest_passed_strict",
+            "file": "testing/test_skipping.py",
+            "code_content": "class TestXFail:\n    def test_dynamic_xfail_set_during_runtest_passed_strict(\n        self, testdir: Testdir\n    ) -> None:\n        # Issue #7486.\n        p = testdir.makepyfile(\n            \"\"\"\n            import pytest\n            def test_this(request):\n                request.node.add_marker(pytest.mark.xfail(reason=\"xfail\", strict=True))\n        \"\"\"\n        )\n        result = testdir.runpytest(p)\n        result.assert_outcomes(failed=1)"
+        }
+    ],
+    "pytest-dev__pytest-8365": [
+        {
+            "name": "test_tmp_path_factory_handles_invalid_dir_characters",
+            "file": "testing/test_tmpdir.py",
+            "code_content": "def test_tmp_path_factory_handles_invalid_dir_characters(\n    tmp_path_factory: TempPathFactory, monkeypatch: MonkeyPatch\n) -> None:\n    monkeypatch.setattr(\"getpass.getuser\", lambda: \"os/<:*?;>agnostic\")\n    # _basetemp / _given_basetemp are cached / set in parallel runs, patch them\n    monkeypatch.setattr(tmp_path_factory, \"_basetemp\", None)\n    monkeypatch.setattr(tmp_path_factory, \"_given_basetemp\", None)\n    p = tmp_path_factory.getbasetemp()\n    assert \"pytest-of-unknown\" in str(p)"
+        }
+    ],
+    "pytest-dev__pytest-8906": [
+        {
+            "name": "test_module_level_skip_error",
+            "file": "testing/test_skipping.py",
+            "code_content": "def test_module_level_skip_error(pytester: Pytester) -> None:\n    \"\"\"Verify that using pytest.skip at module level causes a collection error.\"\"\"\n    pytester.makepyfile(\n        \"\"\"\n        import pytest\n        pytest.skip(\"skip_module_level\")\n\n        def test_func():\n            assert True\n    \"\"\"\n    )\n    result = pytester.runpytest()\n    result.stdout.fnmatch_lines(\n        [\"*Using pytest.skip outside of a test will skip the entire module*\"]\n    )"
+        }
+    ],
+    "pytest-dev__pytest-9359": [
+        {
+            "name": "test_decorator",
+            "file": "testing/code/test_source.py",
+            "code_content": "def test_decorator() -> None:\n    s = \"\"\"\\\ndef foo(f):\n    pass\n\n@foo\ndef bar():\n    pass\n    \"\"\"\n    source = getstatement(3, s)\n    assert \"@foo\" in str(source)"
+        }
+    ]
+}

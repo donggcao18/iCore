@@ -1,0 +1,347 @@
+{
+    "pylint-dev__pylint-5859": {
+        "base_commit": "182cc539b8154c0710fcea7e522267e42eba8899",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "pylint/checkers/misc.py::EncodingChecker.open",
+                "file": "pylint/checkers/misc.py",
+                "name": "EncodingChecker.open",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    119,
+                    128
+                ],
+                "new_span": [
+                    119,
+                    128
+                ],
+                "base_targets": [
+                    {
+                        "id": "pylint/checkers/misc.py::EncodingChecker.open",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "pylint/checkers/misc.py::EncodingChecker.open"
+                ],
+                "selected_patched": [
+                    "pylint/checkers/misc.py::EncodingChecker.open"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pylint-dev__pylint-6506": {
+        "base_commit": "0a4204fd7555cfedd43f43017c94d24ef48244a5",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "pylint/config/config_initialization.py::_config_initialization",
+                "file": "pylint/config/config_initialization.py",
+                "name": "_config_initialization",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    20,
+                    106
+                ],
+                "new_span": [
+                    20,
+                    105
+                ],
+                "base_targets": [
+                    {
+                        "id": "pylint/config/config_initialization.py::_config_initialization",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "pylint/config/config_initialization.py::_config_initialization"
+                ],
+                "selected_patched": [
+                    "pylint/config/config_initialization.py::_config_initialization"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pylint-dev__pylint-7080": {
+        "base_commit": "3c5eca2ded3dd2b59ebaf23eb289453b5d2930f0",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "pylint/lint/expand_modules.py::_is_ignored_file",
+                "file": "pylint/lint/expand_modules.py",
+                "name": "_is_ignored_file",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    49,
+                    60
+                ],
+                "new_span": [
+                    49,
+                    61
+                ],
+                "base_targets": [
+                    {
+                        "id": "pylint/lint/expand_modules.py::_is_ignored_file",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "pylint/lint/expand_modules.py::_is_ignored_file"
+                ],
+                "selected_patched": [
+                    "pylint/lint/expand_modules.py::_is_ignored_file"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pylint-dev__pylint-7114": {
+        "base_commit": "397c1703e8ae6349d33f7b99f45b2ccaf581e666",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "pylint/lint/expand_modules.py::expand_modules",
+                "file": "pylint/lint/expand_modules.py",
+                "name": "expand_modules",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    64,
+                    162
+                ],
+                "new_span": [
+                    64,
+                    162
+                ],
+                "base_targets": [
+                    {
+                        "id": "pylint/lint/expand_modules.py::expand_modules",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "pylint/lint/expand_modules.py::expand_modules"
+                ],
+                "selected_patched": [
+                    "pylint/lint/expand_modules.py::expand_modules"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pylint-dev__pylint-7228": {
+        "base_commit": "d597f252915ddcaaa15ccdfcb35670152cb83587",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "pylint/config/argument.py::<module>",
+                "file": "pylint/config/argument.py",
+                "name": "<module>",
+                "kind": "module",
+                "change": "modified",
+                "old_span": [
+                    1,
+                    488
+                ],
+                "new_span": [
+                    1,
+                    497
+                ],
+                "base_targets": [
+                    {
+                        "id": "pylint/config/argument.py::<module>",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "pylint/config/argument.py::<module>"
+                ],
+                "selected_patched": [
+                    "pylint/config/argument.py::<module>"
+                ]
+            },
+            {
+                "id": "pylint/config/argument.py::_TYPE_TRANSFORMERS",
+                "file": "pylint/config/argument.py",
+                "name": "_TYPE_TRANSFORMERS",
+                "kind": "variable",
+                "change": "modified",
+                "old_span": [
+                    124,
+                    138
+                ],
+                "new_span": [
+                    133,
+                    147
+                ],
+                "base_targets": [
+                    {
+                        "id": "pylint/config/argument.py::_TYPE_TRANSFORMERS",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "pylint/config/argument.py::_TYPE_TRANSFORMERS"
+                ],
+                "selected_patched": [
+                    "pylint/config/argument.py::_TYPE_TRANSFORMERS"
+                ]
+            },
+            {
+                "id": "pylint/config/argument.py::_regex_transformer",
+                "file": "pylint/config/argument.py",
+                "name": "_regex_transformer",
+                "kind": "function",
+                "change": "added",
+                "old_span": null,
+                "new_span": [
+                    102,
+                    108
+                ],
+                "base_targets": [
+                    {
+                        "id": "pylint/config/argument.py::_regexp_csv_transfomer",
+                        "reason": "existing_caller",
+                        "confidence": 0.8
+                    }
+                ],
+                "selected_base": [
+                    "pylint/config/argument.py::_regexp_csv_transfomer"
+                ],
+                "selected_patched": [
+                    "pylint/config/argument.py::_regex_transformer"
+                ]
+            },
+            {
+                "id": "pylint/config/argument.py::_regexp_csv_transfomer",
+                "file": "pylint/config/argument.py",
+                "name": "_regexp_csv_transfomer",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    102,
+                    107
+                ],
+                "new_span": [
+                    111,
+                    116
+                ],
+                "base_targets": [
+                    {
+                        "id": "pylint/config/argument.py::_regexp_csv_transfomer",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "pylint/config/argument.py::_regexp_csv_transfomer"
+                ],
+                "selected_patched": [
+                    "pylint/config/argument.py::_regexp_csv_transfomer"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 4,
+            "base_objects": 3,
+            "patched_objects": 4
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pylint-dev__pylint-7993": {
+        "base_commit": "e90702074e68e20dc8e5df5013ee3ecf22139c3e",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "pylint/reporters/text.py::TextReporter.on_set_current_module",
+                "file": "pylint/reporters/text.py",
+                "name": "TextReporter.on_set_current_module",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    166,
+                    186
+                ],
+                "new_span": [
+                    166,
+                    186
+                ],
+                "base_targets": [
+                    {
+                        "id": "pylint/reporters/text.py::TextReporter.on_set_current_module",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "pylint/reporters/text.py::TextReporter.on_set_current_module"
+                ],
+                "selected_patched": [
+                    "pylint/reporters/text.py::TextReporter.on_set_current_module"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    }
+}

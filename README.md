@@ -74,6 +74,35 @@ python -m scripts.test_retrieval.extract_oracle --dataset swt-verified --repo py
 Change `--repo` for another project. The exporter creates one normalized
 `data/swt-bench-verified/test.csv` containing every repository; the extractor
 filters that CSV by `--repo`. Lite uses `data/swe-bench-lite/test.csv`.
+Oracle output is grouped as `retrieval_results/test/oracle/<dataset>/<repo>/`
+(for example, `lite/pylint/` or `swt-bench-verified/pylint/`).
+
+Production-code oracle retrieval observes the normalized developer code `patch`
+and selects the affected functions, methods, classes, and variables:
+
+```sh
+python -m scripts.code_retrieval.extract_oracle --dataset lite --repo pylint-dev/pylint
+python -m scripts.code_retrieval.extract_oracle --dataset lite --repo pytest-dev/pytest
+```
+
+It writes `code_retrieval_oracle_base.json`, `code_retrieval_oracle_patched.json`,
+and `oracle_code_manifest.json` under `retrieval_results/code/oracle/<dataset>/<repo>/`.
+Use the base JSON as `--context_code_path` to supply buggy-revision source.
+The patched JSON contains the developer fix and is a separate hindsight variant.
+See [ORACLE_CODE_GUIDE.md](ORACLE_CODE_GUIDE.md) for selection rules and usage.
+
+To store both code and augmented existing-test oracle context, run:
+
+```sh
+python -m scripts.test_retrieval.augment_oracle --dataset lite --repo pylint-dev/pylint
+```
+
+This also writes `related_tests_oracle_code_base.json`,
+`related_tests_oracle_base_augmented.json`, and `oracle_augmented_manifest.json`
+under the test oracle directory. It analyzes calls/references, helpers, fixtures,
+and inherited setup methods. Defaults are ten tests and eight dependency edges;
+use `--top-k 0` for all candidates or `--no-fallback` to disable module proximity.
+`--code-output-dir` overrides code output separately from `--output-dir` for tests.
 
 After preparing those environments, continue with
 `REPO=pylint-dev/pylint DATASET=lite ITERATIONS=3 bash test_retrieval_flask.sh`, then

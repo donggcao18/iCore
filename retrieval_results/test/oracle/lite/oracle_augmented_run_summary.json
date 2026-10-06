@@ -1,0 +1,224 @@
+{
+  "dataset": "SWE-bench/SWE-bench_Lite",
+  "parameters": {
+    "top_k": 10,
+    "max_depth": 8,
+    "fallback": true
+  },
+  "repositories": {
+    "pylint-dev/pylint": {
+      "instances": 6,
+      "original_base_tests": 5,
+      "augmented_tests": 60,
+      "empty_before": 3,
+      "empty_after": 0,
+      "module_proximity_instances": [
+        "pylint-dev__pylint-7993"
+      ],
+      "all_selected_snippets_verified_against_base_commit": true,
+      "per_instance": [
+        {
+          "instance_id": "pylint-dev__pylint-5859",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pylint-dev__pylint-6506",
+          "original_base": 2,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 8,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pylint-dev__pylint-7080",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pylint-dev__pylint-7114",
+          "original_base": 1,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 9,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pylint-dev__pylint-7228",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pylint-dev__pylint-7993",
+          "original_base": 2,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 8,
+          "source_verified": true
+        }
+      ]
+    },
+    "pytest-dev/pytest": {
+      "instances": 17,
+      "original_base_tests": 22,
+      "augmented_tests": 150,
+      "empty_before": 11,
+      "empty_after": 0,
+      "module_proximity_instances": [
+        "pytest-dev__pytest-5221",
+        "pytest-dev__pytest-5227",
+        "pytest-dev__pytest-6116",
+        "pytest-dev__pytest-7432",
+        "pytest-dev__pytest-8906"
+      ],
+      "all_selected_snippets_verified_against_base_commit": true,
+      "per_instance": [
+        {
+          "instance_id": "pytest-dev__pytest-11143",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-11148",
+          "original_base": 2,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 8,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-5103",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-5221",
+          "original_base": 2,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 8,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-5227",
+          "original_base": 5,
+          "production_selected": 2,
+          "augmented": 7,
+          "added": 2,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-5413",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-5495",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-5692",
+          "original_base": 0,
+          "production_selected": 4,
+          "augmented": 4,
+          "added": 4,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-6116",
+          "original_base": 2,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 8,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-7168",
+          "original_base": 10,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 0,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-7220",
+          "original_base": 0,
+          "production_selected": 7,
+          "augmented": 7,
+          "added": 7,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-7373",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-7432",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-7490",
+          "original_base": 0,
+          "production_selected": 2,
+          "augmented": 2,
+          "added": 2,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-8365",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-8906",
+          "original_base": 1,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 9,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-9359",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "source_verified": true
+        }
+      ]
+    }
+  }
+}

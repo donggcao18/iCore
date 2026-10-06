@@ -1,0 +1,1071 @@
+{
+    "pytest-dev__pytest-11143": {
+        "base_commit": "6995257cf470d2143ad1683824962de4071c0eb7",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter.run",
+                "file": "src/_pytest/assertion/rewrite.py",
+                "name": "AssertionRewriter.run",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    660,
+                    742
+                ],
+                "new_span": [
+                    660,
+                    743
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter.run",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter.run"
+                ],
+                "selected_patched": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter.run"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-11148": {
+        "base_commit": "2f7415cfbc4b6ca62f9013f1abd27136f46b9653",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/pathlib.py::import_path",
+                "file": "src/_pytest/pathlib.py",
+                "name": "import_path",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    486,
+                    590
+                ],
+                "new_span": [
+                    486,
+                    592
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/pathlib.py::import_path",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/pathlib.py::import_path"
+                ],
+                "selected_patched": [
+                    "src/_pytest/pathlib.py::import_path"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-5103": {
+        "base_commit": "10ca84ffc56c2dd2d9dc4bd71b7b898e083500cd",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                "file": "src/_pytest/assertion/rewrite.py",
+                "name": "AssertionRewriter",
+                "kind": "class",
+                "change": "modified",
+                "old_span": [
+                    608,
+                    1084
+                ],
+                "new_span": [
+                    608,
+                    1109
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter"
+                ],
+                "selected_patched": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter"
+                ]
+            },
+            {
+                "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter._visit_all",
+                "file": "src/_pytest/assertion/rewrite.py",
+                "name": "AssertionRewriter._visit_all",
+                "kind": "function",
+                "change": "added",
+                "old_span": null,
+                "new_span": [
+                    996,
+                    1015
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
+                        "reason": "existing_caller",
+                        "confidence": 0.8
+                    },
+                    {
+                        "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy",
+                        "reason": "existing_caller",
+                        "confidence": 0.8
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy"
+                ],
+                "selected_patched": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter._visit_all"
+                ]
+            },
+            {
+                "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
+                "file": "src/_pytest/assertion/rewrite.py",
+                "name": "AssertionRewriter.visit_Call_35",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    967,
+                    992
+                ],
+                "new_span": [
+                    967,
+                    994
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35"
+                ],
+                "selected_patched": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35"
+                ]
+            },
+            {
+                "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy",
+                "file": "src/_pytest/assertion/rewrite.py",
+                "name": "AssertionRewriter.visit_Call_legacy",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    1000,
+                    1028
+                ],
+                "new_span": [
+                    1023,
+                    1053
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy"
+                ],
+                "selected_patched": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 4,
+            "base_objects": 3,
+            "patched_objects": 4
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-5221": {
+        "base_commit": "4a2fdce62b73944030cff9b3e52862868ca9584d",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/python.py::_showfixtures_main",
+                "file": "src/_pytest/python.py",
+                "name": "_showfixtures_main",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    1303,
+                    1355
+                ],
+                "new_span": [
+                    1303,
+                    1357
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/python.py::_showfixtures_main",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/python.py::_showfixtures_main"
+                ],
+                "selected_patched": [
+                    "src/_pytest/python.py::_showfixtures_main"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-5227": {
+        "base_commit": "2051e30b9b596e944524ccb787ed20f9f5be93e3",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/logging.py::DEFAULT_LOG_FORMAT",
+                "file": "src/_pytest/logging.py",
+                "name": "DEFAULT_LOG_FORMAT",
+                "kind": "variable",
+                "change": "modified",
+                "old_span": [
+                    18,
+                    18
+                ],
+                "new_span": [
+                    18,
+                    18
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/logging.py::DEFAULT_LOG_FORMAT",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/logging.py::DEFAULT_LOG_FORMAT"
+                ],
+                "selected_patched": [
+                    "src/_pytest/logging.py::DEFAULT_LOG_FORMAT"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-5413": {
+        "base_commit": "450d2646233c670654744d3d24330b69895bb9d2",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/_code/code.py::ExceptionInfo",
+                "file": "src/_pytest/_code/code.py",
+                "name": "ExceptionInfo",
+                "kind": "class",
+                "change": "modified",
+                "old_span": [
+                    373,
+                    555
+                ],
+                "new_span": [
+                    373,
+                    548
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/_code/code.py::ExceptionInfo",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/_code/code.py::ExceptionInfo"
+                ],
+                "selected_patched": [
+                    "src/_pytest/_code/code.py::ExceptionInfo"
+                ]
+            },
+            {
+                "id": "src/_pytest/_code/code.py::ExceptionInfo.__str__",
+                "file": "src/_pytest/_code/code.py",
+                "name": "ExceptionInfo.__str__",
+                "kind": "function",
+                "change": "deleted",
+                "old_span": [
+                    537,
+                    542
+                ],
+                "new_span": null,
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/_code/code.py::ExceptionInfo.__str__",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/_code/code.py::ExceptionInfo.__str__"
+                ],
+                "selected_patched": []
+            }
+        ],
+        "counts": {
+            "changed_symbols": 2,
+            "base_objects": 2,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-5495": {
+        "base_commit": "1aefb24b37c30fba8fd79a744829ca16e252f340",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/assertion/util.py::_compare_eq_sequence",
+                "file": "src/_pytest/assertion/util.py",
+                "name": "_compare_eq_sequence",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    256,
+                    286
+                ],
+                "new_span": [
+                    256,
+                    307
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/assertion/util.py::_compare_eq_sequence",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/assertion/util.py::_compare_eq_sequence"
+                ],
+                "selected_patched": [
+                    "src/_pytest/assertion/util.py::_compare_eq_sequence"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-5692": {
+        "base_commit": "29e336bd9bf87eaef8e2683196ee1975f1ad4088",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/junitxml.py::<module>",
+                "file": "src/_pytest/junitxml.py",
+                "name": "<module>",
+                "kind": "module",
+                "change": "modified",
+                "old_span": [
+                    1,
+                    691
+                ],
+                "new_span": [
+                    1,
+                    695
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/junitxml.py::<module>",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/junitxml.py::<module>"
+                ],
+                "selected_patched": [
+                    "src/_pytest/junitxml.py::<module>"
+                ]
+            },
+            {
+                "id": "src/_pytest/junitxml.py::LogXML.pytest_sessionfinish",
+                "file": "src/_pytest/junitxml.py",
+                "name": "LogXML.pytest_sessionfinish",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    643,
+                    671
+                ],
+                "new_span": [
+                    645,
+                    675
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/junitxml.py::LogXML.pytest_sessionfinish",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/junitxml.py::LogXML.pytest_sessionfinish"
+                ],
+                "selected_patched": [
+                    "src/_pytest/junitxml.py::LogXML.pytest_sessionfinish"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 2,
+            "base_objects": 2,
+            "patched_objects": 2
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-6116": {
+        "base_commit": "e670ff76cbad80108bde9bab616b66771b8653cf",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/main.py::pytest_addoption",
+                "file": "src/_pytest/main.py",
+                "name": "pytest_addoption",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    46,
+                    181
+                ],
+                "new_span": [
+                    46,
+                    182
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/main.py::pytest_addoption",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/main.py::pytest_addoption"
+                ],
+                "selected_patched": [
+                    "src/_pytest/main.py::pytest_addoption"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-7168": {
+        "base_commit": "4787fd64a4ca0dba5528b5651bddd254102fe9f3",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/_io/saferepr.py::_format_repr_exception",
+                "file": "src/_pytest/_io/saferepr.py",
+                "name": "_format_repr_exception",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    15,
+                    24
+                ],
+                "new_span": [
+                    15,
+                    24
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/_io/saferepr.py::_format_repr_exception",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/_io/saferepr.py::_format_repr_exception"
+                ],
+                "selected_patched": [
+                    "src/_pytest/_io/saferepr.py::_format_repr_exception"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-7220": {
+        "base_commit": "56bf819c2f4eaf8b36bd8c42c06bb59d5a3bfc0f",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/nodes.py::<module>",
+                "file": "src/_pytest/nodes.py",
+                "name": "<module>",
+                "kind": "module",
+                "change": "modified",
+                "old_span": [
+                    1,
+                    607
+                ],
+                "new_span": [
+                    1,
+                    613
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/nodes.py::<module>",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/nodes.py::<module>"
+                ],
+                "selected_patched": [
+                    "src/_pytest/nodes.py::<module>"
+                ]
+            },
+            {
+                "id": "src/_pytest/nodes.py::Node._repr_failure_py",
+                "file": "src/_pytest/nodes.py",
+                "name": "Node._repr_failure_py",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    333,
+                    377
+                ],
+                "new_span": [
+                    334,
+                    383
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/nodes.py::Node._repr_failure_py",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/nodes.py::Node._repr_failure_py"
+                ],
+                "selected_patched": [
+                    "src/_pytest/nodes.py::Node._repr_failure_py"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 2,
+            "base_objects": 2,
+            "patched_objects": 2
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-7373": {
+        "base_commit": "7b77fc086aab8b3a8ebc890200371884555eea1e",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/mark/evaluate.py::<module>",
+                "file": "src/_pytest/mark/evaluate.py",
+                "name": "<module>",
+                "kind": "module",
+                "change": "modified",
+                "old_span": [
+                    1,
+                    135
+                ],
+                "new_span": [
+                    1,
+                    124
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/mark/evaluate.py::<module>",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/mark/evaluate.py::<module>"
+                ],
+                "selected_patched": [
+                    "src/_pytest/mark/evaluate.py::<module>"
+                ]
+            },
+            {
+                "id": "src/_pytest/mark/evaluate.py::MarkEvaluator._istrue",
+                "file": "src/_pytest/mark/evaluate.py",
+                "name": "MarkEvaluator._istrue",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    82,
+                    121
+                ],
+                "new_span": [
+                    71,
+                    110
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/mark/evaluate.py::MarkEvaluator._istrue",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/mark/evaluate.py::MarkEvaluator._istrue"
+                ],
+                "selected_patched": [
+                    "src/_pytest/mark/evaluate.py::MarkEvaluator._istrue"
+                ]
+            },
+            {
+                "id": "src/_pytest/mark/evaluate.py::cached_eval",
+                "file": "src/_pytest/mark/evaluate.py",
+                "name": "cached_eval",
+                "kind": "function",
+                "change": "deleted",
+                "old_span": [
+                    21,
+                    31
+                ],
+                "new_span": null,
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/mark/evaluate.py::cached_eval",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/mark/evaluate.py::cached_eval"
+                ],
+                "selected_patched": []
+            },
+            {
+                "id": "src/_pytest/mark/evaluate.py::compiled_eval",
+                "file": "src/_pytest/mark/evaluate.py",
+                "name": "compiled_eval",
+                "kind": "function",
+                "change": "added",
+                "old_span": null,
+                "new_span": [
+                    16,
+                    20
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/mark/evaluate.py::MarkEvaluator._istrue",
+                        "reason": "existing_caller",
+                        "confidence": 0.8
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/mark/evaluate.py::MarkEvaluator._istrue"
+                ],
+                "selected_patched": [
+                    "src/_pytest/mark/evaluate.py::compiled_eval"
+                ]
+            },
+            {
+                "id": "src/_pytest/mark/evaluate.py::evalcache_key",
+                "file": "src/_pytest/mark/evaluate.py",
+                "name": "evalcache_key",
+                "kind": "variable",
+                "change": "deleted",
+                "old_span": [
+                    18,
+                    18
+                ],
+                "new_span": null,
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/mark/evaluate.py::evalcache_key",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/mark/evaluate.py::evalcache_key"
+                ],
+                "selected_patched": []
+            }
+        ],
+        "counts": {
+            "changed_symbols": 5,
+            "base_objects": 4,
+            "patched_objects": 3
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-7432": {
+        "base_commit": "e6e300e729dd33956e5448d8be9a0b1540b4e53a",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/skipping.py::pytest_runtest_makereport",
+                "file": "src/_pytest/skipping.py",
+                "name": "pytest_runtest_makereport",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    260,
+                    305
+                ],
+                "new_span": [
+                    260,
+                    306
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/skipping.py::pytest_runtest_makereport",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/skipping.py::pytest_runtest_makereport"
+                ],
+                "selected_patched": [
+                    "src/_pytest/skipping.py::pytest_runtest_makereport"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-7490": {
+        "base_commit": "7f7a36478abe7dd1fa993b115d22606aa0e35e88",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/skipping.py::<module>",
+                "file": "src/_pytest/skipping.py",
+                "name": "<module>",
+                "kind": "module",
+                "change": "modified",
+                "old_span": [
+                    1,
+                    315
+                ],
+                "new_span": [
+                    1,
+                    316
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/skipping.py::<module>",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/skipping.py::<module>"
+                ],
+                "selected_patched": [
+                    "src/_pytest/skipping.py::<module>"
+                ]
+            },
+            {
+                "id": "src/_pytest/skipping.py::pytest_runtest_call",
+                "file": "src/_pytest/skipping.py",
+                "name": "pytest_runtest_call",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    247,
+                    257
+                ],
+                "new_span": [
+                    244,
+                    258
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/skipping.py::pytest_runtest_call",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/skipping.py::pytest_runtest_call"
+                ],
+                "selected_patched": [
+                    "src/_pytest/skipping.py::pytest_runtest_call"
+                ]
+            },
+            {
+                "id": "src/_pytest/skipping.py::pytest_runtest_setup",
+                "file": "src/_pytest/skipping.py",
+                "name": "pytest_runtest_setup",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    232,
+                    244
+                ],
+                "new_span": [
+                    232,
+                    241
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/skipping.py::pytest_runtest_setup",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/skipping.py::pytest_runtest_setup"
+                ],
+                "selected_patched": [
+                    "src/_pytest/skipping.py::pytest_runtest_setup"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 3,
+            "base_objects": 3,
+            "patched_objects": 3
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-8365": {
+        "base_commit": "4964b468c83c06971eb743fbc57cc404f760c573",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/tmpdir.py::TempPathFactory.getbasetemp",
+                "file": "src/_pytest/tmpdir.py",
+                "name": "TempPathFactory.getbasetemp",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    102,
+                    125
+                ],
+                "new_span": [
+                    102,
+                    130
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/tmpdir.py::TempPathFactory.getbasetemp",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/tmpdir.py::TempPathFactory.getbasetemp"
+                ],
+                "selected_patched": [
+                    "src/_pytest/tmpdir.py::TempPathFactory.getbasetemp"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-8906": {
+        "base_commit": "69356d20cfee9a81972dcbf93d8caf9eabe113e8",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/python.py::Module._importtestmodule",
+                "file": "src/_pytest/python.py",
+                "name": "Module._importtestmodule",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    572,
+                    617
+                ],
+                "new_span": [
+                    572,
+                    617
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/python.py::Module._importtestmodule",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/python.py::Module._importtestmodule"
+                ],
+                "selected_patched": [
+                    "src/_pytest/python.py::Module._importtestmodule"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-9359": {
+        "base_commit": "e2ee3144ed6e241dea8d96215fcdca18b3892551",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/_code/source.py::get_statement_startend2",
+                "file": "src/_pytest/_code/source.py",
+                "name": "get_statement_startend2",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    146,
+                    165
+                ],
+                "new_span": [
+                    146,
+                    170
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/_code/source.py::get_statement_startend2",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/_code/source.py::get_statement_startend2"
+                ],
+                "selected_patched": [
+                    "src/_pytest/_code/source.py::get_statement_startend2"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "non_python_files": []
+    }
+}
