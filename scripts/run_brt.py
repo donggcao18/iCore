@@ -18,29 +18,29 @@ def fingerprint(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def select_code_hits(code_path, rows):
-    """Exclude explicit retrieval misses, while rejecting missing/malformed data."""
+def check_code_context(code_path, rows):
+    """Validate code records; explicit retrieval misses use no code context."""
     values = json.loads(Path(code_path).read_text(encoding='utf-8'))
     if not isinstance(values, dict):
         raise RuntimeError(f'Missing or invalid code in {code_path}: expected an instance-ID mapping')
-    kept, skipped = [], []
+    with_code, no_code = [], []
     for row in rows:
         bug_id = row['instance_id']
         if bug_id not in values:
             raise RuntimeError(f'Missing code in {code_path}: {bug_id}')
         value = values[bug_id]
         if value is None or (isinstance(value, dict) and all(node is None for node in value.values())):
-            skipped.append(bug_id)
+            no_code.append(bug_id)
         else:
-            kept.append(row)
-    check_json(code_path, kept, 'code')
-    if skipped:
-        print(f'Skipping BRT generation/evaluation for {len(skipped)}/{len(rows)} instances '
-              f'with no production-code matches: {", ".join(skipped)}', flush=True)
-    return kept, skipped
+            with_code.append(row)
+    check_json(code_path, with_code, 'code')
+    if no_code:
+        print(f'Generating BRTs without production-code context for {len(no_code)}/{len(rows)} instances: '
+              f'{", ".join(no_code)}. Using the issue and retrieved tests.', flush=True)
+    return no_code
 
 
-def summarize(result_file, rows, samples, skipped=()):
+def summarize(result_file, rows, samples, no_code=()):
     results = json.loads(result_file.read_text(encoding='utf-8'))
     successes = reproduced = 0
     for row in rows:
@@ -61,8 +61,8 @@ def summarize(result_file, rows, samples, skipped=()):
         'candidates': len(rows) * samples, 'fail_to_pass_candidates': successes,
         'reproduced_instances': reproduced,
         'instance_reproduction_rate': reproduced / len(rows) if rows else None,
-        'total_selected_instances': len(rows) + len(skipped),
-        'skipped_no_code_instance_ids': list(skipped),
+        'total_selected_instances': len(rows),
+        'no_code_instance_ids': list(no_code),
     }
     result_file.with_name('summary.json').write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
     print(f'{successes}/{summary["candidates"]} fail-to-pass candidates; '
@@ -97,12 +97,11 @@ def main(argv=None):
     instructions = template.with_name('prompt_with_code_and_test.txt')
     plans = []
     # Check every selected repository before spending credits on any generation.
-    for repo, source_rows in selections.items():
+    for repo, rows in selections.items():
         paths = artifact_paths(args.output_root, args.benchmark, args.model, repo)
         tests = paths.tests / f'related_tests_{args.iterations + 1}.json'
-        rows, skipped = select_code_hits(paths.code, source_rows)
-        if rows:
-            check_json(tests, rows, 'tests')
+        no_code = check_code_context(paths.code, rows)
+        check_json(tests, rows, 'tests')
         if any(not row.get('patch', '').startswith('diff --git ') for row in rows):
             raise RuntimeError(f'Missing reference production fix for {repo}; evaluation requires patch.')
         root = paths.category('brt') / f'i{args.iterations}_s{args.samples}'
@@ -111,20 +110,21 @@ def main(argv=None):
             'model': args.model, 'base_url': BASE_URL.get(args.model),
             'provider': args.provider, 'max_tokens': args.max_tokens,
             'samples': args.samples, 'iterations': args.iterations, 'temperature': args.temperature,
-            'rows_sha256': hashlib.sha256(json.dumps(source_rows, sort_keys=True).encode()).hexdigest(),
-            'code_sha256': fingerprint(paths.code), 'tests_sha256': fingerprint(tests) if tests.exists() else None,
+            'rows_sha256': hashlib.sha256(json.dumps(rows, sort_keys=True).encode()).hexdigest(),
+            'code_sha256': fingerprint(paths.code), 'tests_sha256': fingerprint(tests),
             'template_sha256': fingerprint(template), 'instructions_sha256': fingerprint(instructions),
-            'skipped_no_code_instance_ids': skipped,
+            'no_code_instance_ids': no_code,
         }
         manifest_path = root / 'run_config.json'
         if manifest_path.exists():
             previous = json.loads(manifest_path.read_text(encoding='utf-8'))
-            # Migrate runs made before no-code exclusions without discarding
-            # completed candidates for the remaining eligible instances.
-            previous.setdefault('skipped_no_code_instance_ids', skipped)
+            # Restore previously excluded IDs without discarding completed
+            # candidates/results for unchanged instances and model settings.
+            previous.pop('skipped_no_code_instance_ids', None)
+            previous.setdefault('no_code_instance_ids', no_code)
             if previous != manifest:
                 raise RuntimeError(f'BRT configuration/context changed for {repo}; use a separate --output-root.')
-        plans.append((paths, rows, tests, root, manifest, skipped))
+        plans.append((paths, rows, tests, root, manifest, no_code))
         print(f'{repo}: {len(rows)} instances, {args.samples} candidate(s) each; context: {tests}', flush=True)
     active_rows = [row for _, rows, _, _, _, _ in plans for row in rows]
     if active_rows:
@@ -132,16 +132,9 @@ def main(argv=None):
     if args.preflight_only:
         print('BRT preflight passed; no generation or evaluation was run.')
         return
-    for paths, rows, tests, root, manifest, skipped in plans:
+    for paths, rows, tests, root, manifest, no_code in plans:
         root.mkdir(parents=True, exist_ok=True)
         (root / 'run_config.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
-        if not rows:
-            results = root / 'execution_results.json'
-            if not results.exists():
-                results.write_text('{}\n', encoding='utf-8')
-            summarize(results, rows, args.samples, skipped)
-            print(f'{paths.repo}: skipped all instances; no BRT generation/evaluation needed.', flush=True)
-            continue
         selected_csv, env = prepare_selection(root / 'selections', rows)
         for name, value in (('ICORE_LLM_PROVIDER', args.provider), ('ICORE_LLM_MAX_TOKENS', args.max_tokens),
                             ('ICORE_LLM_TIMEOUT', args.timeout), ('ICORE_TEST_TIMEOUT', args.test_timeout)):
@@ -167,7 +160,7 @@ def main(argv=None):
                        '--dataset_csv', selected_csv, '--gen_test_dir', generated,
                        '--model', args.model, '--exp_name', 'brt', '--samples', args.samples,
                        '--injection_path', tests, '--result_file', results, env=env)
-            summarize(results, rows, args.samples, skipped)
+            summarize(results, rows, args.samples, no_code)
         print(f'{paths.repo}: BRT {args.stage} complete. Outputs: {root}', flush=True)
 
 
