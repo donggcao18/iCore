@@ -5,6 +5,35 @@ checkout root automatically, so relative output paths retain their meaning.
 The Python modules remain under `scripts/code_retrieval`, `scripts/test_retrieval`,
 and `scripts/generator`; this folder contains the shell entry points.
 
+To run code retrieval, iterative test retrieval, final BRT generation, and
+buggy/fixed evaluation for SWT Verified pytest with DeepSeek R1-0528:
+
+```bash
+bash scripts/launchers/run_retrieval_brt_swt_verified.sh
+```
+
+This launcher selects all 15 `pytest-dev/pytest` instances, uses three test
+refinement rounds, generates one final candidate per instance, and allows 500
+seconds per API attempt. Both runners share the same model, repository, input
+CSV, iteration count, and output root. Retrieval failures stop the launcher
+before final generation. `DATASET_CSV` defaults to the prepared
+`data/swt-bench-verified/oracle_input_pylint_pytest.csv` for complete evaluation
+fixes; no oracle-context JSON enters this experiment's prompts.
+
+Edit the selections at the top of the launcher or set `MODEL`, `REPO`,
+`DATASET_CSV`, `OUTPUT_ROOT`, `ITERATIONS`, `SAMPLES`, `MAX_WORKERS`,
+`ICORE_LLM_TIMEOUT`, or `ICORE_TEST_TIMEOUT`. For ten final candidates:
+
+```bash
+SAMPLES=10 bash scripts/launchers/run_retrieval_brt_swt_verified.sh
+```
+
+With defaults, outputs are under
+`retrieval_results/swt-bench-verified/deepseek%2Fdeepseek-r1-0528/`:
+`code/pytest-dev/pytest/`, `test/pytest-dev/pytest/`, and
+`brt/pytest-dev/pytest/i3_s1/`. Final execution details and aggregate results are
+`execution_results.json` and `summary.json` inside that BRT directory.
+
 ## Retrieval with a chosen benchmark, model, and repositories
 
 The three generic launchers require `--model` and at least one `--repo`.
