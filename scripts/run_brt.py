@@ -41,7 +41,7 @@ def check_code_context(code_path, rows):
     return no_code
 
 
-def summarize(result_file, rows, samples, no_code=()):
+def summarize(result_file, rows, samples, no_code=(), excluded=()):
     results = json.loads(result_file.read_text(encoding='utf-8'))
     successes = reproduced = 0
     for row in rows:
@@ -62,8 +62,9 @@ def summarize(result_file, rows, samples, no_code=()):
         'candidates': len(rows) * samples, 'fail_to_pass_candidates': successes,
         'reproduced_instances': reproduced,
         'instance_reproduction_rate': reproduced / len(rows) if rows else None,
-        'total_selected_instances': len(rows),
+        'total_selected_instances': len(rows) + len(excluded),
         'no_code_instance_ids': list(no_code),
+        'excluded_instance_ids': list(excluded),
     }
     result_file.with_name('summary.json').write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
     print(f'{successes}/{summary["candidates"]} fail-to-pass candidates; '
@@ -76,6 +77,8 @@ def main(argv=None):
     parser.add_argument('--benchmark', '--dataset', type=benchmark_argument, default='swt-verified')
     parser.add_argument('--model', type=model_argument, required=True)
     parser.add_argument('--repo', type=repo_argument, action='append', required=True)
+    parser.add_argument('--exclude-instance', action='append', default=[],
+                        help='Omit one instance from generation/evaluation; repeat for several IDs.')
     parser.add_argument('--dataset-csv', type=Path)
     parser.add_argument('--output-root', type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument('--iterations', type=positive_int, default=3,
@@ -94,15 +97,24 @@ def main(argv=None):
     benchmark = BENCHMARKS[args.benchmark]
     dataset_csv = args.dataset_csv or ROOT / 'data' / benchmark.folder / 'test.csv'
     selections = {repo: select_rows(dataset_csv, repo, args.benchmark) for repo in dict.fromkeys(args.repo)}
+    excluded_ids = set(args.exclude_instance)
+    unknown = excluded_ids - {row['instance_id'] for rows in selections.values() for row in rows}
+    if unknown:
+        parser.error('Excluded IDs are not in the selected repositories: ' + ', '.join(sorted(unknown)))
     template = ROOT / 'data/prompt_templates/prompt_with_code_and_tests.json'
     instructions = template.with_name('prompt_with_code_and_test.txt')
     plans = []
     # Check every selected repository before spending credits on any generation.
-    for repo, rows in selections.items():
+    for repo, source_rows in selections.items():
+        rows = [row for row in source_rows if row['instance_id'] not in excluded_ids]
+        excluded = [row['instance_id'] for row in source_rows if row['instance_id'] in excluded_ids]
+        if excluded:
+            print(f'Excluding from BRT generation/evaluation: {", ".join(excluded)}', flush=True)
         paths = artifact_paths(args.output_root, args.benchmark, args.model, repo)
         tests = paths.tests / f'related_tests_{args.iterations + 1}.json'
         no_code = check_code_context(paths.code, rows)
-        check_json(tests, rows, 'tests')
+        if rows:
+            check_json(tests, rows, 'tests')
         for row in rows:
             prepare_reference_patch(row.get('patch'), row['instance_id'])
         root = paths.category('brt') / f'i{args.iterations}_s{args.samples}'
@@ -111,10 +123,11 @@ def main(argv=None):
             'model': args.model, 'base_url': BASE_URL.get(args.model),
             'provider': args.provider, 'max_tokens': args.max_tokens,
             'samples': args.samples, 'iterations': args.iterations, 'temperature': args.temperature,
-            'rows_sha256': hashlib.sha256(json.dumps(rows, sort_keys=True).encode()).hexdigest(),
+            'rows_sha256': hashlib.sha256(json.dumps(source_rows, sort_keys=True).encode()).hexdigest(),
             'code_sha256': fingerprint(paths.code), 'tests_sha256': fingerprint(tests),
             'template_sha256': fingerprint(template), 'instructions_sha256': fingerprint(instructions),
             'no_code_instance_ids': no_code,
+            'excluded_instance_ids': excluded,
         }
         manifest_path = root / 'run_config.json'
         if manifest_path.exists():
@@ -122,20 +135,29 @@ def main(argv=None):
             # Restore previously excluded IDs without discarding completed
             # candidates/results for unchanged instances and model settings.
             previous.pop('skipped_no_code_instance_ids', None)
-            previous.setdefault('no_code_instance_ids', no_code)
+            # Explicit selection changes may reuse completed samples. These
+            # metadata fields describe current selection, not prompt content.
+            for key in ('no_code_instance_ids', 'excluded_instance_ids'):
+                previous[key] = manifest[key]
             if previous != manifest:
                 raise RuntimeError(f'BRT configuration/context changed for {repo}; use a separate --output-root.')
-        plans.append((paths, rows, tests, root, manifest, no_code))
+        plans.append((paths, rows, tests, root, manifest, no_code, excluded))
         print(f'{repo}: {len(rows)} instances, {args.samples} candidate(s) each; context: {tests}', flush=True)
-    active_rows = [row for _, rows, _, _, _, _ in plans for row in rows]
+    active_rows = [row for _, rows, _, _, _, _, _ in plans for row in rows]
     if active_rows:
         preflight(active_rows, args.model)
     if args.preflight_only:
         print('BRT preflight passed; no generation or evaluation was run.')
         return
-    for paths, rows, tests, root, manifest, no_code in plans:
+    for paths, rows, tests, root, manifest, no_code, excluded in plans:
         root.mkdir(parents=True, exist_ok=True)
         (root / 'run_config.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
+        if not rows:
+            results = root / 'execution_results.json'
+            if not results.exists():
+                results.write_text('{}\n', encoding='utf-8')
+            summarize(results, rows, args.samples, no_code, excluded)
+            continue
         selected_csv, env = prepare_selection(root / 'selections', rows)
         for name, value in (('ICORE_LLM_PROVIDER', args.provider), ('ICORE_LLM_MAX_TOKENS', args.max_tokens),
                             ('ICORE_LLM_TIMEOUT', args.timeout), ('ICORE_TEST_TIMEOUT', args.test_timeout)):
@@ -161,7 +183,7 @@ def main(argv=None):
                        '--dataset_csv', selected_csv, '--gen_test_dir', generated,
                        '--model', args.model, '--exp_name', 'brt', '--samples', args.samples,
                        '--injection_path', tests, '--result_file', results, env=env)
-            summarize(results, rows, args.samples, no_code)
+            summarize(results, rows, args.samples, no_code, excluded)
         print(f'{paths.repo}: BRT {args.stage} complete. Outputs: {root}', flush=True)
 
 

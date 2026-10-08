@@ -260,6 +260,13 @@ IDs retain all selected instances; `run_config.json` and `summary.json` record
 Rerunning a previous run that excluded null-code instances restores them while
 reusing completed candidates/results. Missing or malformed retrieval records
 still stop the workflow.
+To explicitly omit an instance, pass `--exclude-instance <instance_id>`;
+repeat the flag for multiple IDs. The current SWT BRT launcher excludes
+`pylint-dev__pylint-7277` at the user's request because its checkout installation
+fails during evaluation. Remove that argument line when its environment is
+repaired. Exclusions affect only BRT generation/evaluation. Completed outputs
+are retained, and `excluded_instance_ids` in the manifest and summary records
+the omitted IDs. Reproduction rates use the remaining evaluated instances.
 The issue and retrieved buggy code/tests enter the prompt; the reference
 production fix is used only when evaluating the fixed revision.
 Production fixes may use Git-style `diff --git` headers or plain unified

@@ -242,6 +242,46 @@ class BrtWorkflowTests(unittest.TestCase):
                 brt.main(self.args)
         run.assert_not_called()
 
+    def test_exclusion_resumes_completed_run_and_changes_only_selected_ids(self):
+        with patch.object(brt, 'preflight'), patch.object(brt, 'run_module', side_effect=self.run_module):
+            brt.main(self.args)
+        excluded = self.rows[0]['instance_id']
+        paths = brt.artifact_paths(self.output, 'swt-verified', MODEL, REPOS[0])
+        root = paths.category('brt') / 'i3_s1'
+        candidate = root / 'generated_tests' / f'{excluded}_n1.txt'
+        original = candidate.read_text()
+        self.commands.clear()
+        with patch.object(brt, 'preflight') as preflight, patch.object(brt, 'run_module', side_effect=self.run_module):
+            brt.main(self.args + ['--exclude-instance', excluded])
+        preflight.assert_called_once_with([self.rows[1]], MODEL)
+        self.assertEqual(len(self.commands), 2)
+        self.assertEqual(candidate.read_text(), original)
+        summary = json.loads((root / 'summary.json').read_text())
+        self.assertEqual(summary['instances'], 0)
+        self.assertEqual(summary['total_selected_instances'], 1)
+        self.assertEqual(summary['excluded_instance_ids'], [excluded])
+        self.assertEqual(summary['fail_to_pass_candidates'], 0)
+
+    def test_exclusion_keeps_other_instances_in_same_repo(self):
+        paths, no_code = self.add_no_code_instances()
+        excluded = no_code[0]
+        with patch.object(brt, 'preflight'), patch.object(brt, 'run_module', side_effect=self.run_module):
+            brt.main(self.args + ['--exclude-instance', excluded])
+        root = paths.category('brt') / 'i3_s1'
+        selected = (root / 'selections/selected_ids.txt').read_text().split()
+        self.assertEqual(selected, [self.rows[0]['instance_id'], *no_code[1:]])
+        results = json.loads((root / 'execution_results.json').read_text())
+        self.assertNotIn(excluded, results)
+        summary = json.loads((root / 'summary.json').read_text())
+        self.assertEqual(summary['instances'], 3)
+        self.assertEqual(summary['excluded_instance_ids'], [excluded])
+        self.assertEqual(summary['no_code_instance_ids'], no_code[1:])
+
+    def test_unknown_exclusion_is_rejected_before_generation(self):
+        with patch.object(brt, 'run_module') as run, patch('sys.stderr'), self.assertRaises(SystemExit):
+            brt.main(self.args + ['--exclude-instance', 'typo-123'])
+        run.assert_not_called()
+
 
 class EvaluationTests(unittest.TestCase):
     def test_null_code_omits_only_code_section_and_retains_issue_and_test_context(self):
