@@ -335,6 +335,76 @@ python -m scripts.run_brt --benchmark lite --model <model-id> --repo <owner/repo
 
 ## Existing launchers
 
+For SWT Verified BRT generation with only the issue and augmented base oracle
+tests as context, run:
+
+```bash
+bash scripts/launchers/run_brt_oracle_test_swt_verified.sh
+```
+
+This separate launcher reuses the existing generator, test-only prompt template,
+and buggy/fixed evaluator. It passes
+`retrieval_results/test/oracle/swt-bench-verified/pylint/related_tests_oracle_base_augmented.json`
+as both generation context and evaluation injection reference. No code-retrieval
+file is loaded. The model sees the bug report and the oracle test snippets;
+production fixes are used only by evaluation.
+
+Both oracle launchers default to `deepseek/deepseek-r1-0528`, using `QWEN_API_KEY`
+and `QWEN_BASE_URL` (OpenRouter by default) from `scripts/config.py`.
+The test-only launcher generates one candidate per instance at temperature 0.7,
+and excludes `pylint-dev__pylint-7277`. It uses
+`data/swt-bench-verified/oracle_input_pylint_pytest.csv`, the prepared input for
+these oracle artifacts with complete reference fixes. Copy that CSV to the
+server together with the oracle file. Edit the selections at the top of the
+launcher or set `MODEL`, `REPO`, `ORACLE`, `DATASET_CSV`, `SAMPLES`, and
+`OUTPUT_ROOT` in the environment. Set `EXCLUDE_INSTANCE=''` to include `7277`
+after fixing its environment.
+
+Prompts, candidates, the selection CSV, execution results, and summary are saved
+under
+`retrieval_results/swt-bench-verified/<escaped-model-id>/brt/pylint-dev/pylint/oracle_test_augmented_s1/`.
+They are separate from the retrieved-context experiment and reused on rerun.
+Changing input/context hashes rejects cache reuse in the same output folder.
+For ten candidates per instance:
+
+```bash
+SAMPLES=10 bash scripts/launchers/run_brt_oracle_test_swt_verified.sh
+```
+
+For the code-only oracle experiment, run:
+
+```bash
+bash scripts/launchers/run_brt_oracle_code_swt_verified.sh
+```
+
+Its default `CODE` input is
+`/research/cbim/vast/qt60/any-ssr/utils/iCore/retrieval_results/code/oracle/swt-bench-verified/pylint/code_retrieval_oracle_base.json`.
+Generation uses the existing code-only prompt template with the issue and these
+base production-code snippets, including their class context. No test-retrieval
+JSON, patched code oracle, production fix, or reference test patch enters the
+prompt. Missing or empty code context stops the run before generation.
+
+Defaults match the test-only launcher: `deepseek/deepseek-r1-0528`, Pylint, one candidate,
+temperature 0.7, the prepared oracle CSV, and exclusion of `7277`. The default
+stage generates and evaluates candidates. Evaluation uses the existing `libro`
+token-similarity strategy to choose a test insertion file without requiring a
+test-retrieval JSON; this differs from the test-only launcher's oracle-test
+insertion reference. Reference fixes are used only during evaluation.
+
+Outputs, including saved prompts and configuration hashes, are isolated under
+`retrieval_results/swt-bench-verified/<escaped-model-id>/brt/pylint-dev/pylint/oracle_code_base_s1/`.
+Set `MODEL`, `REPO`, `CODE`, `DATASET_CSV`, `SAMPLES`, `OUTPUT_ROOT`, or
+`EXCLUDE_INSTANCE` to override the selections. Use `STAGE=generate` for generation
+only, or `STAGE=evaluate` to evaluate previously generated candidates:
+
+```bash
+STAGE=generate SAMPLES=10 bash scripts/launchers/run_brt_oracle_code_swt_verified.sh
+STAGE=evaluate SAMPLES=10 bash scripts/launchers/run_brt_oracle_code_swt_verified.sh
+# If the checkout lives elsewhere, point CODE to that checkout's oracle:
+CODE=./retrieval_results/code/oracle/swt-bench-verified/pylint/code_retrieval_oracle_base.json \
+  bash scripts/launchers/run_brt_oracle_code_swt_verified.sh
+```
+
 | Launcher | Purpose |
 | --- | --- |
 | `code_retrieval.sh`, `test_retrieval.sh` | Original replication launchers; existing limitations are documented in PROJECT_GUIDE.md. |

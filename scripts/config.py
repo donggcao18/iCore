@@ -8,6 +8,7 @@ ROOT_DIR = '.'
 ENV_NAME_TEMPLATE = 'setup_{name1}_{name2}__{version}'
 
 API_KEY = {
+    'deepseek/deepseek-r1-0528': os.getenv('QWEN_API_KEY'),
     'z-ai/glm-5.3-flash': os.getenv('QWEN_API_KEY'),
     'deepseek/deepseek-v4-flash-0731': os.getenv('QWEN_API_KEY'),
     'mistralai/mistral-small-3.2-24b-instruct': os.getenv('QWEN_API_KEY'),
@@ -22,6 +23,7 @@ API_KEY = {
 }
 
 BASE_URL = {
+    'deepseek/deepseek-r1-0528': os.getenv('QWEN_BASE_URL') or 'https://openrouter.ai/api/v1',
     'z-ai/glm-5.3-flash': os.getenv('QWEN_BASE_URL') or 'https://openrouter.ai/api/v1',
     'deepseek/deepseek-v4-flash-0731': os.getenv('QWEN_BASE_URL') or 'https://openrouter.ai/api/v1',
     'mistralai/mistral-small-3.2-24b-instruct': os.getenv('QWEN_BASE_URL') or 'https://openrouter.ai/api/v1',
