@@ -10,7 +10,7 @@ DATASET_CSV="${DATASET_CSV:-./data/swt-bench-verified/oracle_input_pylint_pytest
 EXCLUDE_INSTANCE="${EXCLUDE_INSTANCE-pylint-dev__pylint-7277}"
 SAMPLES="${SAMPLES:-1}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-./retrieval_results}"
-export ICORE_LLM_TIMEOUT="${ICORE_LLM_TIMEOUT:-180}"
+export ICORE_LLM_TIMEOUT="${ICORE_LLM_TIMEOUT:-500}"
 export ICORE_TEST_TIMEOUT="${ICORE_TEST_TIMEOUT:-60}"
 
 exec "${PYTHON:-python}" - "$MODEL" "$REPO" "$ORACLE" "$DATASET_CSV" \

@@ -351,6 +351,9 @@ production fixes are used only by evaluation.
 
 Both oracle launchers default to `deepseek/deepseek-r1-0528`, using `QWEN_API_KEY`
 and `QWEN_BASE_URL` (OpenRouter by default) from `scripts/config.py`.
+Each API attempt has a 500-second timeout, overridable with `ICORE_LLM_TIMEOUT`.
+The elapsed-time messages every 30 seconds report the same pending request;
+they do not send another API call. Temporary API errors can trigger retries.
 The test-only launcher generates one candidate per instance at temperature 0.7,
 and excludes `pylint-dev__pylint-7277`. It uses
 `data/swt-bench-verified/oracle_input_pylint_pytest.csv`, the prepared input for
