@@ -9,6 +9,8 @@ ENV_NAME_TEMPLATE = 'setup_{name1}_{name2}__{version}'
 
 API_KEY = {
     'deepseek/deepseek-v4-flash-0731': os.getenv('QWEN_API_KEY'),
+    'mistralai/mistral-small-3.2-24b-instruct': os.getenv('QWEN_API_KEY'),
+    'qwen/qwen3-coder-30b-a3b-instruct': os.getenv('QWEN_API_KEY'),
     'gpt-4o': os.getenv('OPENAI_API_KEY'),
     'gpt-4o-2024-08-06': os.getenv('OPENAI_API_KEY'),
     'qwen-32b': os.getenv('QWEN_API_KEY'),
@@ -20,6 +22,8 @@ API_KEY = {
 
 BASE_URL = {
     'deepseek/deepseek-v4-flash-0731': os.getenv('QWEN_BASE_URL') or 'https://openrouter.ai/api/v1',
+    'mistralai/mistral-small-3.2-24b-instruct': os.getenv('QWEN_BASE_URL') or 'https://openrouter.ai/api/v1',
+    'qwen/qwen3-coder-30b-a3b-instruct': os.getenv('QWEN_BASE_URL') or 'https://openrouter.ai/api/v1',
     'gpt-4o': os.getenv('OPENAI_BASE_URL') or None,
     'gpt-4o-2024-08-06': os.getenv('OPENAI_BASE_URL') or None,
     'qwen-32b': os.getenv('QWEN_BASE_URL') or None,
