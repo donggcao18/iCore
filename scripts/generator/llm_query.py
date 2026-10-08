@@ -29,8 +29,9 @@ def get_relevant_docs(instance_id, docs_path):
     
     return '\n'.join(relevant_docs)
 
-def make_messages_from_dataset(exp_name, bug_report, context_code_path, context_test_path, template_file):
-    prompt_save_path = f'{ROOT_DIR}/data/{exp_name}/prompts/{bug_report["instance_id"]}.json'
+def make_messages_from_dataset(exp_name, bug_report, context_code_path, context_test_path, template_file, prompt_dir=None):
+    prompt_save_path = (Path(prompt_dir) / f'{bug_report["instance_id"]}.json' if prompt_dir
+                        else Path(ROOT_DIR) / 'data' / exp_name / 'prompts' / f'{bug_report["instance_id"]}.json')
     if os.path.exists(prompt_save_path):
         with open(prompt_save_path, 'r') as f:
             return json.load(f)
@@ -92,16 +93,17 @@ def make_messages_from_dataset(exp_name, bug_report, context_code_path, context_
 
 def query_llm_for_gentest(
     # proj, bug_id, 
-    exp_name, model, bug_report, context_code_path, context_test_path, template_file, save_prompt=False, prompt_save_path=None, save_message=False, temperature=0.7):
+    exp_name, model, bug_report, context_code_path, context_test_path, template_file, save_prompt=False, prompt_save_path=None, save_message=False, temperature=0.7, prompt_dir=None):
     
     # chat_mode = model_is_chat(model)
     
-    prompt = make_messages_from_dataset(exp_name, bug_report, context_code_path, context_test_path, template_file)
+    prompt = make_messages_from_dataset(exp_name, bug_report, context_code_path, context_test_path, template_file, prompt_dir=prompt_dir)
 
     if save_prompt:
         ext = 'json'
         if prompt_save_path is None:
-            prompt_save_path = f'{ROOT_DIR}/data/{exp_name}/prompts/{bug_report["instance_id"]}.json'
+            prompt_save_path = (Path(prompt_dir) / f'{bug_report["instance_id"]}.json' if prompt_dir
+                                else Path(ROOT_DIR) / 'data' / exp_name / 'prompts' / f'{bug_report["instance_id"]}.json')
         if not os.path.exists(prompt_save_path):
             Path(prompt_save_path).parent.mkdir(parents=True, exist_ok=True)
             with open(prompt_save_path, 'w') as f:
@@ -147,7 +149,7 @@ def query_times(args, bug_report):
             out = f'{ROOT_DIR}/data/{args.exp_name}/gen_tests_{model}/{bug_report["instance_id"]}_n{i+1}.txt'
         else:
             out = f'{args.out_dir}/{bug_report["instance_id"]}_n{i+1}.txt'
-        if not args.retry and os.path.exists(out):
+        if not args.retry and os.path.exists(out) and os.path.getsize(out):
             continue
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(out), exist_ok=True)
@@ -160,7 +162,8 @@ def query_times(args, bug_report):
             template_file=args.template_file, 
             save_prompt=args.save_prompt, 
             save_message=args.save_message,
-            temperature=args.temperature
+            temperature=args.temperature,
+            prompt_dir=getattr(args, 'prompt_dir', None),
         )
         if gen_test is None:
             raise RuntimeError(
@@ -179,6 +182,7 @@ if __name__ == '__main__':
     parser.add_argument('--context_test_path', default=None)
     parser.add_argument('--out_dir', default=None)
     parser.add_argument('--save_prompt', action='store_true')
+    parser.add_argument('--prompt_dir', type=Path, help='Optional directory for saved/reused prompts.')
     parser.add_argument('--template_file', default='./data/prompt_templates/prompt_with_code_and_tests.json')
     parser.add_argument('--model', default='deepseek-chat')
     parser.add_argument('--save_message', action='store_true')

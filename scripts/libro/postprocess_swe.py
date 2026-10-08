@@ -11,6 +11,8 @@ import glob
 import subprocess as sp
 import argparse
 from scripts.utils import swe_util
+from scripts.utils.benchmark_data import load_selected_csv
+from pathlib import Path
 
 
 def inject_prefix_rootdir(proj):
@@ -47,7 +49,8 @@ def run_test(repo_dir_path, test_name, env_name):
     status = 0
     conda_cmd = f'eval "$(conda shell.bash hook)" && conda activate {env_name} && export PYTHONPATH={repo_dir_path}:$PYTHONPATH && ' + swe_util.swe_test_cmd(proj, version, test_name)
     test_process = sp.run(conda_cmd, shell=True, executable='bash',
-                          capture_output=True, cwd=repo_dir_path, timeout=60)
+                          capture_output=True, cwd=repo_dir_path,
+                          timeout=float(os.getenv('ICORE_TEST_TIMEOUT', '60')))
     if proj == 'django':
         captured_stdout = test_process.stderr.decode()
         captured_stderr = ''
@@ -64,14 +67,21 @@ def run_test(repo_dir_path, test_name, env_name):
         if proj in {'astropy', 'matplotlib', 'seaborn', 'flask', 'xarray', 'pylint', 'pytest', 'scikit-learn', 'sphinx', 'requests'}:
             # pytest style
             match = re.findall(r'(\d+) failed', captured_stdout)
-            error_match = re.findall(r'(\d+) error in', captured_stdout)
+            error_match = re.findall(r'(\d+) errors?\b', captured_stdout)
             if match:
                 failed_test_num = sum(int(num) for num in match)
             else:
                 failed_test_num = 0
             if error_match:
                 failed_test_num += sum(int(num) for num in error_match)
-                status = -1
+            # A zero exit code without any passing tests (e.g. all skipped) is
+            # not evidence that the generated candidate passes on fixed code.
+            passed_test_num = sum(int(num) for num in re.findall(r'(\d+) passed\b', captured_stdout))
+            status = -1 if (
+                test_process.returncode not in (0, 1) or error_match
+                or (test_process.returncode == 0 and passed_test_num == 0)
+                or (test_process.returncode == 1 and failed_test_num == 0)
+            ) else 0
                 
             failed_tests = re.findall(r'FAILED(.*::.*)', captured_stdout)
             error_tests = re.findall(r'ERROR (.*::.*)', captured_stdout)
@@ -260,14 +270,15 @@ def twover_run_experiment(bug_report, example_tests, injection):
         if isinstance(buggy_info, str):
             final_results.append(buggy_info)
             continue
-        fails_in_buggy_version = buggy_info['autogen_failed'] or buggy_info['runtime_error'] or buggy_info['compile_error']
-        
         if isinstance(fixed_info, dict):
             fails_in_fixed_version = fixed_info['autogen_failed'] or fixed_info['compile_error'] or fixed_info['runtime_error']
         else:
             fails_in_fixed_version = True
         
-        success = (fails_in_buggy_version and not fails_in_fixed_version)
+        # Collection/setup/compile errors do not constitute a reproducing test.
+        success = (buggy_info['autogen_failed']
+                   and not buggy_info['runtime_error'] and not buggy_info['compile_error']
+                   and not fails_in_fixed_version)
 
         final_results.append({
             'buggy': buggy_info,
@@ -314,6 +325,9 @@ if __name__ == '__main__':
     parser.add_argument('--swt', default=False, action='store_true')
     parser.add_argument('--tdd', default=False, action='store_true')
     parser.add_argument('--from_id', default=None)
+    parser.add_argument('--dataset_csv', type=Path,
+                        help='Evaluate the exact local benchmark rows, filtered by SWT_IDS_FILE.')
+    parser.add_argument('--samples', type=int, help='Evaluate exactly samples n1..nN per instance.')
     args = parser.parse_args()
 
     exp_name = args.exp_name
@@ -324,14 +338,18 @@ if __name__ == '__main__':
         gen_test_dir = args.gen_test_dir
     bug2tests = defaultdict(list)
         
-    with open(os.environ.get('SWT_IDS_FILE', 'swt.txt'), 'r') as f:
-        swt = f.read().strip().split('\n')
-    with open('tdd.txt', 'r') as f:
-        tdd = f.read().strip().split('\n')
-    if args.tdd:
+    if args.samples is not None and args.samples < 1:
+        parser.error('--samples must be positive')
+    if args.dataset_csv:
+        swe_bench = load_selected_csv(args.dataset_csv)
+    elif args.tdd:
+        with open('tdd.txt', 'r') as f:
+            tdd = f.read().strip().split('\n')
         swe_bench = load_dataset("princeton-nlp/SWE-bench_Verified")["test"]
         swe_bench = [bug for bug in swe_bench if bug["instance_id"] in tdd]
     elif args.swt:
+        with open(os.environ.get('SWT_IDS_FILE', 'swt.txt'), 'r') as f:
+            swt = f.read().strip().split('\n')
         swe_bench = load_dataset("SWE-bench/SWE-bench_Lite")["test"]
         swe_bench = [bug for bug in swe_bench if bug["instance_id"] in swt]
     else:
@@ -346,8 +364,6 @@ if __name__ == '__main__':
             json.dump({}, f, indent=4)
     with open(result_file, 'r') as f:
         exec_results = json.load(f)
-    with open('tmp_data/final_gpt_@1_acc.txt', 'r') as f:
-        skip = f.read().strip().split('\n')
     flag = False
     injection = args.injection_path
     for bug_report in swe_bench:
@@ -367,15 +383,25 @@ if __name__ == '__main__':
         # ]:
         #     continue
         
-        if bug_id in exec_results and len(exec_results[bug_id]) >= 5:
-            continue
         # if bug_id in skip:
         #     continue
 
-        res_for_bug = {}
+        res_for_bug = exec_results.get(bug_id, {})
 
         example_tests = []
-        tests = glob.glob(os.path.join(gen_test_dir, f'{bug_id}_*.txt'))
+        if args.samples:
+            tests = [os.path.join(gen_test_dir, f'{bug_id}_n{sample}.txt')
+                     for sample in range(1, args.samples + 1)]
+        else:
+            tests = sorted(glob.glob(os.path.join(gen_test_dir, f'{bug_id}_*.txt')))
+        if not tests:
+            raise RuntimeError(f'No generated candidates for {bug_id} in {gen_test_dir}')
+        for test_file in tests:
+            if not os.path.isfile(test_file) or not os.path.getsize(test_file):
+                raise RuntimeError(f'Missing or empty candidate: {test_file}')
+        tests = [test_file for test_file in tests if os.path.basename(test_file) not in res_for_bug]
+        if not tests:
+            continue
         for test_file in tests:
             with open(test_file) as f:
                 test_content = f.read().strip()

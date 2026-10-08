@@ -238,7 +238,77 @@ The stash keeps tracked and untracked changes for later recovery. Retrieval
 requires a clean checkout because its stages switch buggy commits.
 
 Retrieval and draft generation do **not** evaluate whether a draft reproduces a
-bug. Use the separate BRT generation/evaluation workflow for that experiment.
+bug. Run final BRT generation and evaluation after completing both retrieval stages:
+
+```bash
+bash scripts/launchers/run_brt_swt_verified.sh
+```
+
+This launcher passes the model (`mistralai/mistral-small-3.2-24b-instruct`) and
+both repositories (`pylint-dev/pylint`, `pytest-dev/pytest`) directly to
+`scripts.run_brt`. Edit those argument lines to change the experiment, matching
+the code/test retrieval launchers. It requires completed `related_tests_4.json`
+by default and generates one final candidate per instance at temperature 0.7.
+It uses the exact local SWT Verified rows for generation and evaluation.
+The issue and retrieved buggy code/tests enter the prompt; the reference
+production fix is used only when evaluating the fixed revision.
+
+The evaluator injects each candidate into the first retrieved reference's
+file/class (or uses lexical placement for an empty reference selection), then
+runs its first injected test on buggy and fixed code. Prefer one focused test
+per candidate. A success requires a test failure on buggy code and a passing
+test on fixed code. Collection/setup errors, no-tests-collected runs, and
+all-skipped runs do not count as successful reproductions. Each test execution
+has a 60-second timeout. Evaluation resets and cleans the disposable benchmark
+clones and applies the production fix between runs; it uses the environments
+prepared by `setup_swt_verified.sh`. Run only one workflow per clone at a time.
+
+Outputs follow the same benchmark/model/repository structure:
+
+```text
+retrieval_results/swt-bench-verified/<escaped-model-id>/brt/<owner>/<repo>/i3_s1/
+├── generated_tests/<instance_id>_n1.txt
+├── prompts/<instance_id>.json
+├── selections/selected.csv, selected_ids.txt
+├── run_config.json
+├── execution_results.json
+└── summary.json
+```
+
+`execution_results.json` retains the buggy/fixed failure details and a `success`
+boolean for each candidate. `summary.json` reports candidate successes and the
+number/rate of instances with at least one successful candidate. For multiple
+samples, this is the observed fraction reproduced with that sample budget.
+Candidates and evaluated candidate results are reused on rerun. Configuration
+and context hashes protect prompt/result reuse; use a separate `--output-root`
+when changing model settings or context, with matching retrieval outputs there.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `--samples` / `SAMPLES` | `1` | Final candidates generated per instance. |
+| `--iterations` / `ITERATIONS` | `3` | Use `related_tests_(iterations+1).json` from retrieval. |
+| `--temperature` | `0.7` | Final candidate sampling temperature. |
+| `--timeout` | `180` | LLM request timeout in seconds. |
+| `--test-timeout` | `60` | Timeout in seconds for each buggy/fixed test execution. |
+| `--stage` | `all` | `all`, `generate`, or `evaluate`; evaluation reuses saved candidates. |
+| `--output-root` | `retrieval_results` | Same base folder used for code/test retrieval. |
+| `--preflight-only` | omitted | Check context, configuration, dependencies, clones, and environments. |
+| `--provider`, `--max-tokens` | omitted | Optional generation provider and token limit. |
+
+Examples:
+
+```bash
+bash scripts/launchers/run_brt_swt_verified.sh --preflight-only
+bash scripts/launchers/run_brt_swt_verified.sh --samples 10 --test-timeout 120
+# Evaluate the same ten saved candidates per instance:
+bash scripts/launchers/run_brt_swt_verified.sh --samples 10 --stage evaluate --test-timeout 120
+```
+
+For another configured benchmark/model/repository, call the runner directly:
+
+```bash
+python -m scripts.run_brt --benchmark lite --model <model-id> --repo <owner/repo>
+```
 
 ## Existing launchers
 
