@@ -1,209 +1,209 @@
 {
   "pylint-dev__pylint-4970": [
     {
-      "file": "tests/checkers/unittest_similar.py",
       "name": "test_help",
+      "file": "tests/checkers/unittest_similar.py",
       "code_content": "def test_help() -> None:\n    output = StringIO()\n    with redirect_stdout(output):\n        try:\n            similar.Run([\"--help\"])\n        except SystemExit as ex:\n            assert ex.code == 0\n        else:\n            pytest.fail(\"not system exit\")"
     },
     {
-      "file": "tests/checkers/unittest_similar.py",
       "name": "test_ignore_comments",
+      "file": "tests/checkers/unittest_similar.py",
       "code_content": "def test_ignore_comments() -> None:\n    output = StringIO()\n    with redirect_stdout(output), pytest.raises(SystemExit) as ex:\n        similar.Run([\"--ignore-comments\", SIMILAR1, SIMILAR2])\n    assert ex.value.code == 0\n    assert (\n        output.getvalue().strip()\n        == (\n            f\"\"\"\n10 similar lines in 2 files\n=={SIMILAR1}:[0:11]\n=={SIMILAR2}:[0:11]\n   import one\n   from two import two\n   three\n   four\n   five\n   six\n   # A full line comment\n   seven\n   eight\n   nine\n   ''' ten\nTOTAL lines=62 duplicates=10 percent=16.13\n\"\"\"\n        ).strip()\n    )"
     },
     {
-      "file": "tests/checkers/unittest_similar.py",
       "name": "test_ignore_docstrings",
+      "file": "tests/checkers/unittest_similar.py",
       "code_content": "def test_ignore_docstrings() -> None:\n    output = StringIO()\n    with redirect_stdout(output), pytest.raises(SystemExit) as ex:\n        similar.Run([\"--ignore-docstrings\", SIMILAR1, SIMILAR2])\n    assert ex.value.code == 0\n    assert (\n        output.getvalue().strip()\n        == (\n            f\"\"\"\n5 similar lines in 2 files\n=={SIMILAR1}:[7:15]\n=={SIMILAR2}:[7:15]\n   seven\n   eight\n   nine\n   ''' ten\n   ELEVEN\n   twelve '''\n   thirteen\n   fourteen\n\n5 similar lines in 2 files\n=={SIMILAR1}:[0:5]\n=={SIMILAR2}:[0:5]\n   import one\n   from two import two\n   three\n   four\n   five\nTOTAL lines=62 duplicates=10 percent=16.13\n\"\"\"\n        ).strip()\n    )"
     },
     {
-      "file": "tests/checkers/unittest_similar.py",
       "name": "test_ignore_imports",
+      "file": "tests/checkers/unittest_similar.py",
       "code_content": "def test_ignore_imports() -> None:\n    output = StringIO()\n    with redirect_stdout(output), pytest.raises(SystemExit) as ex:\n        similar.Run([\"--ignore-imports\", SIMILAR1, SIMILAR2])\n    assert ex.value.code == 0\n    assert (\n        output.getvalue().strip()\n        == \"\"\"\nTOTAL lines=62 duplicates=0 percent=0.00\n\"\"\".strip()\n    )"
     },
     {
-      "file": "tests/checkers/unittest_similar.py",
       "name": "test_ignore_multiline_imports",
+      "file": "tests/checkers/unittest_similar.py",
       "code_content": "def test_ignore_multiline_imports() -> None:\n    output = StringIO()\n    with redirect_stdout(output), pytest.raises(SystemExit) as ex:\n        similar.Run([\"--ignore-imports\", MULTILINE, MULTILINE])\n    assert ex.value.code == 0\n    assert (\n        output.getvalue().strip()\n        == \"\"\"\nTOTAL lines=16 duplicates=0 percent=0.00\n\"\"\".strip()\n    )"
     },
     {
-      "file": "tests/checkers/unittest_similar.py",
       "name": "test_ignore_nothing",
+      "file": "tests/checkers/unittest_similar.py",
       "code_content": "def test_ignore_nothing() -> None:\n    output = StringIO()\n    with redirect_stdout(output), pytest.raises(SystemExit) as ex:\n        similar.Run([SIMILAR1, SIMILAR2])\n    assert ex.value.code == 0\n    assert (\n        output.getvalue().strip()\n        == (\n            f\"\"\"\n5 similar lines in 2 files\n=={SIMILAR1}:[0:5]\n=={SIMILAR2}:[0:5]\n   import one\n   from two import two\n   three\n   four\n   five\nTOTAL lines=62 duplicates=5 percent=8.06\n\"\"\"\n        ).strip()\n    )"
     },
     {
-      "file": "tests/checkers/unittest_similar.py",
       "name": "test_ignore_signatures_class_methods_fail",
+      "file": "tests/checkers/unittest_similar.py",
       "code_content": "def test_ignore_signatures_class_methods_fail() -> None:\n    output = StringIO()\n    with redirect_stdout(output), pytest.raises(SystemExit) as ex:\n        similar.Run([SIMILAR_CLS_B, SIMILAR_CLS_A])\n    assert ex.value.code == 0\n    assert (\n        output.getvalue().strip()\n        == (\n            f'''\n15 similar lines in 2 files\n=={SIMILAR_CLS_A}:[1:18]\n=={SIMILAR_CLS_B}:[1:18]\n       def parent_method(\n           self,\n           *,\n           a=\"\",\n           b=None,\n           c=True,\n       ):\n           \"\"\"Overridden method example.\"\"\"\n\n           def _internal_func(\n               arg1: int = 1,\n               arg2: str = \"2\",\n               arg3: int = 3,\n               arg4: bool = True,\n           ):\n               pass\n\n\n7 similar lines in 2 files\n=={SIMILAR_CLS_A}:[20:27]\n=={SIMILAR_CLS_B}:[20:27]\n               self,\n               *,\n               a=None,\n               b=False,\n               c=\"\",\n           ):\n               pass\nTOTAL lines=54 duplicates=22 percent=40.74\n'''\n        ).strip()\n    )"
     },
     {
-      "file": "tests/checkers/unittest_similar.py",
       "name": "test_ignore_signatures_class_methods_pass",
+      "file": "tests/checkers/unittest_similar.py",
       "code_content": "def test_ignore_signatures_class_methods_pass() -> None:\n    output = StringIO()\n    with redirect_stdout(output), pytest.raises(SystemExit) as ex:\n        similar.Run([\"--ignore-signatures\", SIMILAR_CLS_B, SIMILAR_CLS_A])\n    assert ex.value.code == 0\n    assert (\n        output.getvalue().strip()\n        == \"\"\"\nTOTAL lines=54 duplicates=0 percent=0.00\n\"\"\".strip()\n    )"
     },
     {
-      "file": "tests/checkers/unittest_similar.py",
       "name": "test_ignore_signatures_empty_functions_fail",
+      "file": "tests/checkers/unittest_similar.py",
       "code_content": "def test_ignore_signatures_empty_functions_fail() -> None:\n    output = StringIO()\n    with redirect_stdout(output), pytest.raises(SystemExit) as ex:\n        similar.Run([EMPTY_FUNCTION_1, EMPTY_FUNCTION_2])\n    assert ex.value.code == 0\n    assert (\n        output.getvalue().strip()\n        == (\n            f'''\n6 similar lines in 2 files\n=={EMPTY_FUNCTION_1}:[1:7]\n=={EMPTY_FUNCTION_2}:[1:7]\n       arg1: int = 1,\n       arg2: str = \"2\",\n       arg3: int = 3,\n       arg4: bool = True,\n   ) -> None:\n       \"\"\"Valid function definition with docstring only.\"\"\"\nTOTAL lines=14 duplicates=6 percent=42.86\n'''\n        ).strip()\n    )"
     },
     {
-      "file": "tests/checkers/unittest_similar.py",
       "name": "test_ignore_signatures_empty_functions_pass",
+      "file": "tests/checkers/unittest_similar.py",
       "code_content": "def test_ignore_signatures_empty_functions_pass() -> None:\n    output = StringIO()\n    with redirect_stdout(output), pytest.raises(SystemExit) as ex:\n        similar.Run([\"--ignore-signatures\", EMPTY_FUNCTION_1, EMPTY_FUNCTION_2])\n    assert ex.value.code == 0\n    assert (\n        output.getvalue().strip()\n        == \"\"\"\nTOTAL lines=14 duplicates=0 percent=0.00\n\"\"\".strip()\n    )"
     }
   ],
   "pylint-dev__pylint-6386": [
     {
-      "file": "tests/checkers/unittest_refactoring.py",
       "name": "test_issue_5724",
+      "file": "tests/checkers/unittest_refactoring.py",
       "code_content": "@pytest.mark.timeout(60)\ndef test_issue_5724() -> None:\n    \"\"\"Regression test for parsing of pylint disable pragma's.\"\"\"\n    with pytest.raises(SystemExit) as cm:\n        Run(\n            [\n                os.path.join(REGR_DATA, \"issue_5724.py\"),\n                \"--enable=missing-final-newline\",\n            ],\n            reporter=TextReporter(),\n        )\n    assert cm.value.code == 0"
     },
     {
-      "file": "tests/checkers/unittest_refactoring.py",
       "name": "test_process_tokens",
+      "file": "tests/checkers/unittest_refactoring.py",
       "code_content": "@pytest.mark.timeout(8)\ndef test_process_tokens() -> None:\n    with pytest.raises(SystemExit) as cm:\n        Run([os.path.join(REGR_DATA, \"very_long_line.py\")], reporter=TextReporter())\n    assert cm.value.code == 0"
     },
     {
-      "file": "tests/config/test_argparse_config.py",
       "name": "TestArgparseOptionsProviderMixin.test_logger_commandline",
+      "file": "tests/config/test_argparse_config.py",
       "code_content": "class TestArgparseOptionsProviderMixin:\n    @staticmethod\n    def test_logger_commandline() -> None:\n        \"\"\"Check that we parse command-line options for the logging checker correctly.\"\"\"\n        with pytest.raises(SystemExit) as ex:\n            Run([LOGGING_TEST, \"--logging-format-style=new\"])\n        assert ex.value.code == 0"
     },
     {
-      "file": "tests/config/test_argparse_config.py",
       "name": "TestArgparseOptionsProviderMixin.test_logger_rcfile",
+      "file": "tests/config/test_argparse_config.py",
       "code_content": "class TestArgparseOptionsProviderMixin:\n    @staticmethod\n    def test_logger_rcfile() -> None:\n        \"\"\"Check that we parse the rcfile for the logging checker correctly.\"\"\"\n        with pytest.raises(SystemExit) as ex:\n            Run([LOGGING_TEST, f\"--rcfile={LOGGING_TEST.replace('.py', '.rc')}\"])\n        assert ex.value.code == 0"
     },
     {
-      "file": "tests/config/test_argparse_config.py",
       "name": "TestArgparseOptionsProviderMixin.test_logger_without_options",
+      "file": "tests/config/test_argparse_config.py",
       "code_content": "class TestArgparseOptionsProviderMixin:\n    @staticmethod\n    def test_logger_without_options() -> None:\n        \"\"\"Check that we raise messages when we do not supply any options.\"\"\"\n        with pytest.raises(SystemExit) as ex:\n            Run([LOGGING_TEST])\n        assert ex.value.code == 2"
     },
     {
-      "file": "tests/config/test_argparse_config.py",
       "name": "TestDeprecationOptions.test_new_names",
+      "file": "tests/config/test_argparse_config.py",
       "code_content": "class TestDeprecationOptions:\n    @staticmethod\n    def test_new_names() -> None:\n        \"\"\"Check that we correctly emit DeprecationWarnings for deprecated options.\"\"\"\n        with pytest.raises(SystemExit) as ex:\n            with pytest.warns(DeprecationWarning) as records:\n                Run([EMPTY_MODULE, \"--ignore-mixin-members=yes\"])\n            assert len(records) == 1\n            assert \"--ignore-mixin-members has been deprecated\" in records[0]\n        assert ex.value.code == 0"
     },
     {
-      "file": "tests/config/test_argparse_config.py",
       "name": "TestDeprecationOptions.test_old_names",
+      "file": "tests/config/test_argparse_config.py",
       "code_content": "class TestDeprecationOptions:\n    @staticmethod\n    def test_old_names() -> None:\n        \"\"\"Check that we correctly double assign old name options.\"\"\"\n        run = Run([EMPTY_MODULE, \"--ignore=test,test_two\"], exit=False)\n        assert run.linter.config.ignore == [\"test\", \"test_two\"]\n        assert run.linter.config.ignore == run.linter.config.black_list\n        assert run.linter.config.ignore_patterns == [re.compile(\"^\\\\.#\")]\n        assert run.linter.config.ignore_patterns == run.linter.config.black_list_re"
     },
     {
-      "file": "tests/config/test_config.py",
       "name": "test_unknown_confidence",
+      "file": "tests/config/test_config.py",
       "code_content": "def test_unknown_confidence(capsys: CaptureFixture) -> None:\n    \"\"\"Check that we correctly error an unknown confidence value.\"\"\"\n    with pytest.raises(SystemExit):\n        Run([str(EMPTY_MODULE), \"--confidence=UNKNOWN_CONFIG\"], exit=False)\n    output = capsys.readouterr()\n    assert \"argument --confidence: UNKNOWN_CONFIG should be in\" in output.err"
     },
     {
-      "file": "tests/config/test_config.py",
       "name": "test_unknown_message_id",
+      "file": "tests/config/test_config.py",
       "code_content": "def test_unknown_message_id(capsys: CaptureFixture) -> None:\n    \"\"\"Check that we correctly raise a message on an unknown id.\"\"\"\n    Run([str(EMPTY_MODULE), \"--disable=12345\"], exit=False)\n    output = capsys.readouterr()\n    assert \"Command line:1:0: E0012: Bad option value for --disable.\" in output.out"
     },
     {
-      "file": "tests/config/test_config.py",
       "name": "test_unknown_option_name",
+      "file": "tests/config/test_config.py",
       "code_content": "def test_unknown_option_name(capsys: CaptureFixture) -> None:\n    \"\"\"Check that we correctly raise a message on an unknown option.\"\"\"\n    with pytest.raises(_UnrecognizedOptionError):\n        Run([str(EMPTY_MODULE), \"--unknown-option=yes\"], exit=False)\n    output = capsys.readouterr()\n    assert \"E0015: Unrecognized option found: unknown-option=yes\" in output.out"
     }
   ],
   "pylint-dev__pylint-6903": [
     {
-      "file": "tests/config/pylint_config/test_pylint_config_generate.py",
       "name": "test_format_of_output",
+      "file": "tests/config/pylint_config/test_pylint_config_generate.py",
       "code_content": "def test_format_of_output(\n    monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]\n) -> None:\n    \"\"\"Check that we output the correct format.\"\"\"\n    # Monkeypatch everything we don't want to check in this test\n    monkeypatch.setattr(\n        \"pylint.config._pylint_config.utils.get_and_validate_output_file\",\n        lambda: (False, Path()),\n    )\n\n    # Set the answers needed for the input() calls\n    answers = iter([\"T\", \"toml\", \"TOML\", \"I\", \"INI\", \"TOMLINI\", \"exit()\"])\n    monkeypatch.setattr(\"builtins.input\", lambda x: next(answers))\n\n    with warnings.catch_warnings():\n        warnings.filterwarnings(\"ignore\", message=\"NOTE:.*\", category=UserWarning)\n        # Check 'T'\n        Run([\"generate\", \"--interactive\"], exit=False)\n        captured = capsys.readouterr()\n        assert \"[tool.pylint.main]\" in captured.out\n\n        # Check 'toml'\n        Run([\"generate\", \"--interactive\"], exit=False)\n        captured = capsys.readouterr()\n        assert \"[tool.pylint.main]\" in captured.out\n\n        # Check 'TOML'\n        Run([\"generate\", \"--interactive\"], exit=False)\n        captured = capsys.readouterr()\n        assert \"[tool.pylint.main]\" in captured.out\n\n        # Check 'I'\n        Run([\"generate\", \"--interactive\"], exit=False)\n        captured = capsys.readouterr()\n        assert \"[MAIN]\" in captured.out\n\n        # Check 'INI'\n        Run([\"generate\", \"--interactive\"], exit=False)\n        captured = capsys.readouterr()\n        assert \"[MAIN]\" in captured.out\n\n        # Check 'TOMLINI' and then 'exit()'\n        with pytest.raises(SystemExit):\n            Run([\"generate\", \"--interactive\"], exit=False)"
     },
     {
-      "file": "tests/config/pylint_config/test_pylint_config_generate.py",
       "name": "test_generate_interactive_exitcode",
+      "file": "tests/config/pylint_config/test_pylint_config_generate.py",
       "code_content": "def test_generate_interactive_exitcode(monkeypatch: MonkeyPatch) -> None:\n    \"\"\"Check that we exit correctly based on different parameters.\"\"\"\n    # Monkeypatch everything we don't want to check in this test\n    monkeypatch.setattr(\n        \"pylint.config._pylint_config.utils.get_and_validate_format\", lambda: \"toml\"\n    )\n    monkeypatch.setattr(\n        \"pylint.config._pylint_config.utils.get_and_validate_output_file\",\n        lambda: (False, Path()),\n    )\n\n    with warnings.catch_warnings():\n        warnings.filterwarnings(\"ignore\", message=\"NOTE:.*\", category=UserWarning)\n        with pytest.raises(SystemExit) as ex:\n            Run([\"generate\", \"--interactive\"])\n        assert ex.value.code == 0\n\n        Run([\"generate\", \"--interactive\"], exit=False)"
     },
     {
-      "file": "tests/config/pylint_config/test_pylint_config_generate.py",
       "name": "test_writing_to_output_file",
+      "file": "tests/config/pylint_config/test_pylint_config_generate.py",
       "code_content": "def test_writing_to_output_file(\n    monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]\n) -> None:\n    \"\"\"Check that we can write to an output file.\"\"\"\n    # Monkeypatch everything we don't want to check in this test\n    monkeypatch.setattr(\n        \"pylint.config._pylint_config.utils.get_and_validate_format\", lambda: \"toml\"\n    )\n\n    # Set up a temporary file to write to\n    tempfile_name = Path(tempfile.gettempdir()) / \"CONFIG\"\n    if tempfile_name.exists():\n        os.remove(tempfile_name)\n\n    # Set the answers needed for the input() calls\n    answers = iter(\n        [\n            # Don't write to file\n            \"no\",\n            # Write to file\n            \"yes\",\n            str(tempfile_name),\n            # Don't overwrite file\n            \"yes\",\n            str(tempfile_name),\n            \"misspelled-no\",\n            \"no\",\n            # Don't overwrite file with default\n            \"yes\",\n            str(tempfile_name),\n            \"\",\n            # Overwrite file\n            \"yes\",\n            str(tempfile_name),\n            \"yes\",\n        ]\n    )\n    monkeypatch.setattr(\"builtins.input\", lambda x: next(answers))\n\n    with warnings.catch_warnings():\n        warnings.filterwarnings(\"ignore\", message=\"NOTE:.*\", category=UserWarning)\n        # Check no writing to file\n        Run([\"generate\", \"--interactive\"], exit=False)\n        captured = capsys.readouterr()\n        assert \"[tool.pylint.main]\" in captured.out\n\n        # Test writing to file\n        assert not tempfile_name.exists()\n        Run([\"generate\", \"--interactive\"], exit=False)\n        captured = capsys.readouterr()\n        assert tempfile_name.exists()\n\n        last_modified = tempfile_name.stat().st_mtime\n\n        # Test not overwriting file\n        Run([\"generate\", \"--interactive\"], exit=False)\n        captured = capsys.readouterr()\n        assert last_modified == tempfile_name.stat().st_mtime\n\n        # Test not overwriting file with default value\n        Run([\"generate\", \"--interactive\"], exit=False)\n        captured = capsys.readouterr()\n        assert last_modified == tempfile_name.stat().st_mtime\n\n        # Test overwriting\n        Run([\"generate\", \"--interactive\"], exit=False)\n        captured = capsys.readouterr()\n        assert last_modified != tempfile_name.stat().st_mtime"
     },
     {
-      "file": "tests/config/pylint_config/test_pylint_config_help.py",
       "name": "test_pylint_config_main_messages",
+      "file": "tests/config/pylint_config/test_pylint_config_help.py",
       "code_content": "def test_pylint_config_main_messages(capsys: CaptureFixture[str]) -> None:\n    \"\"\"Check that the help messages are displayed correctly.\"\"\"\n    with warnings.catch_warnings():\n        warnings.filterwarnings(\"ignore\", message=\"NOTE:.*\", category=UserWarning)\n        Run([], exit=False)\n        captured = capsys.readouterr()\n        assert captured.out.startswith(\"usage: pylint-config [options]\")\n        assert \"--interactive\" not in captured.out\n\n        Run([\"-h\"], exit=False)\n        captured_two = capsys.readouterr()\n        assert captured_two.out == captured.out\n\n        with pytest.raises(SystemExit):\n            Run([\"generate\", \"-h\"])\n        captured = capsys.readouterr()\n        assert captured.out.startswith(\"usage: pylint-config [options] generate\")\n        assert \"--interactive\" in captured.out\n\n        with pytest.raises(SystemExit) as ex:\n            Run([\"generate\"])\n        captured_two = capsys.readouterr()\n        assert captured_two.out == captured.out\n        # This gets auto-raised by argparse to be 0.\n        assert ex.value.code == 32\n\n        with pytest.raises(SystemExit) as ex:\n            Run([\"-h\"])\n        assert ex.value.code == 32"
     },
     {
-      "file": "tests/config/test_find_default_config_files.py",
       "name": "test_verbose_abbreviation",
+      "file": "tests/config/test_find_default_config_files.py",
       "code_content": "@pytest.mark.usefixtures(\"pop_pylintrc\")\ndef test_verbose_abbreviation(capsys: CaptureFixture) -> None:\n    \"\"\"Test that we correctly handle an abbreviated pre-processable option.\"\"\"\n    with tempdir() as chroot:\n        with fake_home():\n            chroot_path = Path(chroot)\n            testutils.create_files([\"a/b/c/d/__init__.py\"])\n            os.chdir(chroot_path / \"a/b/c\")\n            with pytest.raises(SystemExit):\n                Run([\"--ve\"])\n            out = capsys.readouterr()\n            # This output only exists when launched in verbose mode\n            assert \"No config file found, using default configuration\" in out.err"
     },
     {
-      "file": "tests/config/test_find_default_config_files.py",
       "name": "test_verbose_output_no_config",
+      "file": "tests/config/test_find_default_config_files.py",
       "code_content": "@pytest.mark.usefixtures(\"pop_pylintrc\")\ndef test_verbose_output_no_config(capsys: CaptureFixture) -> None:\n    \"\"\"Test that we print a log message in verbose mode with no file.\"\"\"\n    with tempdir() as chroot:\n        with fake_home():\n            chroot_path = Path(chroot)\n            testutils.create_files([\"a/b/c/d/__init__.py\"])\n            os.chdir(chroot_path / \"a/b/c\")\n            with pytest.raises(SystemExit):\n                Run([\"--verbose\"])\n            out = capsys.readouterr()\n            assert \"No config file found, using default configuration\" in out.err"
     },
     {
-      "file": "tests/config/test_per_directory_config.py",
       "name": "test_fall_back_on_base_config",
+      "file": "tests/config/test_per_directory_config.py",
       "code_content": "def test_fall_back_on_base_config(tmpdir: LocalPath) -> None:\n    \"\"\"Test that we correctly fall back on the base config.\"\"\"\n    # A file under the current dir should fall back to the highest level\n    # For pylint this is ./pylintrc\n    test_file = tmpdir / \"test.py\"\n    runner = Run([__name__], exit=False)\n    assert id(runner.linter.config) == id(runner.linter._base_config)\n\n    # When the file is a directory that does not have any of its parents in\n    # linter._directory_namespaces it should default to the base config\n    with open(test_file, \"w\", encoding=\"utf-8\") as f:\n        f.write(\"1\")\n    Run([str(test_file)], exit=False)\n    assert id(runner.linter.config) == id(runner.linter._base_config)"
     },
     {
-      "file": "tests/checkers/unittest_format.py",
       "name": "test_disable_global_option_end_of_line",
+      "file": "tests/checkers/unittest_format.py",
       "code_content": "def test_disable_global_option_end_of_line() -> None:\n    \"\"\"Test for issue with disabling tokenizer messages\n    that extend beyond the scope of the ast tokens\n    \"\"\"\n    file_ = tempfile.NamedTemporaryFile(\"w\", delete=False)\n    with file_:\n        file_.write(\n            \"\"\"\n1\n    \"\"\"\n        )\n    try:\n        linter = lint.PyLinter()\n        checker = BasicChecker(linter)\n        linter.register_checker(checker)\n        args = linter._arguments_manager._parse_command_line_configuration(\n            [file_.name, \"-d\", \"pointless-statement\"]\n        )\n        myreporter = reporters.CollectingReporter()\n        linter.set_reporter(myreporter)\n        linter.check(args)\n        assert not myreporter.messages\n    finally:\n        os.remove(file_.name)"
     },
     {
-      "file": "tests/checkers/unittest_refactoring.py",
       "name": "test_issue_5724",
+      "file": "tests/checkers/unittest_refactoring.py",
       "code_content": "@pytest.mark.timeout(60)\ndef test_issue_5724() -> None:\n    \"\"\"Regression test for parsing of pylint disable pragma's.\"\"\"\n    with pytest.raises(SystemExit) as cm:\n        Run(\n            [\n                os.path.join(REGR_DATA, \"issue_5724.py\"),\n                \"--enable=missing-final-newline\",\n                \"--disable=C\",\n            ],\n            reporter=TextReporter(),\n        )\n    assert cm.value.code == 0"
     },
     {
-      "file": "tests/checkers/unittest_refactoring.py",
       "name": "test_process_tokens",
+      "file": "tests/checkers/unittest_refactoring.py",
       "code_content": "@pytest.mark.timeout(8)\ndef test_process_tokens() -> None:\n    with pytest.raises(SystemExit) as cm:\n        Run(\n            [os.path.join(REGR_DATA, \"very_long_line.py\"), \"--disable=C\"],\n            reporter=TextReporter(),\n        )\n    assert cm.value.code == 0"
     }
   ],
   "pylint-dev__pylint-7080": [
     {
-      "file": "tests/lint/unittest_expand_modules.py",
       "name": "TestExpandModules.test_expand_modules",
+      "file": "tests/lint/unittest_expand_modules.py",
       "code_content": "class TestExpandModules(CheckerTestCase):\n    @pytest.mark.parametrize(\n        \"files_or_modules,expected\",\n        [\n            ([__file__], [this_file]),\n            (\n                [str(Path(__file__).parent)],\n                [\n                    init_of_package,\n                    test_caching,\n                    test_pylinter,\n                    test_utils,\n                    this_file_from_init,\n                    unittest_lint,\n                ],\n            ),\n        ],\n    )\n    @set_config(ignore_paths=\"\")\n    def test_expand_modules(self, files_or_modules, expected):\n        \"\"\"Test expand_modules with the default value of ignore-paths.\"\"\"\n        ignore_list, ignore_list_re = [], []\n        modules, errors = expand_modules(\n            files_or_modules,\n            ignore_list,\n            ignore_list_re,\n            self.linter.config.ignore_paths,\n        )\n        modules.sort(key=lambda d: d[\"name\"])\n        assert modules == expected\n        assert not errors"
     },
     {
-      "file": "tests/lint/unittest_expand_modules.py",
       "name": "TestExpandModules.test_expand_modules_with_ignore",
+      "file": "tests/lint/unittest_expand_modules.py",
       "code_content": "class TestExpandModules(CheckerTestCase):\n    @pytest.mark.parametrize(\n        \"files_or_modules,expected\",\n        [\n            ([__file__], []),\n            (\n                [str(Path(__file__).parent)],\n                [\n                    init_of_package,\n                ],\n            ),\n        ],\n    )\n    @set_config(ignore_paths=\".*/lint/.*\")\n    def test_expand_modules_with_ignore(self, files_or_modules, expected):\n        \"\"\"Test expand_modules with a non-default value of ignore-paths.\"\"\"\n        ignore_list, ignore_list_re = [], []\n        modules, errors = expand_modules(\n            files_or_modules,\n            ignore_list,\n            ignore_list_re,\n            self.linter.config.ignore_paths,\n        )\n        modules.sort(key=lambda d: d[\"name\"])\n        assert modules == expected\n        assert not errors"
     },
     {
-      "file": "tests/lint/unittest_lint.py",
       "name": "test_recursive_ignore",
+      "file": "tests/lint/unittest_lint.py",
       "code_content": "@pytest.mark.parametrize(\n    \"ignore_parameter,ignore_parameter_value\",\n    [\n        (\"--ignore\", \"failing.py\"),\n        (\"--ignore\", \"ignored_subdirectory\"),\n        (\"--ignore-patterns\", \"failing.*\"),\n        (\"--ignore-patterns\", \"ignored_*\"),\n        (\"--ignore-paths\", \".*directory/ignored.*\"),\n        (\"--ignore-paths\", \".*ignored.*/failing.*\"),\n    ],\n)\ndef test_recursive_ignore(ignore_parameter, ignore_parameter_value) -> None:\n    run = Run(\n        [\n            \"--recursive\",\n            \"y\",\n            ignore_parameter,\n            ignore_parameter_value,\n            join(REGRTEST_DATA_DIR, \"directory\"),\n        ],\n        exit=False,\n    )\n\n    linted_files = run.linter._iterate_file_descrs(\n        tuple(run.linter._discover_files([join(REGRTEST_DATA_DIR, \"directory\")]))\n    )\n    linted_file_paths = [file_item.filepath for file_item in linted_files]\n\n    ignored_file = os.path.abspath(\n        join(REGRTEST_DATA_DIR, \"directory\", \"ignored_subdirectory\", \"failing.py\")\n    )\n    assert ignored_file not in linted_file_paths\n\n    for regrtest_data_module in (\n        (\"directory\", \"subdirectory\", \"subsubdirectory\", \"module.py\"),\n        (\"directory\", \"subdirectory\", \"module.py\"),\n        (\"directory\", \"package\", \"module.py\"),\n        (\"directory\", \"package\", \"subpackage\", \"module.py\"),\n    ):\n        module = os.path.abspath(join(REGRTEST_DATA_DIR, *regrtest_data_module))\n    assert module in linted_file_paths"
     },
     {
-      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j1",
+      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "code_content": "@pytest.mark.benchmark(\n    group=\"baseline\",\n)\nclass TestEstablishBaselineBenchmarks:\n    def test_baseline_benchmark_j1(self, benchmark):\n        \"\"\"Establish a baseline of pylint performance with no work.\n\n        We will add extra Checkers in other benchmarks.\n\n        Because this is so simple, if this regresses something very serious has happened\n        \"\"\"\n        linter = PyLinter(reporter=Reporter())\n        fileinfos = [self.empty_filepath]  # Single file to end-to-end the system\n        assert linter.config.jobs == 1\n        assert len(linter._checkers) == 1, \"Should just have 'main'\"\n        benchmark(linter.check, fileinfos)\n        assert (\n            linter.msg_status == 0\n        ), f\"Expected no errors to be thrown: {pprint.pformat(linter.reporter.messages)}\""
     },
     {
-      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j1_all_checks_lots_of_files",
+      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "code_content": "@pytest.mark.benchmark(\n    group=\"baseline\",\n)\nclass TestEstablishBaselineBenchmarks:\n    def test_baseline_benchmark_j1_all_checks_lots_of_files(self, benchmark):\n        \"\"\"Runs lots of files, with -j1, against all plug-ins.\n\n        ... that's the intent at least.\n        \"\"\"\n        if benchmark.disabled:\n            benchmark(print, \"skipping, only benchmark large file counts\")\n            return  # _only_ run this test is profiling\n        linter = PyLinter()\n\n        # Register all checkers/extensions and enable them\n        with patch(\"os.listdir\", return_value=[\"pylint\", \"tests\"]):\n            register_plugins(\n                linter,\n                os.path.abspath(os.path.join(os.path.dirname(__file__), \"..\", \"..\")),\n            )\n        linter.load_default_plugins()\n        linter.enable(\"all\")\n\n        # Just 1 file, but all Checkers/Extensions\n        fileinfos = [self.empty_filepath for _ in range(self.lot_of_files)]\n\n        assert linter.config.jobs == 1\n        print(\"len(linter._checkers)\", len(linter._checkers))\n        assert len(linter._checkers) > 1, \"Should have more than 'main'\"\n        benchmark(linter.check, fileinfos)"
     },
     {
-      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j1_single_working_checker",
+      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "code_content": "@pytest.mark.benchmark(\n    group=\"baseline\",\n)\nclass TestEstablishBaselineBenchmarks:\n    def test_baseline_benchmark_j1_single_working_checker(self, benchmark):\n        \"\"\"Establish a baseline of single-worker performance for PyLinter.\n\n        Here we mimic a single Checker that does some work so that we can see the\n        impact of running a simple system with -j1 against the same system with -j2.\n\n        We expect this benchmark to take very close to\n        `numfiles*SleepingChecker.sleep_duration`\n        \"\"\"\n        if benchmark.disabled:\n            benchmark(print, \"skipping, do not want to sleep in main tests\")\n            return  # _only_ run this test is profiling\n        linter = PyLinter(reporter=Reporter())\n        linter.register_checker(SleepingChecker(linter))\n\n        # Check the same number of files as\n        # `test_baseline_benchmark_j2_single_working_checker`\n        fileinfos = [self.empty_filepath for _ in range(2)]\n\n        assert linter.config.jobs == 1\n        assert len(linter._checkers) == 2, \"Should have 'main' and 'sleeper'\"\n        benchmark(linter.check, fileinfos)\n        assert (\n            linter.msg_status == 0\n        ), f\"Expected no errors to be thrown: {pprint.pformat(linter.reporter.messages)}\""
     },
     {
-      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j2",
+      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "code_content": "@pytest.mark.benchmark(\n    group=\"baseline\",\n)\nclass TestEstablishBaselineBenchmarks:\n    @pytest.mark.needs_two_cores\n    def test_baseline_benchmark_j2(self, benchmark):\n        \"\"\"Establish a baseline of pylint performance with no work across threads.\n\n        Same as `test_baseline_benchmark_j1` but we use -j2 with 2 fake files to\n        ensure end-to-end-system invoked.\n\n        Because this is also so simple, if this regresses something very serious has\n        happened.\n        \"\"\"\n        linter = PyLinter(reporter=Reporter())\n        linter.config.jobs = 2\n\n        # Create file per worker, using all workers\n        fileinfos = [self.empty_filepath for _ in range(linter.config.jobs)]\n\n        assert linter.config.jobs == 2\n        assert len(linter._checkers) == 1, \"Should have 'main'\"\n        benchmark(linter.check, fileinfos)\n        assert (\n            linter.msg_status == 0\n        ), f\"Expected no errors to be thrown: {pprint.pformat(linter.reporter.messages)}\""
     },
     {
-      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j2_single_working_checker",
+      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "code_content": "@pytest.mark.benchmark(\n    group=\"baseline\",\n)\nclass TestEstablishBaselineBenchmarks:\n    @pytest.mark.needs_two_cores\n    def test_baseline_benchmark_j2_single_working_checker(self, benchmark):\n        \"\"\"Establishes baseline of multi-worker performance for PyLinter/check_parallel.\n\n        We expect this benchmark to take less time that test_baseline_benchmark_j1,\n        `error_margin*(1/J)*(numfiles*SleepingChecker.sleep_duration)`\n\n        Because of the cost of the framework and system the performance difference will\n        *not* be 1/2 of -j1 versions.\n        \"\"\"\n        if benchmark.disabled:\n            benchmark(print, \"skipping, do not want to sleep in main tests\")\n            return  # _only_ run this test is profiling\n        linter = PyLinter(reporter=Reporter())\n        linter.config.jobs = 2\n        linter.register_checker(SleepingChecker(linter))\n\n        # Check the same number of files as\n        # `test_baseline_benchmark_j1_single_working_checker`\n        fileinfos = [self.empty_filepath for _ in range(2)]\n\n        assert linter.config.jobs == 2\n        assert len(linter._checkers) == 2, \"Should have 'main' and 'sleeper'\"\n        benchmark(linter.check, fileinfos)\n        assert (\n            linter.msg_status == 0\n        ), f\"Expected no errors to be thrown: {pprint.pformat(linter.reporter.messages)}\""
     },
     {
-      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "name": "TestEstablishBaselineBenchmarks.test_baseline_lots_of_files_j1",
+      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "code_content": "@pytest.mark.benchmark(\n    group=\"baseline\",\n)\nclass TestEstablishBaselineBenchmarks:\n    def test_baseline_lots_of_files_j1(self, benchmark):\n        \"\"\"Establish a baseline with only 'main' checker being run in -j1.\n\n        We do not register any checkers except the default 'main', so the cost is just\n        that of the system with a lot of files registered\n        \"\"\"\n        if benchmark.disabled:\n            benchmark(print, \"skipping, only benchmark large file counts\")\n            return  # _only_ run this test is profiling\n        linter = PyLinter(reporter=Reporter())\n        linter.config.jobs = 1\n        fileinfos = [self.empty_filepath for _ in range(self.lot_of_files)]\n        assert linter.config.jobs == 1\n        assert len(linter._checkers) == 1, \"Should have 'main'\"\n        benchmark(linter.check, fileinfos)\n        assert (\n            linter.msg_status == 0\n        ), f\"Expected no errors to be thrown: {pprint.pformat(linter.reporter.messages)}\""
     },
     {
-      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "name": "TestEstablishBaselineBenchmarks.test_baseline_lots_of_files_j1_empty_checker",
+      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "code_content": "@pytest.mark.benchmark(\n    group=\"baseline\",\n)\nclass TestEstablishBaselineBenchmarks:\n    def test_baseline_lots_of_files_j1_empty_checker(self, benchmark):\n        \"\"\"Baselines pylint for a single extra checker being run in -j1, for N-files.\n\n        We use a checker that does no work, so the cost is just that of the system at\n        scale\n        \"\"\"\n        if benchmark.disabled:\n            benchmark(print, \"skipping, only benchmark large file counts\")\n            return  # _only_ run this test is profiling\n        linter = PyLinter(reporter=Reporter())\n        linter.config.jobs = 1\n        linter.register_checker(NoWorkChecker(linter))\n        fileinfos = [self.empty_filepath for _ in range(self.lot_of_files)]\n        assert linter.config.jobs == 1\n        assert len(linter._checkers) == 2, \"Should have 'main' and 'sleeper'\"\n        benchmark(linter.check, fileinfos)\n        assert (\n            linter.msg_status == 0\n        ), f\"Expected no errors to be thrown: {pprint.pformat(linter.reporter.messages)}\""
     }
   ],
@@ -221,48 +221,48 @@
       "code_content": "def test_csv_regex_error(capsys: CaptureFixture) -> None:\n    \"\"\"Check that we correctly error when an option is passed and one\n    of its comma-separated regular expressions values is an invalid regular expression.\n    \"\"\"\n    with pytest.raises(SystemExit):\n        Run(\n            [str(EMPTY_MODULE), r\"--bad-names-rgx=(foo{1,3})\"],\n            exit=False,\n        )\n    output = capsys.readouterr()\n    assert (\n        r\"Error in provided regular expression: (foo{1 beginning at index 0: missing ), unterminated subpattern\"\n        in output.err\n    )"
     },
     {
-      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j1_all_checks_lots_of_files",
+      "file": "tests/benchmark/test_baseline_benchmarks.py",
       "code_content": "@pytest.mark.benchmark(\n    group=\"baseline\",\n)\nclass TestEstablishBaselineBenchmarks:\n    def test_baseline_benchmark_j1_all_checks_lots_of_files(\n        self, benchmark: BenchmarkFixture\n    ) -> None:\n        \"\"\"Runs lots of files, with -j1, against all plug-ins.\n\n        ... that's the intent at least.\n        \"\"\"\n        if benchmark.disabled:\n            benchmark(print, \"skipping, only benchmark large file counts\")\n            return  # _only_ run this test is profiling\n        linter = PyLinter()\n\n        # Register all checkers/extensions and enable them\n        with patch(\"os.listdir\", return_value=[\"pylint\", \"tests\"]):\n            register_plugins(\n                linter,\n                os.path.abspath(os.path.join(os.path.dirname(__file__), \"..\", \"..\")),\n            )\n        linter.load_default_plugins()\n        linter.enable(\"all\")\n\n        # Just 1 file, but all Checkers/Extensions\n        fileinfos = [self.empty_filepath for _ in range(self.lot_of_files)]\n\n        assert linter.config.jobs == 1\n        print(\"len(linter._checkers)\", len(linter._checkers))\n        assert len(linter._checkers) > 1, \"Should have more than 'main'\"\n        benchmark(linter.check, fileinfos)"
     },
     {
-      "file": "tests/checkers/unittest_format.py",
       "name": "test_disable_global_option_end_of_line",
+      "file": "tests/checkers/unittest_format.py",
       "code_content": "def test_disable_global_option_end_of_line() -> None:\n    \"\"\"Test for issue with disabling tokenizer messages\n    that extend beyond the scope of the ast tokens\n    \"\"\"\n    file_ = tempfile.NamedTemporaryFile(\"w\", delete=False)\n    with file_:\n        file_.write(\n            \"\"\"\n1\n    \"\"\"\n        )\n    # pylint: disable = too-many-try-statements\n    try:\n        linter = lint.PyLinter()\n        checker = BasicChecker(linter)\n        linter.register_checker(checker)\n        args = linter._arguments_manager._parse_command_line_configuration(\n            [file_.name, \"-d\", \"pointless-statement\"]\n        )\n        myreporter = reporters.CollectingReporter()\n        linter.set_reporter(myreporter)\n        linter.check(args)\n        assert not myreporter.messages\n    finally:\n        os.remove(file_.name)"
     },
     {
-      "file": "tests/reporters/unittest_reporting.py",
       "name": "test_multi_format_output",
+      "file": "tests/reporters/unittest_reporting.py",
       "code_content": "def test_multi_format_output(tmp_path: Path) -> None:\n    text = StringIO(newline=None)\n    json = tmp_path / \"somefile.json\"\n\n    source_file = tmp_path / \"somemodule.py\"\n    source_file.write_text('NOT_EMPTY = \"This module is not empty\"\\n')\n    escaped_source_file = dumps(str(source_file))\n\n    nop_format = NopReporter.__module__ + \".\" + NopReporter.__name__\n    formats = \",\".join([\"json:\" + str(json), \"text\", nop_format])\n\n    with redirect_stdout(text):\n        linter = PyLinter()\n        linter.load_default_plugins()\n        linter.set_option(\"persistent\", False)\n        linter.set_option(\"reports\", True)\n        linter.set_option(\"score\", True)\n        linter.set_option(\"score\", True)\n        linter.set_option(\"output-format\", formats)\n\n        assert linter.reporter.linter is linter\n        with pytest.raises(NotImplementedError):\n            linter.reporter.out = text\n\n        linter.open()\n        linter.check_single_file_item(\n            FileItem(\"somemodule\", str(source_file), \"somemodule\")\n        )\n        linter.add_message(\"line-too-long\", line=1, args=(1, 2))\n        linter.generate_reports()\n        linter.reporter.writeln(\"direct output\")\n\n        # Ensure the output files are flushed and closed\n        assert isinstance(linter.reporter, MultiReporter)\n        linter.reporter.close_output_files()\n        del linter.reporter\n\n    with open(json, encoding=\"utf-8\") as f:\n        assert (\n            f.read() == \"[\\n\"\n            \"    {\\n\"\n            '        \"type\": \"convention\",\\n'\n            '        \"module\": \"somemodule\",\\n'\n            '        \"obj\": \"\",\\n'\n            '        \"line\": 1,\\n'\n            '        \"column\": 0,\\n'\n            '        \"endLine\": null,\\n'\n            '        \"endColumn\": null,\\n'\n            f'        \"path\": {escaped_source_file},\\n'\n            '        \"symbol\": \"missing-module-docstring\",\\n'\n            '        \"message\": \"Missing module docstring\",\\n'\n            '        \"message-id\": \"C0114\"\\n'\n            \"    },\\n\"\n            \"    {\\n\"\n            '        \"type\": \"convention\",\\n'\n            '        \"module\": \"somemodule\",\\n'\n            '        \"obj\": \"\",\\n'\n            '        \"line\": 1,\\n'\n            '        \"column\": 0,\\n'\n            '        \"endLine\": null,\\n'\n            '        \"endColumn\": null,\\n'\n            f'        \"path\": {escaped_source_file},\\n'\n            '        \"symbol\": \"line-too-long\",\\n'\n            '        \"message\": \"Line too long (1/2)\",\\n'\n            '        \"message-id\": \"C0301\"\\n'\n            \"    }\\n\"\n            \"]\\n\"\n            \"direct output\\n\"\n        )\n\n    assert (\n        text.getvalue() == \"A NopReporter was initialized.\\n\"\n        \"************* Module somemodule\\n\"\n        f\"{source_file}:1:0: C0114: Missing module docstring (missing-module-docstring)\\n\"\n        f\"{source_file}:1:0: C0301: Line too long (1/2) (line-too-long)\\n\"\n        \"\\n\"\n        \"\\n\"\n        \"Report\\n\"\n        \"======\\n\"\n        \"1 statements analysed.\\n\"\n        \"\\n\"\n        \"Statistics by type\\n\"\n        \"------------------\\n\"\n        \"\\n\"\n        \"+---------+-------+-----------+-----------+------------+---------+\\n\"\n        \"|type     |number |old number |difference |%documented |%badname |\\n\"\n        \"+=========+=======+===========+===========+============+=========+\\n\"\n        \"|module   |1      |NC         |NC         |0.00        |0.00     |\\n\"\n        \"+---------+-------+-----------+-----------+------------+---------+\\n\"\n        \"|class    |0      |NC         |NC         |0           |0        |\\n\"\n        \"+---------+-------+-----------+-----------+------------+---------+\\n\"\n        \"|method   |0      |NC         |NC         |0           |0        |\\n\"\n        \"+---------+-------+-----------+-----------+------------+---------+\\n\"\n        \"|function |0      |NC         |NC         |0           |0        |\\n\"\n        \"+---------+-------+-----------+-----------+------------+---------+\\n\"\n        \"\\n\"\n        \"\\n\"\n        \"\\n\"\n        \"3 lines have been analyzed\\n\"\n        \"\\n\"\n        \"Raw metrics\\n\"\n        \"-----------\\n\"\n        \"\\n\"\n        \"+----------+-------+------+---------+-----------+\\n\"\n        \"|type      |number |%     |previous |difference |\\n\"\n        \"+==========+=======+======+=========+===========+\\n\"\n        \"|code      |2      |66.67 |NC       |NC         |\\n\"\n        \"+----------+-------+------+---------+-----------+\\n\"\n        \"|docstring |0      |0.00  |NC       |NC         |\\n\"\n        \"+----------+-------+------+---------+-----------+\\n\"\n        \"|comment   |0      |0.00  |NC       |NC         |\\n\"\n        \"+----------+-------+------+---------+-----------+\\n\"\n        \"|empty     |1      |33.33 |NC       |NC         |\\n\"\n        \"+----------+-------+------+---------+-----------+\\n\"\n        \"\\n\"\n        \"\\n\"\n        \"\\n\"\n        \"Duplication\\n\"\n        \"-----------\\n\"\n        \"\\n\"\n        \"+-------------------------+------+---------+-----------+\\n\"\n        \"|                         |now   |previous |difference |\\n\"\n        \"+=========================+======+=========+===========+\\n\"\n        \"|nb duplicated lines      |0     |NC       |NC         |\\n\"\n        \"+-------------------------+------+---------+-----------+\\n\"\n        \"|percent duplicated lines |0.000 |NC       |NC         |\\n\"\n        \"+-------------------------+------+---------+-----------+\\n\"\n        \"\\n\"\n        \"\\n\"\n        \"\\n\"\n        \"Messages by category\\n\"\n        \"--------------------\\n\"\n        \"\\n\"\n        \"+-----------+-------+---------+-----------+\\n\"\n        \"|type       |number |previous |difference |\\n\"\n        \"+===========+=======+=========+===========+\\n\"\n        \"|convention |2      |NC       |NC         |\\n\"\n        \"+-----------+-------+---------+-----------+\\n\"\n        \"|refactor   |0      |NC       |NC         |\\n\"\n        \"+-----------+-------+---------+-----------+\\n\"\n        \"|warning    |0      |NC       |NC         |\\n\"\n        \"+-----------+-------+---------+-----------+\\n\"\n        \"|error      |0      |NC       |NC         |\\n\"\n        \"+-----------+-------+---------+-----------+\\n\"\n        \"\\n\"\n        \"\\n\"\n        \"\\n\"\n        \"Messages\\n\"\n        \"--------\\n\"\n        \"\\n\"\n        \"+-------------------------+------------+\\n\"\n        \"|message id               |occurrences |\\n\"\n        \"+=========================+============+\\n\"\n        \"|missing-module-docstring |1           |\\n\"\n        \"+-------------------------+------------+\\n\"\n        \"|line-too-long            |1           |\\n\"\n        \"+-------------------------+------------+\\n\"\n        \"\\n\"\n        \"\\n\"\n        \"\\n\"\n        \"\\n\"\n        \"-----------------------------------\\n\"\n        \"Your code has been rated at 0.00/10\\n\"\n        \"\\n\"\n        \"direct output\\n\"\n    )"
     },
     {
-      "file": "tests/reporters/unittest_reporting.py",
       "name": "test_parseable_output_regression",
+      "file": "tests/reporters/unittest_reporting.py",
       "code_content": "def test_parseable_output_regression() -> None:\n    output = StringIO()\n    with warnings.catch_warnings(record=True):\n        warnings.simplefilter(\"ignore\", category=DeprecationWarning)\n        linter = PyLinter(reporter=ParseableTextReporter())\n\n    checkers.initialize(linter)\n    linter.config.persistent = 0\n    linter.reporter.out = output\n    linter.set_option(\"output-format\", \"parseable\")\n    linter.open()\n    linter.set_current_module(\"0123\")\n    linter.add_message(\"line-too-long\", line=1, args=(1, 2))\n    assert (\n        output.getvalue() == \"************* Module 0123\\n\"\n        \"0123:1: [C0301(line-too-long), ] \"\n        \"Line too long (1/2)\\n\"\n    )"
     },
     {
-      "file": "tests/test_check_parallel.py",
       "name": "TestCheckParallel.test_compare_workers_to_single_proc",
+      "file": "tests/test_check_parallel.py",
       "code_content": "class TestCheckParallel:\n    @pytest.mark.needs_two_cores\n    @pytest.mark.parametrize(\n        \"num_files,num_jobs,num_checkers\",\n        [\n            (1, 2, 1),\n            (1, 2, 2),\n            (1, 2, 3),\n            (2, 2, 1),\n            (2, 2, 2),\n            (2, 2, 3),\n            (3, 2, 1),\n            (3, 2, 2),\n            (3, 2, 3),\n            (3, 1, 1),\n            (3, 1, 2),\n            (3, 1, 3),\n            (10, 2, 1),\n            (10, 2, 2),\n            (10, 2, 3),\n        ],\n    )\n    def test_compare_workers_to_single_proc(\n        self, num_files: int, num_jobs: int, num_checkers: int\n    ) -> None:\n        \"\"\"Compares the 3 key parameters for check_parallel() produces the same results.\n\n        The intent here is to ensure that the check_parallel() operates on each file,\n        without ordering issues, irrespective of the number of workers used and the\n        number of checkers applied.\n\n        This test becomes more important if we want to change how we parameterize the\n        checkers, for example if we aim to batch the files across jobs.\n        \"\"\"\n\n        # define the stats we expect to get back from the runs, these should only vary\n        # with the number of files.\n        expected_stats = LinterStats(\n            by_module={\n                # pylint: disable-next=consider-using-f-string\n                \"--test-file_data-name-%d--\"\n                % idx: ModuleStats(\n                    convention=0,\n                    error=0,\n                    fatal=0,\n                    info=0,\n                    refactor=0,\n                    statement=18,\n                    warning=0,\n                )\n                for idx in range(num_files)\n            }\n        )\n        expected_stats.by_msg = {}\n        expected_stats.convention = 0\n        expected_stats.error = 0\n        expected_stats.fatal = 0\n        expected_stats.info = 0\n        expected_stats.refactor = 0\n        expected_stats.statement = 18 * num_files\n        expected_stats.warning = 0\n\n        file_infos = _gen_file_datas(num_files)\n\n        # Loop for single-proc and mult-proc, so we can ensure the same linter-config\n        for do_single_proc in range(2):\n            linter = PyLinter(reporter=Reporter())\n\n            # Assign between 1 and 3 checkers to the linter, they should not change the\n            # results of the lint\n            linter.register_checker(SequentialTestChecker(linter))\n            if num_checkers > 1:\n                linter.register_checker(ExtraSequentialTestChecker(linter))\n            if num_checkers > 2:\n                linter.register_checker(ThirdSequentialTestChecker(linter))\n\n            if do_single_proc:\n                # establish the baseline\n                assert (\n                    linter.config.jobs == 1\n                ), \"jobs>1 are ignored when calling _lint_files\"\n                ast_mapping = linter._get_asts(iter(file_infos), None)\n                with linter._astroid_module_checker() as check_astroid_module:\n                    linter._lint_files(ast_mapping, check_astroid_module)\n                assert linter.msg_status == 0, \"We should not fail the lint\"\n                stats_single_proc = linter.stats\n            else:\n                check_parallel(\n                    linter,\n                    jobs=num_jobs,\n                    files=file_infos,\n                )\n                stats_check_parallel = linter.stats\n                assert linter.msg_status == 0, \"We should not fail the lint\"\n\n        assert str(stats_single_proc) == str(\n            stats_check_parallel\n        ), \"Single-proc and check_parallel() should return the same thing\"\n        assert str(stats_check_parallel) == str(\n            expected_stats\n        ), \"The lint is returning unexpected results, has something changed?\""
     },
     {
-      "file": "tests/test_check_parallel.py",
       "name": "TestCheckParallel.test_map_reduce",
+      "file": "tests/test_check_parallel.py",
       "code_content": "class TestCheckParallel:\n    @pytest.mark.needs_two_cores\n    @pytest.mark.parametrize(\n        \"num_files,num_jobs,num_checkers\",\n        [\n            (2, 2, 1),\n            (2, 2, 2),\n            (2, 2, 3),\n            (3, 2, 1),\n            (3, 2, 2),\n            (3, 2, 3),\n            (3, 1, 1),\n            (3, 1, 2),\n            (3, 1, 3),\n            (10, 2, 1),\n            (10, 2, 2),\n            (10, 2, 3),\n        ],\n    )\n    def test_map_reduce(self, num_files: int, num_jobs: int, num_checkers: int) -> None:\n        \"\"\"Compares the 3 key parameters for check_parallel() produces the same results.\n\n        The intent here is to validate the reduce step: no stats should be lost.\n\n        Checks regression of https://github.com/pylint-dev/pylint/issues/4118\n        \"\"\"\n\n        # define the stats we expect to get back from the runs, these should only vary\n        # with the number of files.\n        file_infos = _gen_file_datas(num_files)\n\n        # Loop for single-proc and mult-proc, so we can ensure the same linter-config\n        for do_single_proc in range(2):\n            linter = PyLinter(reporter=Reporter())\n\n            # Assign between 1 and 3 checkers to the linter, they should not change the\n            # results of the lint\n            linter.register_checker(ParallelTestChecker(linter))\n            if num_checkers > 1:\n                linter.register_checker(ExtraParallelTestChecker(linter))\n            if num_checkers > 2:\n                linter.register_checker(ThirdParallelTestChecker(linter))\n\n            if do_single_proc:\n                # establish the baseline\n                assert (\n                    linter.config.jobs == 1\n                ), \"jobs>1 are ignored when calling _lint_files\"\n                ast_mapping = linter._get_asts(iter(file_infos), None)\n                with linter._astroid_module_checker() as check_astroid_module:\n                    linter._lint_files(ast_mapping, check_astroid_module)\n                stats_single_proc = linter.stats\n            else:\n                check_parallel(\n                    linter,\n                    jobs=num_jobs,\n                    files=file_infos,\n                )\n                stats_check_parallel = linter.stats\n        assert str(stats_single_proc.by_msg) == str(\n            stats_check_parallel.by_msg\n        ), \"Single-proc and check_parallel() should return the same thing\""
     },
     {
-      "file": "tests/test_check_parallel.py",
       "name": "TestCheckParallelFramework.test_linter_with_unpickleable_plugins_is_pickleable",
+      "file": "tests/test_check_parallel.py",
       "code_content": "class TestCheckParallelFramework:\n    def test_linter_with_unpickleable_plugins_is_pickleable(self) -> None:\n        \"\"\"The linter needs to be pickle-able in order to be passed between workers\"\"\"\n        linter = PyLinter(reporter=Reporter())\n        # We load an extension that we know is not pickle-safe\n        linter.load_plugin_modules([\"pylint.extensions.overlapping_exceptions\"])\n        try:\n            dill.dumps(linter)\n            raise AssertionError(\n                \"Plugins loaded were pickle-safe! This test needs altering\"\n            )\n        except (KeyError, TypeError, PickleError, NotImplementedError):\n            pass\n\n        # And expect this call to make it pickle-able\n        linter.load_plugin_configuration()\n        try:\n            dill.dumps(linter)\n        except KeyError as exc:\n            raise AssertionError(\n                \"Cannot pickle linter when using non-pickleable plugin\"\n            ) from exc"
     },
     {
-      "file": "tests/test_check_parallel.py",
       "name": "TestCheckParallelFramework.test_worker_initialize",
+      "file": "tests/test_check_parallel.py",
       "code_content": "class TestCheckParallelFramework:\n    def test_worker_initialize(self) -> None:\n        linter = PyLinter(reporter=Reporter())\n        worker_initialize(linter=dill.dumps(linter))\n        assert isinstance(pylint.lint.parallel._worker_linter, type(linter))"
     },
     {
-      "file": "tests/test_pylint_runners.py",
       "name": "test_runner",
+      "file": "tests/test_pylint_runners.py",
       "code_content": "@pytest.mark.parametrize(\"runner\", [run_pylint, run_pyreverse, run_symilar])\ndef test_runner(runner: _RunCallable, tmp_path: pathlib.Path) -> None:\n    filepath = os.path.abspath(__file__)\n    testargs = [\"\", filepath]\n    with _test_cwd(tmp_path):\n        with patch.object(sys, \"argv\", testargs):\n            with pytest.raises(SystemExit) as err:\n                runner()\n            assert err.value.code == 0"
     }
   ]

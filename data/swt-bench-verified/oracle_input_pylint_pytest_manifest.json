@@ -1,0 +1,202 @@
+{
+  "source_csv": "data\\swt-bench-verified\\test.csv",
+  "source_csv_sha256": "96e866b437896f991d60a0a09f5d3477034454a4843d52aa42d4c8efeb61ec7e",
+  "prepared_csv": "data\\swt-bench-verified\\oracle_input_pylint_pytest.csv",
+  "reference_dataset": "SWE-bench/SWE-bench_Verified",
+  "reference_url": "https://huggingface.co/datasets/SWE-bench/SWE-bench_Verified",
+  "instances": 21,
+  "swt_test_patches_preserved": true,
+  "base_commits_verified": true,
+  "repair": "All 21 SWT production patches equal the upstream patch with the first and last lines removed; restore those exact upstream lines.",
+  "records": [
+    {
+      "instance_id": "pylint-dev__pylint-4970",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "40cc2ffd7887959157aaf469e09585ec2be7f528",
+      "restored_first_line": "diff --git a/pylint/checkers/similar.py b/pylint/checkers/similar.py",
+      "restored_last_line": "     def _compute_sims(self) -> List[Tuple[int, Set[LinesChunkLimits_T]]]:",
+      "original_patch_sha256": "ba105ed49c0e1c92cbcd807163fd74ef3e54349f3013420d09dae0fc970cec74",
+      "complete_patch_sha256": "7eb3a09727133387bf81fa3a1596746a2dcca2c0c9eba95caaa69b65d619dccd"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-6386",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "754b487f4d892e3d4872b6fc7468a71db4e31c13",
+      "restored_first_line": "diff --git a/pylint/config/argument.py b/pylint/config/argument.py",
+      "restored_last_line": "         (",
+      "original_patch_sha256": "479db9ffa9f73081f3c973248dfc51c8c303795ef0c108fb89cdc7cd8a51ceb4",
+      "complete_patch_sha256": "9f82c0b5df51c65fbbe78c3f24bda13c07571ab541c2e50d0ee15a9aabbeef45"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-6903",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "ca80f03a43bc39e4cc2c67dc99817b3c9f13b8a6",
+      "restored_first_line": "diff --git a/pylint/lint/run.py b/pylint/lint/run.py",
+      "restored_last_line": " ",
+      "original_patch_sha256": "664a4cfc041fb3c6bddd68f2aac7a9729292fae21af5277849373b45b52c59fd",
+      "complete_patch_sha256": "4b0aa53db6637dcaab2ff2373a8ebf3495df12181640b7dd38e5bb19c0e9fbcd"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-7080",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "3c5eca2ded3dd2b59ebaf23eb289453b5d2930f0",
+      "restored_first_line": "diff --git a/pylint/lint/expand_modules.py b/pylint/lint/expand_modules.py",
+      "restored_last_line": "         basename in ignore_list",
+      "original_patch_sha256": "d8dd34b07a0ca7137117962c1d41410577ebdc403a55576b490efadf198cb4a3",
+      "complete_patch_sha256": "f908ad1f6d4b8df3755a634c6741abf8ae613bc59278a54c16560c16d255580f"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-7277",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "684a1d6aa0a6791e20078bc524f97c8906332390",
+      "restored_first_line": "diff --git a/pylint/__init__.py b/pylint/__init__.py",
+      "restored_last_line": "     elif env_pythonpath.endswith(\":\") and env_pythonpath not in (f\"{cwd}:\", \".:\"):",
+      "original_patch_sha256": "1e479ebf860ebb3e6a27b5bfb202e5cff3d49c6a71f19f7513b1089f4af118ae",
+      "complete_patch_sha256": "50a6e08256232f773d7066b57477ca5e9ac08bf71a1310b392fdcd22427c7abe"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-8898",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "1f8c4d9eb185c16a2c1d881c054f015e1c2eb334",
+      "restored_first_line": "diff --git a/pylint/config/argument.py b/pylint/config/argument.py",
+      "restored_last_line": "     lines = [line.strip() for line in string.splitlines()]",
+      "original_patch_sha256": "aac328c7b6c4c13f0a6d2f68b01f293e089d19567bdd5485648457f53268d2c5",
+      "complete_patch_sha256": "1ef5ef80b29bcfb5902b6818e58a576cf6d97b66fb7b354fa1392451954a6c98"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-10051",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "aa55975c7d3f6c9f6d7f68accc41bb7cadf0eb9a",
+      "restored_first_line": "diff --git a/src/_pytest/logging.py b/src/_pytest/logging.py",
+      "restored_last_line": "         \"\"\"Set the level of a logger for the duration of a test.",
+      "original_patch_sha256": "7da244b4f118fb955d5fed39222c28cbe787c7410d92a7ca0bff2f2ec580f4a8",
+      "complete_patch_sha256": "9662c12536a07d0cc5a6ce6f781edb31ea013af4df0e156522ca624aaed634c0"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-10081",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "da9a2b584eb7a6c7e924b2621ed0ddaeca0a7bea",
+      "restored_first_line": "diff --git a/src/_pytest/unittest.py b/src/_pytest/unittest.py",
+      "restored_last_line": " ",
+      "original_patch_sha256": "7df9f6e0fc4860afceeca2b8dbffd0309198a469807b27b8b313995ca2073c8a",
+      "complete_patch_sha256": "30b7bbcd61e92e71c186f5c36c622301a6d5dde818e67c97535fa30d7897af93"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-10356",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "3c1534944cbd34e8a41bc9e76818018fadefc9a1",
+      "restored_first_line": "diff --git a/src/_pytest/mark/structures.py b/src/_pytest/mark/structures.py",
+      "restored_last_line": " # Typing for builtin pytest marks. This is cheating; it gives builtin marks",
+      "original_patch_sha256": "c5b90ff0b52fadd54d4c16ffdec2989ea94a3652dad810d2fd840e7733fe6497",
+      "complete_patch_sha256": "99d679e52efb6f3a8e9370d597653996c8866ab086935e187d469dafe86e76a2"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5262",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "58e6a09db49f34886ff13f3b7520dd0bcd7063cd",
+      "restored_first_line": "diff --git a/src/_pytest/capture.py b/src/_pytest/capture.py",
+      "restored_last_line": " ",
+      "original_patch_sha256": "852a7c6bc22c9ffaf8a6579e232e187d14c6feedf4b597e37af3331e006729cf",
+      "complete_patch_sha256": "2dbcd95f7a4bf52ae721d6289d1d4ee68dbb08ada5082e98784a7138fc126428"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5631",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "cb828ebe70b4fa35cd5f9a7ee024272237eab351",
+      "restored_first_line": "diff --git a/src/_pytest/compat.py b/src/_pytest/compat.py",
+      "restored_last_line": " def getfuncargnames(function, is_method=False, cls=None):",
+      "original_patch_sha256": "36a48e56d6a3a636775e617c31b8baaea6a9f86222bbc1cba9e2ad92bf6c37ff",
+      "complete_patch_sha256": "21f9c28433e251db7f9b2313a75ce5cad6140818a4a6ed0bbab1fc81bfe09605"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5787",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "955e54221008aba577ecbaefa15679f6777d3bf8",
+      "restored_first_line": "diff --git a/src/_pytest/reports.py b/src/_pytest/reports.py",
+      "restored_last_line": "+    return reportdict",
+      "original_patch_sha256": "e8082c49a5366164a57666737a835f9ed904a0ec9818e24f2f3a5fe964cc1cef",
+      "complete_patch_sha256": "25fc02f8a3d96f8ad0f2acbc94c70a3eaa178f7af3546227d0d3f6c138f974cf"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5809",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "8aba863a634f40560e25055d179220f0eefabe9a",
+      "restored_first_line": "diff --git a/src/_pytest/pastebin.py b/src/_pytest/pastebin.py",
+      "restored_last_line": "     m = re.search(r'href=\"/raw/(\\w+)\"', response.decode(\"utf-8\"))",
+      "original_patch_sha256": "9f109021cfec35e097689b7e6b3f7545534f3c7ec063bffbd375c227e3afb241",
+      "complete_patch_sha256": "61efb9f46d91358079c84a64a3bed46abf0f1616952b41cbcb9efcd6956e57db"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5840",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "73c5b7f4b11a81e971f7d1bb18072e06a87060f4",
+      "restored_first_line": "diff --git a/src/_pytest/config/__init__.py b/src/_pytest/config/__init__.py",
+      "restored_last_line": "-    return type(path)(normcase(str(path.realpath())))",
+      "original_patch_sha256": "dd3f2d6858078e45b5e74441d2c09c135f9695e1a73baea1493842404d5b3139",
+      "complete_patch_sha256": "7f6486d010e024a28295d8370931a9079d48e4b2ea3b8a6f66447ce2c73b5778"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-6197",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "e856638ba086fcf5bebf1bebea32d5cf78de87b4",
+      "restored_first_line": "diff --git a/src/_pytest/python.py b/src/_pytest/python.py",
+      "restored_last_line": "         if init_module.check(file=1) and path_matches_patterns(",
+      "original_patch_sha256": "610eb1380d6b27c27cc949480bff33402b8a286edd59575358ff18236c7c789e",
+      "complete_patch_sha256": "3d3810c1b37044c2fcc9a165a02db5ef99dfc26c1c677479ebd66f3ebd8862ac"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-6202",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "3a668ea6ff24b0c8f00498c3144c63bac561d925",
+      "restored_first_line": "diff --git a/src/_pytest/python.py b/src/_pytest/python.py",
+      "restored_last_line": "         # XXX caching?",
+      "original_patch_sha256": "68b4c2c45b118a5611cd11782ce6778a68195f653fdb0e38259e4037fca3dd87",
+      "complete_patch_sha256": "1ad8e233a57c0c3176d18b4de6631176270f1f16fbdd1a33e8ee0181dc02f37a"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7236",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "c98bc4cd3d687fe9b392d8eecd905627191d4f06",
+      "restored_first_line": "diff --git a/src/_pytest/unittest.py b/src/_pytest/unittest.py",
+      "restored_last_line": "+    return bool(getattr(obj, \"__unittest_skip__\", False))",
+      "original_patch_sha256": "dbc7e835ad7bf3b468ff9fe112472c4957e917b121f2d8ba52704d7732ff5abd",
+      "complete_patch_sha256": "9641921f5afd783a16547e1480b06453c7b819271c2df8f195b435afd1a5688b"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7324",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "19ad5889353c7f5f2b65cc2acd346b7a9e95dfcd",
+      "restored_first_line": "diff --git a/src/_pytest/mark/expression.py b/src/_pytest/mark/expression.py",
+      "restored_last_line": "         raise NotImplementedError()",
+      "original_patch_sha256": "33dcd0eabac6954c8bbc7ae0fbf9ec6ccc4fd97405eed1ef047c6814223234e0",
+      "complete_patch_sha256": "545c77165b760409f9e3625cb5a75a5d8e4baa400b952ba1d6bed7c5fdfcf479"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7432",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "e6e300e729dd33956e5448d8be9a0b1540b4e53a",
+      "restored_first_line": "diff --git a/src/_pytest/skipping.py b/src/_pytest/skipping.py",
+      "restored_last_line": "         and type(rep.longrepr) is tuple",
+      "original_patch_sha256": "9ec30bb2f110806212a6b70c789d64ba758d692284b9195e240cecbd3e7de284",
+      "complete_patch_sha256": "fe1bcec846085b964928724c5e75591b1e0280ef37dd9cdb7faf31a89cfcf062"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7521",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "41d211c24a6781843b174379d6d6538f5c17adb9",
+      "restored_first_line": "diff --git a/src/_pytest/capture.py b/src/_pytest/capture.py",
+      "restored_last_line": "             if targetfd in patchsysdict:",
+      "original_patch_sha256": "44342e8c44dd513ed176941c72ee61e2971c915f535babf04a1e34d9592a6e9c",
+      "complete_patch_sha256": "e1f62165b6ecc14c60b08bb71a59b927adba0c3b9a8393394481cc6a4f0f8f0e"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7982",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "a7e38c5c61928033a2dc1915cbee8caa8544a4d0",
+      "restored_first_line": "diff --git a/src/_pytest/pathlib.py b/src/_pytest/pathlib.py",
+      "restored_last_line": " ",
+      "original_patch_sha256": "8f00163d3e2a519037cbcb33c5e513a7fa5e251792ea836eea8e1dcb16f0891e",
+      "complete_patch_sha256": "76762ad86ffeec79de2f946c2dd097c003a9dd6097b8c9e7829d71338056222f"
+    }
+  ]
+}

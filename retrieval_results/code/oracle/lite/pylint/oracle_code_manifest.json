@@ -71,7 +71,73 @@
                 }
             ]
         },
-        "non_python_files": []
+        "non_python_files": [],
+        "documents": {
+            "base": {
+                "pylint/checkers/misc.py::EncodingChecker.open": {
+                    "qualified_name": "EncodingChecker.open",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/checkers/misc.py::EncodingChecker.open",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "class_context_ids": [
+                        "pylint/checkers/misc.py::EncodingChecker"
+                    ]
+                },
+                "pylint/checkers/misc.py::EncodingChecker": {
+                    "qualified_name": "EncodingChecker",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "pylint/checkers/misc.py::EncodingChecker.open",
+                            "class_symbol": "pylint/checkers/misc.py::EncodingChecker",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "pylint/checkers/misc.py::EncodingChecker.open"
+                    ],
+                    "content_kind": "full_class"
+                }
+            },
+            "patched": {
+                "pylint/checkers/misc.py::EncodingChecker.open": {
+                    "qualified_name": "EncodingChecker.open",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/checkers/misc.py::EncodingChecker.open",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "class_context_ids": [
+                        "pylint/checkers/misc.py::EncodingChecker"
+                    ]
+                },
+                "pylint/checkers/misc.py::EncodingChecker": {
+                    "qualified_name": "EncodingChecker",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "pylint/checkers/misc.py::EncodingChecker.open",
+                            "class_symbol": "pylint/checkers/misc.py::EncodingChecker",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "pylint/checkers/misc.py::EncodingChecker.open"
+                    ],
+                    "content_kind": "full_class"
+                }
+            }
+        }
     },
     "pylint-dev__pylint-6506": {
         "base_commit": "0a4204fd7555cfedd43f43017c94d24ef48244a5",
@@ -123,7 +189,35 @@
             "base": [],
             "patched": []
         },
-        "non_python_files": []
+        "non_python_files": [],
+        "documents": {
+            "base": {
+                "pylint/config/config_initialization.py::_config_initialization": {
+                    "qualified_name": "_config_initialization",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/config_initialization.py::_config_initialization",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            },
+            "patched": {
+                "pylint/config/config_initialization.py::_config_initialization": {
+                    "qualified_name": "_config_initialization",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/config_initialization.py::_config_initialization",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            }
+        }
     },
     "pylint-dev__pylint-7080": {
         "base_commit": "3c5eca2ded3dd2b59ebaf23eb289453b5d2930f0",
@@ -175,7 +269,35 @@
             "base": [],
             "patched": []
         },
-        "non_python_files": []
+        "non_python_files": [],
+        "documents": {
+            "base": {
+                "pylint/lint/expand_modules.py::_is_ignored_file": {
+                    "qualified_name": "_is_ignored_file",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/lint/expand_modules.py::_is_ignored_file",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            },
+            "patched": {
+                "pylint/lint/expand_modules.py::_is_ignored_file": {
+                    "qualified_name": "_is_ignored_file",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/lint/expand_modules.py::_is_ignored_file",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            }
+        }
     },
     "pylint-dev__pylint-7114": {
         "base_commit": "397c1703e8ae6349d33f7b99f45b2ccaf581e666",
@@ -227,7 +349,35 @@
             "base": [],
             "patched": []
         },
-        "non_python_files": []
+        "non_python_files": [],
+        "documents": {
+            "base": {
+                "pylint/lint/expand_modules.py::expand_modules": {
+                    "qualified_name": "expand_modules",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/lint/expand_modules.py::expand_modules",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            },
+            "patched": {
+                "pylint/lint/expand_modules.py::expand_modules": {
+                    "qualified_name": "expand_modules",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/lint/expand_modules.py::expand_modules",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            }
+        }
     },
     "pylint-dev__pylint-7228": {
         "base_commit": "d597f252915ddcaaa15ccdfcb35670152cb83587",
@@ -366,7 +516,95 @@
             "base": [],
             "patched": []
         },
-        "non_python_files": []
+        "non_python_files": [],
+        "documents": {
+            "base": {
+                "pylint/config/argument.py::<module>": {
+                    "qualified_name": "<module>",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/argument.py::<module>",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/config/argument.py::_TYPE_TRANSFORMERS": {
+                    "qualified_name": "_TYPE_TRANSFORMERS",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/argument.py::_TYPE_TRANSFORMERS",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/config/argument.py::_regexp_csv_transfomer": {
+                    "qualified_name": "_regexp_csv_transfomer",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/argument.py::_regex_transformer",
+                            "reason": "existing_caller",
+                            "confidence": 0.8
+                        },
+                        {
+                            "changed_symbol": "pylint/config/argument.py::_regexp_csv_transfomer",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            },
+            "patched": {
+                "pylint/config/argument.py::<module>": {
+                    "qualified_name": "<module>",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/argument.py::<module>",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/config/argument.py::_TYPE_TRANSFORMERS": {
+                    "qualified_name": "_TYPE_TRANSFORMERS",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/argument.py::_TYPE_TRANSFORMERS",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/config/argument.py::_regex_transformer": {
+                    "qualified_name": "_regex_transformer",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/argument.py::_regex_transformer",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/config/argument.py::_regexp_csv_transfomer": {
+                    "qualified_name": "_regexp_csv_transfomer",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/argument.py::_regexp_csv_transfomer",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            }
+        }
     },
     "pylint-dev__pylint-7993": {
         "base_commit": "e90702074e68e20dc8e5df5013ee3ecf22139c3e",
@@ -440,6 +678,72 @@
                 }
             ]
         },
-        "non_python_files": []
+        "non_python_files": [],
+        "documents": {
+            "base": {
+                "pylint/reporters/text.py::TextReporter.on_set_current_module": {
+                    "qualified_name": "TextReporter.on_set_current_module",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/reporters/text.py::TextReporter.on_set_current_module",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "class_context_ids": [
+                        "pylint/reporters/text.py::TextReporter"
+                    ]
+                },
+                "pylint/reporters/text.py::TextReporter": {
+                    "qualified_name": "TextReporter",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "pylint/reporters/text.py::TextReporter.on_set_current_module",
+                            "class_symbol": "pylint/reporters/text.py::TextReporter",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "pylint/reporters/text.py::TextReporter.on_set_current_module"
+                    ],
+                    "content_kind": "full_class"
+                }
+            },
+            "patched": {
+                "pylint/reporters/text.py::TextReporter.on_set_current_module": {
+                    "qualified_name": "TextReporter.on_set_current_module",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/reporters/text.py::TextReporter.on_set_current_module",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "class_context_ids": [
+                        "pylint/reporters/text.py::TextReporter"
+                    ]
+                },
+                "pylint/reporters/text.py::TextReporter": {
+                    "qualified_name": "TextReporter",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "pylint/reporters/text.py::TextReporter.on_set_current_module",
+                            "class_symbol": "pylint/reporters/text.py::TextReporter",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "pylint/reporters/text.py::TextReporter.on_set_current_module"
+                    ],
+                    "content_kind": "full_class"
+                }
+            }
+        }
     }
 }

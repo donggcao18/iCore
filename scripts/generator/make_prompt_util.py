@@ -5,7 +5,7 @@ import os
 from scripts.utils.swe_util import repo_path
 
 def get_retrieval_docs(instance_id, retrieval_result_path, all_content = False):
-    with open(retrieval_result_path) as f:
+    with open(retrieval_result_path, encoding='utf-8') as f:
         retrieval_results = json.load(f)
     retrieval_results = retrieval_results.get(instance_id) or {}
     if not isinstance(retrieval_results, dict):
@@ -126,7 +126,7 @@ def get_related_test(instance_id, path, size=-1):
     return '\n'.join(related_tests)
 
 def get_related_test_list(instance_id, path, size=-1):
-    with open(path, 'r') as f:
+    with open(path, 'r', encoding='utf-8') as f:
         results = json.load(f)
     test_files = results.get(instance_id) or []
     if not isinstance(test_files, list):

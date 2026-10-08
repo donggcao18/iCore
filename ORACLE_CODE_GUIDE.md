@@ -18,6 +18,17 @@ is preserved when applying them to temporary historical snapshots. Git's
 `--recount` handles Verified diffs whose hunk counts include trimmed trailing
 context lines; no added or deleted code is changed.
 
+The prepared `data/swt-bench-verified/oracle_input_pylint_pytest.csv` covers the
+21 selected Pylint/pytest instances. Their original SWT production patches
+omit the first and last upstream patch lines, including code in some cases.
+The prepared input restores the complete production fix from the corresponding
+`SWE-bench/SWE-bench_Verified` instance after checking the repository, base
+commit, and exact truncation match. Original SWT test patches and the original
+CSV are preserved. The adjacent `oracle_input_pylint_pytest_manifest.json`
+records the restored lines and hashes. Use `--csv` with this prepared input
+when rerunning these Verified oracle extractions. Run manifests retain
+`production_patch_provenance` independently of generator-facing documents.
+
 Outputs are stored in `retrieval_results/code/oracle/<dataset>/<repo>/`, where
 dataset is `lite` or `swt-bench-verified` and repo is the short name:
 
@@ -29,7 +40,14 @@ dataset is `lite` or `swt-bench-verified` and repo is the short name:
 
 The code files use the existing generator format:
 `{instance_id: {symbol_id: {obj_name, node_type, path, parent, code_start_line,
-code_end_line, code_content, ...}}}`. Paths are relative to the target repository;
+code_end_line, code_content}}}`. These are exactly the seven fields exported by
+the original code retrieval. The symbol ID is the lookup key; the generator
+accepts it in the same way as an original keyword. Oracle-only annotations
+(`qualified_name`, `revision`, selection evidence, class links, outline mode,
+and retained source spans) live in `oracle_code_manifest.json` under
+`{instance_id: {documents: {base: {symbol_id: metadata}, patched: {...}}}}`.
+Subset reruns also migrate previously saved rich documents into this format.
+Paths are relative to the target repository;
 snippets are embedded and describe the indicated revision. Normal generator
 formatting uses those snippets without reading the live checkout. Do not use
 the formatter's optional `all_content=True` mode for historical oracle context.
@@ -54,7 +72,7 @@ Inherited implementations outside the indexed patch files are not expanded.
 
 Class context is deduplicated across selected methods. Existing full-class or
 whole-file documents are reused when they already contain the enclosing class.
-Nested classes also retain their enclosing class structure. Documents record
+Nested classes also retain their enclosing class structure. Manifest metadata records
 `class_context_ids`, `context_for`, and `enclosing_class_context` evidence; the
 manifest records `class_context` and each change's `supporting_base` and
 `supporting_patched` documents. Supporting classes are not added to the patch's
@@ -84,3 +102,18 @@ For BRT generation, use the base code file as `--context_code_path`, and either
 base test oracle. Set `CODE` or `ORACLE` to compare other retrieval variants.
 Use a distinct `EXP` whenever changing context because saved prompts are reused.
 See [ORACLE_PYLINT_GUIDE.md](ORACLE_PYLINT_GUIDE.md) for the full generator command.
+
+Generator input contracts match the original retrieval pipeline:
+
+- Code: `{instance_id: {symbol_id: {obj_name, node_type, path,
+  code_start_line, code_end_line, code_content, parent}}}`.
+- Tests: `{instance_id: [{name, file, code_content}, ...]}`. The original,
+  production-guided, augmented, and patched test variants all use this shape.
+
+Use `code_retrieval_oracle_base.json` with `related_tests_oracle_base_augmented.json`
+for base-revision oracle context. Pass them as `--context_code_path` and
+`--context_test_path` to `scripts.generator.llm_query`. Files named
+`oracle_code_manifest.json`, `oracle_manifest.json`, and
+`oracle_augmented_manifest.json` are analysis reports; they are not retrieval
+inputs. Class provenance and selection details belong to these reports, while
+the generator-facing files contain only the original retrieval fields.

@@ -15064,6 +15064,11 @@
       ]
     },
     "patched_parse_errors": [],
+    "production_patch_provenance": {
+      "production_patch_source_dataset": "SWE-bench/SWE-bench_Verified",
+      "production_patch_repair": "restored_first_and_last_lines_from_matching_upstream_instance",
+      "original_production_patch_sha256": "ba105ed49c0e1c92cbcd807163fd74ef3e54349f3013420d09dae0fc970cec74"
+    },
     "code_oracle_directory": "F:\\GitHub\\iCoRe\\retrieval_results\\code\\oracle\\swt-bench-verified\\pylint"
   },
   "pylint-dev__pylint-6386": {
@@ -37006,6 +37011,11 @@
       ]
     },
     "patched_parse_errors": [],
+    "production_patch_provenance": {
+      "production_patch_source_dataset": "SWE-bench/SWE-bench_Verified",
+      "production_patch_repair": "restored_first_and_last_lines_from_matching_upstream_instance",
+      "original_production_patch_sha256": "479db9ffa9f73081f3c973248dfc51c8c303795ef0c108fb89cdc7cd8a51ceb4"
+    },
     "code_oracle_directory": "F:\\GitHub\\iCoRe\\retrieval_results\\code\\oracle\\swt-bench-verified\\pylint"
   },
   "pylint-dev__pylint-6903": {
@@ -55689,6 +55699,11 @@
       ]
     },
     "patched_parse_errors": [],
+    "production_patch_provenance": {
+      "production_patch_source_dataset": "SWE-bench/SWE-bench_Verified",
+      "production_patch_repair": "restored_first_and_last_lines_from_matching_upstream_instance",
+      "original_production_patch_sha256": "664a4cfc041fb3c6bddd68f2aac7a9729292fae21af5277849373b45b52c59fd"
+    },
     "code_oracle_directory": "F:\\GitHub\\iCoRe\\retrieval_results\\code\\oracle\\swt-bench-verified\\pylint"
   },
   "pylint-dev__pylint-7080": {
@@ -74495,6 +74510,11 @@
       ]
     },
     "patched_parse_errors": [],
+    "production_patch_provenance": {
+      "production_patch_source_dataset": "SWE-bench/SWE-bench_Verified",
+      "production_patch_repair": "restored_first_and_last_lines_from_matching_upstream_instance",
+      "original_production_patch_sha256": "d8dd34b07a0ca7137117962c1d41410577ebdc403a55576b490efadf198cb4a3"
+    },
     "code_oracle_directory": "F:\\GitHub\\iCoRe\\retrieval_results\\code\\oracle\\swt-bench-verified\\pylint"
   },
   "pylint-dev__pylint-7277": {
@@ -92392,6 +92412,11 @@
       ]
     },
     "patched_parse_errors": [],
+    "production_patch_provenance": {
+      "production_patch_source_dataset": "SWE-bench/SWE-bench_Verified",
+      "production_patch_repair": "restored_first_and_last_lines_from_matching_upstream_instance",
+      "original_production_patch_sha256": "1e479ebf860ebb3e6a27b5bfb202e5cff3d49c6a71f19f7513b1089f4af118ae"
+    },
     "code_oracle_directory": "F:\\GitHub\\iCoRe\\retrieval_results\\code\\oracle\\swt-bench-verified\\pylint"
   },
   "pylint-dev__pylint-8898": {
@@ -114582,6 +114607,11 @@
       ]
     },
     "patched_parse_errors": [],
+    "production_patch_provenance": {
+      "production_patch_source_dataset": "SWE-bench/SWE-bench_Verified",
+      "production_patch_repair": "restored_first_and_last_lines_from_matching_upstream_instance",
+      "original_production_patch_sha256": "aac328c7b6c4c13f0a6d2f68b01f293e089d19567bdd5485648457f53268d2c5"
+    },
     "code_oracle_directory": "F:\\GitHub\\iCoRe\\retrieval_results\\code\\oracle\\swt-bench-verified\\pylint"
   }
 }

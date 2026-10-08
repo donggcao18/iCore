@@ -1,6 +1,7 @@
 import subprocess as sp
 from os import path
 from scripts.utils.swe_util import repo_path
+from scripts.utils.patch_utils import prepare_reference_patch
 
 def git_reset_hash(repo_dir_path, commit_hash):
     process = sp.run(['git', 'reset', '--hard', commit_hash],
@@ -24,11 +25,12 @@ def git_clean_all(repo_dir_path):
     assert process.returncode == 0, f"git clean failed with return code {process.returncode}"
 
 def git_apply(repo_dir_path, patch_content):
+    patch_content = prepare_reference_patch(patch_content)
     # Write patch to file
-    with open(path.join(repo_dir_path, 'swe.patch'), 'w') as f:
+    with open(path.join(repo_dir_path, 'swe.patch'), 'w', encoding='utf-8', newline='\n') as f:
         f.write(patch_content)
     # apply patch
-    process = sp.run(['git', 'apply', 'swe.patch'],
+    process = sp.run(['git', 'apply', '--recount', 'swe.patch'],
               cwd=repo_dir_path, stdout=sp.DEVNULL, stderr=sp.DEVNULL)
     assert process.returncode == 0, f"git apply failed with return code {process.returncode}"
     

@@ -12,6 +12,7 @@ from scripts.run_retrieval import (
     check_json, model_argument, positive_int, preflight, prepare_selection,
     repo_argument, run_module, select_rows,
 )
+from scripts.utils.patch_utils import prepare_reference_patch
 
 
 def fingerprint(path):
@@ -102,8 +103,8 @@ def main(argv=None):
         tests = paths.tests / f'related_tests_{args.iterations + 1}.json'
         no_code = check_code_context(paths.code, rows)
         check_json(tests, rows, 'tests')
-        if any(not row.get('patch', '').startswith('diff --git ') for row in rows):
-            raise RuntimeError(f'Missing reference production fix for {repo}; evaluation requires patch.')
+        for row in rows:
+            prepare_reference_patch(row.get('patch'), row['instance_id'])
         root = paths.category('brt') / f'i{args.iterations}_s{args.samples}'
         manifest = {
             'evaluation_version': 2, 'benchmark': benchmark.folder, 'repo': repo,

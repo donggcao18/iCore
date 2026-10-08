@@ -17,6 +17,7 @@ from scripts.test_retrieval.extract_oracle import (
     ensure_repo, read_repo_rows, repository_name,
 )
 from scripts.test_retrieval.static_dependencies import DependencyIndex, Symbol
+from scripts.retrieval_formats import split_code_documents
 
 
 OUTPUT_FILES = (
@@ -233,18 +234,36 @@ def extract_instance(row: dict[str, str], repo_dir: Path) -> tuple[dict, dict, d
     manifest["counts"].update(base_objects=len(base), patched_objects=len(patched))
     manifest["non_python_files"] = [change.path for change in changes
                                     if not change.path.endswith(".py") and not change.old_path.endswith(".py")]
+    provenance = {key: row[key] for key in ("production_patch_source_dataset", "production_patch_repair",
+                                           "original_production_patch_sha256") if row.get(key)}
+    if provenance:
+        manifest["production_patch_provenance"] = provenance
     if not base:
         manifest["base_empty_reason"] = "No affected object or mapped caller exists in parsed base source"
     return base, patched, manifest
 
 
 def store_instance(output_dir: Path, instance_id: str, values: tuple[dict, dict, dict]) -> None:
-    """Preserve other instances when processing an explicit subset."""
+    """Save original-format retrieval; keep oracle annotations in the manifest."""
     output_dir.mkdir(parents=True, exist_ok=True)
+    outputs = []
     for filename, value in zip(OUTPUT_FILES, values):
         destination = output_dir / filename
         output = json.loads(destination.read_text(encoding="utf-8")) if destination.exists() else {}
         output[instance_id] = value
+        outputs.append(output)
+    base, patched, manifests = outputs
+    # Normalize older entries too, so subset reruns never mix export schemas.
+    for revision, retrieval in (("base", base), ("patched", patched)):
+        for identifier, documents in retrieval.items():
+            clean, metadata = split_code_documents(documents)
+            retrieval[identifier] = clean
+            if metadata:
+                stored = manifests.setdefault(identifier, {}).setdefault("documents", {}).setdefault(revision, {})
+                for symbol_id, annotations in metadata.items():
+                    stored.setdefault(symbol_id, {}).update(annotations)
+    for filename, output in zip(OUTPUT_FILES, outputs):
+        destination = output_dir / filename
         temporary = destination.with_suffix(".json.tmp")
         temporary.write_text(json.dumps(output, indent=4, ensure_ascii=False) + "\n", encoding="utf-8")
         temporary.replace(destination)

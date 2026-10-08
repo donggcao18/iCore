@@ -4,45 +4,19 @@
             "obj_name": "open",
             "node_type": "class_function",
             "path": "pylint/checkers/misc.py",
-            "parent": "EncodingChecker",
-            "qualified_name": "EncodingChecker.open",
             "code_start_line": 119,
             "code_end_line": 128,
             "code_content": "    def open(self):\n        super().open()\n\n        notes = \"|\".join(re.escape(note) for note in self.config.notes)\n        if self.config.notes_rgx:\n            regex_string = rf\"#\\s*({notes}|{self.config.notes_rgx})(?=(:|\\s|\\Z))\"\n        else:\n            regex_string = rf\"#\\s*({notes})(?=(:|\\s|\\Z))\"\n\n        self._fixme_pattern = re.compile(regex_string, re.I)",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/checkers/misc.py::EncodingChecker.open",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ],
-            "class_context_ids": [
-                "pylint/checkers/misc.py::EncodingChecker"
-            ]
+            "parent": "EncodingChecker"
         },
         "pylint/checkers/misc.py::EncodingChecker": {
             "obj_name": "EncodingChecker",
             "node_type": "class",
             "path": "pylint/checkers/misc.py",
-            "parent": null,
-            "qualified_name": "EncodingChecker",
             "code_start_line": 77,
             "code_end_line": 198,
             "code_content": "class EncodingChecker(BaseChecker):\n\n    \"\"\"Checks for:\n    * warning notes in the code like FIXME, XXX\n    * encoding issues.\n    \"\"\"\n\n    __implements__ = (IRawChecker, ITokenChecker)\n\n    # configuration section name\n    name = \"miscellaneous\"\n    msgs = {\n        \"W0511\": (\n            \"%s\",\n            \"fixme\",\n            \"Used when a warning note as FIXME or XXX is detected.\",\n        )\n    }\n\n    options = (\n        (\n            \"notes\",\n            {\n                \"type\": \"csv\",\n                \"metavar\": \"<comma separated values>\",\n                \"default\": (\"FIXME\", \"XXX\", \"TODO\"),\n                \"help\": (\n                    \"List of note tags to take in consideration, \"\n                    \"separated by a comma.\"\n                ),\n            },\n        ),\n        (\n            \"notes-rgx\",\n            {\n                \"type\": \"string\",\n                \"metavar\": \"<regexp>\",\n                \"help\": \"Regular expression of note tags to take in consideration.\",\n            },\n        ),\n    )\n\n    def open(self):\n        super().open()\n\n        notes = \"|\".join(re.escape(note) for note in self.config.notes)\n        if self.config.notes_rgx:\n            regex_string = rf\"#\\s*({notes}|{self.config.notes_rgx})(?=(:|\\s|\\Z))\"\n        else:\n            regex_string = rf\"#\\s*({notes})(?=(:|\\s|\\Z))\"\n\n        self._fixme_pattern = re.compile(regex_string, re.I)\n\n    def _check_encoding(\n        self, lineno: int, line: bytes, file_encoding: str\n    ) -> Optional[str]:\n        try:\n            return line.decode(file_encoding)\n        except UnicodeDecodeError:\n            pass\n        except LookupError:\n            if (\n                line.startswith(b\"#\")\n                and \"coding\" in str(line)\n                and file_encoding in str(line)\n            ):\n                msg = f\"Cannot decode using encoding '{file_encoding}', bad encoding\"\n                self.add_message(\"syntax-error\", line=lineno, args=msg)\n        return None\n\n    def process_module(self, node: nodes.Module) -> None:\n        \"\"\"Inspect the source file to find encoding problem.\"\"\"\n        encoding = node.file_encoding if node.file_encoding else \"ascii\"\n\n        with node.stream() as stream:\n            for lineno, line in enumerate(stream):\n                self._check_encoding(lineno + 1, line, encoding)\n\n    def process_tokens(self, tokens):\n        \"\"\"Inspect the source to find fixme problems.\"\"\"\n        if not self.config.notes:\n            return\n        comments = (\n            token_info for token_info in tokens if token_info.type == tokenize.COMMENT\n        )\n        for comment in comments:\n            comment_text = comment.string[1:].lstrip()  # trim '#' and whitespaces\n\n            # handle pylint disable clauses\n            disable_option_match = OPTION_PO.search(comment_text)\n            if disable_option_match:\n                try:\n                    values = []\n                    try:\n                        for pragma_repr in (\n                            p_rep\n                            for p_rep in parse_pragma(disable_option_match.group(2))\n                            if p_rep.action == \"disable\"\n                        ):\n                            values.extend(pragma_repr.messages)\n                    except PragmaParserError:\n                        # Printing useful information dealing with this error is done in the lint package\n                        pass\n                    if set(values) & set(self.config.notes):\n                        continue\n                except ValueError:\n                    self.add_message(\n                        \"bad-inline-option\",\n                        args=disable_option_match.group(1).strip(),\n                        line=comment.start[0],\n                    )\n                    continue\n\n            # emit warnings if necessary\n            match = self._fixme_pattern.search(\"#\" + comment_text.lower())\n            if match:\n                self.add_message(\n                    \"fixme\",\n                    col_offset=comment.start[1] + 1,\n                    args=comment_text,\n                    line=comment.start[0],\n                )",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "reason": "enclosing_class_context",
-                    "related_symbol": "pylint/checkers/misc.py::EncodingChecker.open",
-                    "class_symbol": "pylint/checkers/misc.py::EncodingChecker",
-                    "confidence": 1.0
-                }
-            ],
-            "context_for": [
-                "pylint/checkers/misc.py::EncodingChecker.open"
-            ],
-            "content_kind": "full_class"
+            "parent": null
         }
     },
     "pylint-dev__pylint-6506": {
@@ -50,19 +24,10 @@
             "obj_name": "_config_initialization",
             "node_type": "top-level function",
             "path": "pylint/config/config_initialization.py",
-            "parent": null,
-            "qualified_name": "_config_initialization",
             "code_start_line": 20,
             "code_end_line": 105,
             "code_content": "def _config_initialization(\n    linter: PyLinter,\n    args_list: list[str],\n    reporter: reporters.BaseReporter | reporters.MultiReporter | None = None,\n    config_file: None | str | Path = None,\n    verbose_mode: bool = False,\n) -> list[str]:\n    \"\"\"Parse all available options, read config files and command line arguments and\n    set options accordingly.\n    \"\"\"\n    config_file = Path(config_file) if config_file else None\n\n    # Set the current module to the configuration file\n    # to allow raising messages on the configuration file.\n    linter.set_current_module(str(config_file) if config_file else None)\n\n    # Read the configuration file\n    config_file_parser = _ConfigurationFileParser(verbose_mode, linter)\n    try:\n        config_data, config_args = config_file_parser.parse_config_file(\n            file_path=config_file\n        )\n    except OSError as ex:\n        print(ex, file=sys.stderr)\n        sys.exit(32)\n\n    # Run init hook, if present, before loading plugins\n    if \"init-hook\" in config_data:\n        exec(utils._unquote(config_data[\"init-hook\"]))  # pylint: disable=exec-used\n\n    # Load plugins if specified in the config file\n    if \"load-plugins\" in config_data:\n        linter.load_plugin_modules(utils._splitstrip(config_data[\"load-plugins\"]))\n\n    # First we parse any options from a configuration file\n    try:\n        linter._parse_configuration_file(config_args)\n    except _UnrecognizedOptionError as exc:\n        msg = \", \".join(exc.options)\n        linter.add_message(\"unrecognized-option\", line=0, args=msg)\n\n    # Then, if a custom reporter is provided as argument, it may be overridden\n    # by file parameters, so we re-set it here. We do this before command line\n    # parsing, so it's still overridable by command line options\n    if reporter:\n        linter.set_reporter(reporter)\n\n    # Set the current module to the command line\n    # to allow raising messages on it\n    linter.set_current_module(\"Command line\")\n\n    # Now we parse any options from the command line, so they can override\n    # the configuration file\n    parsed_args_list = linter._parse_command_line_configuration(args_list)\n\n    # Check if there are any options that we do not recognize\n    unrecognized_options: list[str] = []\n    for opt in parsed_args_list:\n        if opt.startswith(\"--\"):\n            unrecognized_options.append(opt[2:])\n        elif opt.startswith(\"-\"):\n            unrecognized_options.append(opt[1:])\n    if unrecognized_options:\n        msg = \", \".join(unrecognized_options)\n        linter._arg_parser.error(f\"Unrecognized option found: {msg}\")\n\n    # Set the current module to configuration as we don't know where\n    # the --load-plugins key is coming from\n    linter.set_current_module(\"Command line or configuration file\")\n\n    # We have loaded configuration from config file and command line. Now, we can\n    # load plugin specific configuration.\n    linter.load_plugin_configuration()\n\n    # parsed_args_list should now only be a list of files/directories to lint.\n    # All other options have been removed from the list.\n    if not parsed_args_list:\n        print(linter.help())\n        sys.exit(32)\n\n    # Now that plugins are loaded, get list of all fail_on messages, and enable them\n    linter.enable_fail_on_messages()\n\n    linter._parse_error_mode()\n\n    return parsed_args_list",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/config/config_initialization.py::_config_initialization",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         }
     },
     "pylint-dev__pylint-7080": {
@@ -70,19 +35,10 @@
             "obj_name": "_is_ignored_file",
             "node_type": "top-level function",
             "path": "pylint/lint/expand_modules.py",
-            "parent": null,
-            "qualified_name": "_is_ignored_file",
             "code_start_line": 49,
             "code_end_line": 61,
             "code_content": "def _is_ignored_file(\n    element: str,\n    ignore_list: list[str],\n    ignore_list_re: list[Pattern[str]],\n    ignore_list_paths_re: list[Pattern[str]],\n) -> bool:\n    element = os.path.normpath(element)\n    basename = os.path.basename(element)\n    return (\n        basename in ignore_list\n        or _is_in_ignore_list_re(basename, ignore_list_re)\n        or _is_in_ignore_list_re(element, ignore_list_paths_re)\n    )",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/lint/expand_modules.py::_is_ignored_file",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         }
     },
     "pylint-dev__pylint-7114": {
@@ -90,19 +46,10 @@
             "obj_name": "expand_modules",
             "node_type": "top-level function",
             "path": "pylint/lint/expand_modules.py",
-            "parent": null,
-            "qualified_name": "expand_modules",
             "code_start_line": 64,
             "code_end_line": 162,
             "code_content": "def expand_modules(\n    files_or_modules: Sequence[str],\n    ignore_list: list[str],\n    ignore_list_re: list[Pattern[str]],\n    ignore_list_paths_re: list[Pattern[str]],\n) -> tuple[list[ModuleDescriptionDict], list[ErrorDescriptionDict]]:\n    \"\"\"Take a list of files/modules/packages and return the list of tuple\n    (file, module name) which have to be actually checked.\n    \"\"\"\n    result: list[ModuleDescriptionDict] = []\n    errors: list[ErrorDescriptionDict] = []\n    path = sys.path.copy()\n\n    for something in files_or_modules:\n        basename = os.path.basename(something)\n        if _is_ignored_file(\n            something, ignore_list, ignore_list_re, ignore_list_paths_re\n        ):\n            continue\n        module_path = get_python_path(something)\n        additional_search_path = [\".\", module_path] + path\n        if os.path.isfile(something) or os.path.exists(\n            os.path.join(something, \"__init__.py\")\n        ):\n            # this is a file or a directory with an explicit __init__.py\n            try:\n                modname = \".\".join(\n                    modutils.modpath_from_file(something, path=additional_search_path)\n                )\n            except ImportError:\n                modname = os.path.splitext(basename)[0]\n            if os.path.isdir(something):\n                filepath = os.path.join(something, \"__init__.py\")\n            else:\n                filepath = something\n        else:\n            # suppose it's a module or package\n            modname = something\n            try:\n                filepath = modutils.file_from_modpath(\n                    modname.split(\".\"), path=additional_search_path\n                )\n                if filepath is None:\n                    continue\n            except ImportError as ex:\n                errors.append({\"key\": \"fatal\", \"mod\": modname, \"ex\": ex})\n                continue\n        filepath = os.path.normpath(filepath)\n        modparts = (modname or something).split(\".\")\n        try:\n            spec = modutils.file_info_from_modpath(\n                modparts, path=additional_search_path\n            )\n        except ImportError:\n            # Might not be acceptable, don't crash.\n            is_namespace = False\n            is_directory = os.path.isdir(something)\n        else:\n            is_namespace = modutils.is_namespace(spec)\n            is_directory = modutils.is_directory(spec)\n        if not is_namespace:\n            result.append(\n                {\n                    \"path\": filepath,\n                    \"name\": modname,\n                    \"isarg\": True,\n                    \"basepath\": filepath,\n                    \"basename\": modname,\n                }\n            )\n        has_init = (\n            not (modname.endswith(\".__init__\") or modname == \"__init__\")\n            and os.path.basename(filepath) == \"__init__.py\"\n        )\n        if has_init or is_namespace or is_directory:\n            for subfilepath in modutils.get_module_files(\n                os.path.dirname(filepath), ignore_list, list_all=is_namespace\n            ):\n                if filepath == subfilepath:\n                    continue\n                if _is_in_ignore_list_re(\n                    os.path.basename(subfilepath), ignore_list_re\n                ) or _is_in_ignore_list_re(subfilepath, ignore_list_paths_re):\n                    continue\n\n                modpath = _modpath_from_file(\n                    subfilepath, is_namespace, path=additional_search_path\n                )\n                submodname = \".\".join(modpath)\n                result.append(\n                    {\n                        \"path\": subfilepath,\n                        \"name\": submodname,\n                        \"isarg\": False,\n                        \"basepath\": filepath,\n                        \"basename\": modname,\n                    }\n                )\n    return result, errors",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/lint/expand_modules.py::expand_modules",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         }
     },
     "pylint-dev__pylint-7228": {
@@ -110,73 +57,37 @@
             "obj_name": "argument",
             "node_type": "file",
             "path": "pylint/config/argument.py",
-            "parent": null,
-            "qualified_name": "<module>",
             "code_start_line": 1,
             "code_end_line": 497,
             "code_content": "# Licensed under the GPL: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html\n# For details: https://github.com/PyCQA/pylint/blob/main/LICENSE\n# Copyright (c) https://github.com/PyCQA/pylint/blob/main/CONTRIBUTORS.txt\n\n\"\"\"Definition of an Argument class and transformers for various argument types.\n\nAn Argument instance represents a pylint option to be handled by an argparse.ArgumentParser\n\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\nimport os\nimport pathlib\nimport re\nimport sys\nfrom collections.abc import Callable\nfrom typing import Any, Pattern, Sequence, Tuple, Union\n\nfrom pylint import interfaces\nfrom pylint import utils as pylint_utils\nfrom pylint.config.callback_actions import _CallbackAction, _ExtendAction\nfrom pylint.config.deprecation_actions import _NewNamesAction, _OldNamesAction\nfrom pylint.constants import PY38_PLUS\n\nif sys.version_info >= (3, 8):\n    from typing import Literal\nelse:\n    from typing_extensions import Literal\n\n\n_ArgumentTypes = Union[\n    str,\n    int,\n    float,\n    bool,\n    Pattern[str],\n    Sequence[str],\n    Sequence[Pattern[str]],\n    Tuple[int, ...],\n]\n\"\"\"List of possible argument types.\"\"\"\n\n\ndef _confidence_transformer(value: str) -> Sequence[str]:\n    \"\"\"Transforms a comma separated string of confidence values.\"\"\"\n    if not value:\n        return interfaces.CONFIDENCE_LEVEL_NAMES\n    values = pylint_utils._check_csv(value)\n    for confidence in values:\n        if confidence not in interfaces.CONFIDENCE_LEVEL_NAMES:\n            raise argparse.ArgumentTypeError(\n                f\"{value} should be in {*interfaces.CONFIDENCE_LEVEL_NAMES,}\"\n            )\n    return values\n\n\ndef _csv_transformer(value: str) -> Sequence[str]:\n    \"\"\"Transforms a comma separated string.\"\"\"\n    return pylint_utils._check_csv(value)\n\n\nYES_VALUES = {\"y\", \"yes\", \"true\"}\nNO_VALUES = {\"n\", \"no\", \"false\"}\n\n\ndef _yn_transformer(value: str) -> bool:\n    \"\"\"Transforms a yes/no or stringified bool into a bool.\"\"\"\n    value = value.lower()\n    if value in YES_VALUES:\n        return True\n    if value in NO_VALUES:\n        return False\n    raise argparse.ArgumentTypeError(\n        None, f\"Invalid yn value '{value}', should be in {*YES_VALUES, *NO_VALUES}\"\n    )\n\n\ndef _non_empty_string_transformer(value: str) -> str:\n    \"\"\"Check that a string is not empty and remove quotes.\"\"\"\n    if not value:\n        raise argparse.ArgumentTypeError(\"Option cannot be an empty string.\")\n    return pylint_utils._unquote(value)\n\n\ndef _path_transformer(value: str) -> str:\n    \"\"\"Expand user and variables in a path.\"\"\"\n    return os.path.expandvars(os.path.expanduser(value))\n\n\ndef _py_version_transformer(value: str) -> tuple[int, ...]:\n    \"\"\"Transforms a version string into a version tuple.\"\"\"\n    try:\n        version = tuple(int(val) for val in value.replace(\",\", \".\").split(\".\"))\n    except ValueError:\n        raise argparse.ArgumentTypeError(\n            f\"{value} has an invalid format, should be a version string. E.g., '3.8'\"\n        ) from None\n    return version\n\n\ndef _regex_transformer(value: str) -> Pattern[str]:\n    \"\"\"Return `re.compile(value)`.\"\"\"\n    try:\n        return re.compile(value)\n    except re.error as e:\n        msg = f\"Error in provided regular expression: {value} beginning at index {e.pos}: {e.msg}\"\n        raise argparse.ArgumentTypeError(msg)\n\n\ndef _regexp_csv_transfomer(value: str) -> Sequence[Pattern[str]]:\n    \"\"\"Transforms a comma separated list of regular expressions.\"\"\"\n    patterns: list[Pattern[str]] = []\n    for pattern in _csv_transformer(value):\n        patterns.append(_regex_transformer(pattern))\n    return patterns\n\n\ndef _regexp_paths_csv_transfomer(value: str) -> Sequence[Pattern[str]]:\n    \"\"\"Transforms a comma separated list of regular expressions paths.\"\"\"\n    patterns: list[Pattern[str]] = []\n    for pattern in _csv_transformer(value):\n        patterns.append(\n            re.compile(\n                str(pathlib.PureWindowsPath(pattern)).replace(\"\\\\\", \"\\\\\\\\\")\n                + \"|\"\n                + pathlib.PureWindowsPath(pattern).as_posix()\n            )\n        )\n    return patterns\n\n\n_TYPE_TRANSFORMERS: dict[str, Callable[[str], _ArgumentTypes]] = {\n    \"choice\": str,\n    \"csv\": _csv_transformer,\n    \"float\": float,\n    \"int\": int,\n    \"confidence\": _confidence_transformer,\n    \"non_empty_string\": _non_empty_string_transformer,\n    \"path\": _path_transformer,\n    \"py_version\": _py_version_transformer,\n    \"regexp\": _regex_transformer,\n    \"regexp_csv\": _regexp_csv_transfomer,\n    \"regexp_paths_csv\": _regexp_paths_csv_transfomer,\n    \"string\": pylint_utils._unquote,\n    \"yn\": _yn_transformer,\n}\n\"\"\"Type transformers for all argument types.\n\nA transformer should accept a string and return one of the supported\nArgument types. It will only be called when parsing 1) command-line,\n2) configuration files and 3) a string default value.\nNon-string default values are assumed to be of the correct type.\n\"\"\"\n\n\nclass _Argument:\n    \"\"\"Class representing an argument to be parsed by an argparse.ArgumentsParser.\n\n    This is based on the parameters passed to argparse.ArgumentsParser.add_message.\n    See:\n    https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument\n    \"\"\"\n\n    def __init__(\n        self,\n        *,\n        flags: list[str],\n        arg_help: str,\n        hide_help: bool,\n        section: str | None,\n    ) -> None:\n        self.flags = flags\n        \"\"\"The name of the argument.\"\"\"\n\n        self.hide_help = hide_help\n        \"\"\"Whether to hide this argument in the help message.\"\"\"\n\n        # argparse uses % formatting on help strings, so a % needs to be escaped\n        self.help = arg_help.replace(\"%\", \"%%\")\n        \"\"\"The description of the argument.\"\"\"\n\n        if hide_help:\n            self.help = argparse.SUPPRESS\n\n        self.section = section\n        \"\"\"The section to add this argument to.\"\"\"\n\n\nclass _BaseStoreArgument(_Argument):\n    \"\"\"Base class for store arguments to be parsed by an argparse.ArgumentsParser.\n\n    This is based on the parameters passed to argparse.ArgumentsParser.add_message.\n    See:\n    https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument\n    \"\"\"\n\n    def __init__(\n        self,\n        *,\n        flags: list[str],\n        action: str,\n        default: _ArgumentTypes,\n        arg_help: str,\n        hide_help: bool,\n        section: str | None,\n    ) -> None:\n        super().__init__(\n            flags=flags, arg_help=arg_help, hide_help=hide_help, section=section\n        )\n\n        self.action = action\n        \"\"\"The action to perform with the argument.\"\"\"\n\n        self.default = default\n        \"\"\"The default value of the argument.\"\"\"\n\n\nclass _StoreArgument(_BaseStoreArgument):\n    \"\"\"Class representing a store argument to be parsed by an argparse.ArgumentsParser.\n\n    This is based on the parameters passed to argparse.ArgumentsParser.add_message.\n    See:\n    https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument\n    \"\"\"\n\n    def __init__(\n        self,\n        *,\n        flags: list[str],\n        action: str,\n        default: _ArgumentTypes,\n        arg_type: str,\n        choices: list[str] | None,\n        arg_help: str,\n        metavar: str,\n        hide_help: bool,\n        section: str | None,\n    ) -> None:\n        super().__init__(\n            flags=flags,\n            action=action,\n            default=default,\n            arg_help=arg_help,\n            hide_help=hide_help,\n            section=section,\n        )\n\n        self.type = _TYPE_TRANSFORMERS[arg_type]\n        \"\"\"A transformer function that returns a transformed type of the argument.\"\"\"\n\n        self.choices = choices\n        \"\"\"A list of possible choices for the argument.\n\n        None if there are no restrictions.\n        \"\"\"\n\n        self.metavar = metavar\n        \"\"\"The metavar of the argument.\n\n        See:\n        https://docs.python.org/3/library/argparse.html#metavar\n        \"\"\"\n\n\nclass _StoreTrueArgument(_BaseStoreArgument):\n    \"\"\"Class representing a 'store_true' argument to be parsed by an\n    argparse.ArgumentsParser.\n\n    This is based on the parameters passed to argparse.ArgumentsParser.add_message.\n    See:\n    https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument\n    \"\"\"\n\n    # pylint: disable-next=useless-super-delegation # We narrow down the type of action\n    def __init__(\n        self,\n        *,\n        flags: list[str],\n        action: Literal[\"store_true\"],\n        default: _ArgumentTypes,\n        arg_help: str,\n        hide_help: bool,\n        section: str | None,\n    ) -> None:\n        super().__init__(\n            flags=flags,\n            action=action,\n            default=default,\n            arg_help=arg_help,\n            hide_help=hide_help,\n            section=section,\n        )\n\n\nclass _DeprecationArgument(_Argument):\n    \"\"\"Store arguments while also handling deprecation warnings for old and new names.\n\n    This is based on the parameters passed to argparse.ArgumentsParser.add_message.\n    See:\n    https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument\n    \"\"\"\n\n    def __init__(\n        self,\n        *,\n        flags: list[str],\n        action: type[argparse.Action],\n        default: _ArgumentTypes,\n        arg_type: str,\n        choices: list[str] | None,\n        arg_help: str,\n        metavar: str,\n        hide_help: bool,\n        section: str | None,\n    ) -> None:\n        super().__init__(\n            flags=flags, arg_help=arg_help, hide_help=hide_help, section=section\n        )\n\n        self.action = action\n        \"\"\"The action to perform with the argument.\"\"\"\n\n        self.default = default\n        \"\"\"The default value of the argument.\"\"\"\n\n        self.type = _TYPE_TRANSFORMERS[arg_type]\n        \"\"\"A transformer function that returns a transformed type of the argument.\"\"\"\n\n        self.choices = choices\n        \"\"\"A list of possible choices for the argument.\n\n        None if there are no restrictions.\n        \"\"\"\n\n        self.metavar = metavar\n        \"\"\"The metavar of the argument.\n\n        See:\n        https://docs.python.org/3/library/argparse.html#metavar\n        \"\"\"\n\n\nclass _ExtendArgument(_DeprecationArgument):\n    \"\"\"Class for extend arguments to be parsed by an argparse.ArgumentsParser.\n\n    This is based on the parameters passed to argparse.ArgumentsParser.add_message.\n    See:\n    https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument\n    \"\"\"\n\n    def __init__(\n        self,\n        *,\n        flags: list[str],\n        action: Literal[\"extend\"],\n        default: _ArgumentTypes,\n        arg_type: str,\n        metavar: str,\n        arg_help: str,\n        hide_help: bool,\n        section: str | None,\n        choices: list[str] | None,\n        dest: str | None,\n    ) -> None:\n        # The extend action is included in the stdlib from 3.8+\n        if PY38_PLUS:\n            action_class = argparse._ExtendAction  # type: ignore[attr-defined]\n        else:\n            action_class = _ExtendAction\n\n        self.dest = dest\n        \"\"\"The destination of the argument.\"\"\"\n\n        super().__init__(\n            flags=flags,\n            action=action_class,\n            default=default,\n            arg_type=arg_type,\n            choices=choices,\n            arg_help=arg_help,\n            metavar=metavar,\n            hide_help=hide_help,\n            section=section,\n        )\n\n\nclass _StoreOldNamesArgument(_DeprecationArgument):\n    \"\"\"Store arguments while also handling old names.\n\n    This is based on the parameters passed to argparse.ArgumentsParser.add_message.\n    See:\n    https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument\n    \"\"\"\n\n    def __init__(\n        self,\n        *,\n        flags: list[str],\n        default: _ArgumentTypes,\n        arg_type: str,\n        choices: list[str] | None,\n        arg_help: str,\n        metavar: str,\n        hide_help: bool,\n        kwargs: dict[str, Any],\n        section: str | None,\n    ) -> None:\n        super().__init__(\n            flags=flags,\n            action=_OldNamesAction,\n            default=default,\n            arg_type=arg_type,\n            choices=choices,\n            arg_help=arg_help,\n            metavar=metavar,\n            hide_help=hide_help,\n            section=section,\n        )\n\n        self.kwargs = kwargs\n        \"\"\"Any additional arguments passed to the action.\"\"\"\n\n\nclass _StoreNewNamesArgument(_DeprecationArgument):\n    \"\"\"Store arguments while also emitting deprecation warnings.\n\n    This is based on the parameters passed to argparse.ArgumentsParser.add_message.\n    See:\n    https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument\n    \"\"\"\n\n    def __init__(\n        self,\n        *,\n        flags: list[str],\n        default: _ArgumentTypes,\n        arg_type: str,\n        choices: list[str] | None,\n        arg_help: str,\n        metavar: str,\n        hide_help: bool,\n        kwargs: dict[str, Any],\n        section: str | None,\n    ) -> None:\n        super().__init__(\n            flags=flags,\n            action=_NewNamesAction,\n            default=default,\n            arg_type=arg_type,\n            choices=choices,\n            arg_help=arg_help,\n            metavar=metavar,\n            hide_help=hide_help,\n            section=section,\n        )\n\n        self.kwargs = kwargs\n        \"\"\"Any additional arguments passed to the action.\"\"\"\n\n\nclass _CallableArgument(_Argument):\n    \"\"\"Class representing an callable argument to be parsed by an\n    argparse.ArgumentsParser.\n\n    This is based on the parameters passed to argparse.ArgumentsParser.add_message.\n    See:\n    https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument\n    \"\"\"\n\n    def __init__(\n        self,\n        *,\n        flags: list[str],\n        action: type[_CallbackAction],\n        arg_help: str,\n        kwargs: dict[str, Any],\n        hide_help: bool,\n        section: str | None,\n        metavar: str,\n    ) -> None:\n        super().__init__(\n            flags=flags, arg_help=arg_help, hide_help=hide_help, section=section\n        )\n\n        self.action = action\n        \"\"\"The action to perform with the argument.\"\"\"\n\n        self.kwargs = kwargs\n        \"\"\"Any additional arguments passed to the action.\"\"\"\n\n        self.metavar = metavar\n        \"\"\"The metavar of the argument.\n\n        See:\n        https://docs.python.org/3/library/argparse.html#metavar\n        \"\"\"",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/config/argument.py::<module>",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         },
         "pylint/config/argument.py::_TYPE_TRANSFORMERS": {
             "obj_name": "_TYPE_TRANSFORMERS",
             "node_type": "global_var",
             "path": "pylint/config/argument.py",
-            "parent": null,
-            "qualified_name": "_TYPE_TRANSFORMERS",
             "code_start_line": 133,
             "code_end_line": 147,
             "code_content": "_TYPE_TRANSFORMERS: dict[str, Callable[[str], _ArgumentTypes]] = {\n    \"choice\": str,\n    \"csv\": _csv_transformer,\n    \"float\": float,\n    \"int\": int,\n    \"confidence\": _confidence_transformer,\n    \"non_empty_string\": _non_empty_string_transformer,\n    \"path\": _path_transformer,\n    \"py_version\": _py_version_transformer,\n    \"regexp\": _regex_transformer,\n    \"regexp_csv\": _regexp_csv_transfomer,\n    \"regexp_paths_csv\": _regexp_paths_csv_transfomer,\n    \"string\": pylint_utils._unquote,\n    \"yn\": _yn_transformer,\n}",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/config/argument.py::_TYPE_TRANSFORMERS",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         },
         "pylint/config/argument.py::_regex_transformer": {
             "obj_name": "_regex_transformer",
             "node_type": "top-level function",
             "path": "pylint/config/argument.py",
-            "parent": null,
-            "qualified_name": "_regex_transformer",
             "code_start_line": 102,
             "code_end_line": 108,
             "code_content": "def _regex_transformer(value: str) -> Pattern[str]:\n    \"\"\"Return `re.compile(value)`.\"\"\"\n    try:\n        return re.compile(value)\n    except re.error as e:\n        msg = f\"Error in provided regular expression: {value} beginning at index {e.pos}: {e.msg}\"\n        raise argparse.ArgumentTypeError(msg)",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/config/argument.py::_regex_transformer",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         },
         "pylint/config/argument.py::_regexp_csv_transfomer": {
             "obj_name": "_regexp_csv_transfomer",
             "node_type": "top-level function",
             "path": "pylint/config/argument.py",
-            "parent": null,
-            "qualified_name": "_regexp_csv_transfomer",
             "code_start_line": 111,
             "code_end_line": 116,
             "code_content": "def _regexp_csv_transfomer(value: str) -> Sequence[Pattern[str]]:\n    \"\"\"Transforms a comma separated list of regular expressions.\"\"\"\n    patterns: list[Pattern[str]] = []\n    for pattern in _csv_transformer(value):\n        patterns.append(_regex_transformer(pattern))\n    return patterns",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/config/argument.py::_regexp_csv_transfomer",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         }
     },
     "pylint-dev__pylint-7993": {
@@ -184,45 +95,19 @@
             "obj_name": "on_set_current_module",
             "node_type": "class_function",
             "path": "pylint/reporters/text.py",
-            "parent": "TextReporter",
-            "qualified_name": "TextReporter.on_set_current_module",
             "code_start_line": 166,
             "code_end_line": 186,
             "code_content": "    def on_set_current_module(self, module: str, filepath: str | None) -> None:\n        \"\"\"Set the format template to be used and check for unrecognized arguments.\"\"\"\n        template = str(self.linter.config.msg_template or self._template)\n\n        # Return early if the template is the same as the previous one\n        if template == self._template:\n            return\n\n        # Set template to the currently selected template\n        self._template = template\n\n        # Check to see if all parameters in the template are attributes of the Message\n        arguments = re.findall(r\"\\{(\\w+?)(:.*)?\\}\", template)\n        for argument in arguments:\n            if argument[0] not in MESSAGE_FIELDS:\n                warnings.warn(\n                    f\"Don't recognize the argument '{argument[0]}' in the --msg-template. \"\n                    \"Are you sure it is supported on the current version of pylint?\"\n                )\n                template = re.sub(r\"\\{\" + argument[0] + r\"(:.*?)?\\}\", \"\", template)\n        self._fixed_template = template",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/reporters/text.py::TextReporter.on_set_current_module",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ],
-            "class_context_ids": [
-                "pylint/reporters/text.py::TextReporter"
-            ]
+            "parent": "TextReporter"
         },
         "pylint/reporters/text.py::TextReporter": {
             "obj_name": "TextReporter",
             "node_type": "class",
             "path": "pylint/reporters/text.py",
-            "parent": null,
-            "qualified_name": "TextReporter",
             "code_start_line": 152,
             "code_end_line": 211,
             "code_content": "class TextReporter(BaseReporter):\n    \"\"\"Reports messages and layouts in plain text.\"\"\"\n\n    name = \"text\"\n    extension = \"txt\"\n    line_format = \"{path}:{line}:{column}: {msg_id}: {msg} ({symbol})\"\n\n    def __init__(self, output: TextIO | None = None) -> None:\n        super().__init__(output)\n        self._modules: set[str] = set()\n        self._template = self.line_format\n        self._fixed_template = self.line_format\n        \"\"\"The output format template with any unrecognized arguments removed.\"\"\"\n\n    def on_set_current_module(self, module: str, filepath: str | None) -> None:\n        \"\"\"Set the format template to be used and check for unrecognized arguments.\"\"\"\n        template = str(self.linter.config.msg_template or self._template)\n\n        # Return early if the template is the same as the previous one\n        if template == self._template:\n            return\n\n        # Set template to the currently selected template\n        self._template = template\n\n        # Check to see if all parameters in the template are attributes of the Message\n        arguments = re.findall(r\"\\{(\\w+?)(:.*)?\\}\", template)\n        for argument in arguments:\n            if argument[0] not in MESSAGE_FIELDS:\n                warnings.warn(\n                    f\"Don't recognize the argument '{argument[0]}' in the --msg-template. \"\n                    \"Are you sure it is supported on the current version of pylint?\"\n                )\n                template = re.sub(r\"\\{\" + argument[0] + r\"(:.*?)?\\}\", \"\", template)\n        self._fixed_template = template\n\n    def write_message(self, msg: Message) -> None:\n        \"\"\"Convenience method to write a formatted message with class default\n        template.\n        \"\"\"\n        self_dict = asdict(msg)\n        for key in (\"end_line\", \"end_column\"):\n            self_dict[key] = self_dict[key] or \"\"\n\n        self.writeln(self._fixed_template.format(**self_dict))\n\n    def handle_message(self, msg: Message) -> None:\n        \"\"\"Manage message of different type and in the context of path.\"\"\"\n        if msg.module not in self._modules:\n            if msg.module:\n                self.writeln(f\"************* Module {msg.module}\")\n                self._modules.add(msg.module)\n            else:\n                self.writeln(\"************* \")\n        self.write_message(msg)\n\n    def _display(self, layout: Section) -> None:\n        \"\"\"Launch layouts display.\"\"\"\n        print(file=self.out)\n        TextWriter().format(layout, self.out)",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "reason": "enclosing_class_context",
-                    "related_symbol": "pylint/reporters/text.py::TextReporter.on_set_current_module",
-                    "class_symbol": "pylint/reporters/text.py::TextReporter",
-                    "confidence": 1.0
-                }
-            ],
-            "context_for": [
-                "pylint/reporters/text.py::TextReporter.on_set_current_module"
-            ],
-            "content_kind": "full_class"
+            "parent": null
         }
     }
 }

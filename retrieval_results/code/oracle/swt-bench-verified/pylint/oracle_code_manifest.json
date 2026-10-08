@@ -71,7 +71,78 @@
                 }
             ]
         },
-        "non_python_files": []
+        "non_python_files": [],
+        "production_patch_provenance": {
+            "production_patch_source_dataset": "SWE-bench/SWE-bench_Verified",
+            "production_patch_repair": "restored_first_and_last_lines_from_matching_upstream_instance",
+            "original_production_patch_sha256": "ba105ed49c0e1c92cbcd807163fd74ef3e54349f3013420d09dae0fc970cec74"
+        },
+        "documents": {
+            "base": {
+                "pylint/checkers/similar.py::Similar.run": {
+                    "qualified_name": "Similar.run",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/checkers/similar.py::Similar.run",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "class_context_ids": [
+                        "pylint/checkers/similar.py::Similar"
+                    ]
+                },
+                "pylint/checkers/similar.py::Similar": {
+                    "qualified_name": "Similar",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "pylint/checkers/similar.py::Similar.run",
+                            "class_symbol": "pylint/checkers/similar.py::Similar",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "pylint/checkers/similar.py::Similar.run"
+                    ],
+                    "content_kind": "full_class"
+                }
+            },
+            "patched": {
+                "pylint/checkers/similar.py::Similar.run": {
+                    "qualified_name": "Similar.run",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/checkers/similar.py::Similar.run",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "class_context_ids": [
+                        "pylint/checkers/similar.py::Similar"
+                    ]
+                },
+                "pylint/checkers/similar.py::Similar": {
+                    "qualified_name": "Similar",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "pylint/checkers/similar.py::Similar.run",
+                            "class_symbol": "pylint/checkers/similar.py::Similar",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "pylint/checkers/similar.py::Similar.run"
+                    ],
+                    "content_kind": "full_class"
+                }
+            }
+        }
     },
     "pylint-dev__pylint-6386": {
         "base_commit": "754b487f4d892e3d4872b6fc7468a71db4e31c13",
@@ -315,7 +386,478 @@
                 }
             ]
         },
-        "non_python_files": []
+        "non_python_files": [],
+        "production_patch_provenance": {
+            "production_patch_source_dataset": "SWE-bench/SWE-bench_Verified",
+            "production_patch_repair": "restored_first_and_last_lines_from_matching_upstream_instance",
+            "original_production_patch_sha256": "479db9ffa9f73081f3c973248dfc51c8c303795ef0c108fb89cdc7cd8a51ceb4"
+        },
+        "documents": {
+            "base": {
+                "pylint/config/argument.py::_CallableArgument.__init__": {
+                    "qualified_name": "_CallableArgument.__init__",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/argument.py::_CallableArgument.__init__",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "class_context_ids": [
+                        "pylint/config/argument.py::_CallableArgument"
+                    ]
+                },
+                "pylint/config/arguments_manager.py::_ArgumentsManager._add_parser_option": {
+                    "qualified_name": "_ArgumentsManager._add_parser_option",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/arguments_manager.py::_ArgumentsManager._add_parser_option",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "class_context_ids": [
+                        "pylint/config/arguments_manager.py::_ArgumentsManager"
+                    ]
+                },
+                "pylint/config/utils.py::PREPROCESSABLE_OPTIONS": {
+                    "qualified_name": "PREPROCESSABLE_OPTIONS",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/utils.py::PREPROCESSABLE_OPTIONS",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/config/utils.py::_convert_option_to_argument": {
+                    "qualified_name": "_convert_option_to_argument",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/utils.py::_convert_option_to_argument",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/config/utils.py::_preprocess_options": {
+                    "qualified_name": "_preprocess_options",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/utils.py::_preprocess_options",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/lint/base_options.py::_make_run_options": {
+                    "qualified_name": "_make_run_options",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/lint/base_options.py::_make_run_options",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/config/argument.py::_CallableArgument": {
+                    "qualified_name": "_CallableArgument",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "pylint/config/argument.py::_CallableArgument.__init__",
+                            "class_symbol": "pylint/config/argument.py::_CallableArgument",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "pylint/config/argument.py::_CallableArgument.__init__"
+                    ],
+                    "content_kind": "full_class"
+                },
+                "pylint/config/arguments_manager.py::_ArgumentsManager": {
+                    "qualified_name": "_ArgumentsManager",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "pylint/config/arguments_manager.py::_ArgumentsManager._add_parser_option",
+                            "class_symbol": "pylint/config/arguments_manager.py::_ArgumentsManager",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "pylint/config/arguments_manager.py::_ArgumentsManager._add_parser_option"
+                    ],
+                    "content_kind": "class_outline",
+                    "source_spans": [
+                        [
+                            60,
+                            60
+                        ],
+                        [
+                            61,
+                            61
+                        ],
+                        [
+                            63,
+                            97
+                        ],
+                        [
+                            99,
+                            100
+                        ],
+                        [
+                            104,
+                            105
+                        ],
+                        [
+                            108,
+                            110
+                        ],
+                        [
+                            117,
+                            118
+                        ],
+                        [
+                            125,
+                            125
+                        ],
+                        [
+                            142,
+                            144
+                        ],
+                        [
+                            158,
+                            161
+                        ],
+                        [
+                            236,
+                            236
+                        ],
+                        [
+                            240,
+                            240
+                        ],
+                        [
+                            252,
+                            254
+                        ],
+                        [
+                            264,
+                            278
+                        ],
+                        [
+                            280,
+                            282
+                        ],
+                        [
+                            320,
+                            326
+                        ],
+                        [
+                            357,
+                            363
+                        ],
+                        [
+                            377,
+                            379
+                        ],
+                        [
+                            415,
+                            417
+                        ],
+                        [
+                            472,
+                            472
+                        ],
+                        [
+                            484,
+                            486
+                        ],
+                        [
+                            525,
+                            528
+                        ],
+                        [
+                            559,
+                            559
+                        ],
+                        [
+                            575,
+                            575
+                        ],
+                        [
+                            585,
+                            587
+                        ],
+                        [
+                            597,
+                            599
+                        ],
+                        [
+                            619,
+                            619
+                        ],
+                        [
+                            629,
+                            629
+                        ],
+                        [
+                            647,
+                            647
+                        ],
+                        [
+                            657,
+                            657
+                        ],
+                        [
+                            728,
+                            734
+                        ]
+                    ]
+                }
+            },
+            "patched": {
+                "pylint/config/argument.py::_CallableArgument.__init__": {
+                    "qualified_name": "_CallableArgument.__init__",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/argument.py::_CallableArgument.__init__",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "class_context_ids": [
+                        "pylint/config/argument.py::_CallableArgument"
+                    ]
+                },
+                "pylint/config/arguments_manager.py::_ArgumentsManager._add_parser_option": {
+                    "qualified_name": "_ArgumentsManager._add_parser_option",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/arguments_manager.py::_ArgumentsManager._add_parser_option",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "class_context_ids": [
+                        "pylint/config/arguments_manager.py::_ArgumentsManager"
+                    ]
+                },
+                "pylint/config/utils.py::PREPROCESSABLE_OPTIONS": {
+                    "qualified_name": "PREPROCESSABLE_OPTIONS",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/utils.py::PREPROCESSABLE_OPTIONS",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/config/utils.py::_convert_option_to_argument": {
+                    "qualified_name": "_convert_option_to_argument",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/utils.py::_convert_option_to_argument",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/config/utils.py::_preprocess_options": {
+                    "qualified_name": "_preprocess_options",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/utils.py::_preprocess_options",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/lint/base_options.py::_make_run_options": {
+                    "qualified_name": "_make_run_options",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/lint/base_options.py::_make_run_options",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/config/argument.py::_CallableArgument": {
+                    "qualified_name": "_CallableArgument",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "pylint/config/argument.py::_CallableArgument.__init__",
+                            "class_symbol": "pylint/config/argument.py::_CallableArgument",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "pylint/config/argument.py::_CallableArgument.__init__"
+                    ],
+                    "content_kind": "full_class"
+                },
+                "pylint/config/arguments_manager.py::_ArgumentsManager": {
+                    "qualified_name": "_ArgumentsManager",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "pylint/config/arguments_manager.py::_ArgumentsManager._add_parser_option",
+                            "class_symbol": "pylint/config/arguments_manager.py::_ArgumentsManager",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "pylint/config/arguments_manager.py::_ArgumentsManager._add_parser_option"
+                    ],
+                    "content_kind": "class_outline",
+                    "source_spans": [
+                        [
+                            60,
+                            60
+                        ],
+                        [
+                            61,
+                            61
+                        ],
+                        [
+                            63,
+                            97
+                        ],
+                        [
+                            99,
+                            100
+                        ],
+                        [
+                            104,
+                            105
+                        ],
+                        [
+                            108,
+                            110
+                        ],
+                        [
+                            117,
+                            118
+                        ],
+                        [
+                            125,
+                            125
+                        ],
+                        [
+                            142,
+                            144
+                        ],
+                        [
+                            158,
+                            161
+                        ],
+                        [
+                            237,
+                            237
+                        ],
+                        [
+                            241,
+                            241
+                        ],
+                        [
+                            253,
+                            255
+                        ],
+                        [
+                            265,
+                            279
+                        ],
+                        [
+                            281,
+                            283
+                        ],
+                        [
+                            321,
+                            327
+                        ],
+                        [
+                            358,
+                            364
+                        ],
+                        [
+                            378,
+                            380
+                        ],
+                        [
+                            416,
+                            418
+                        ],
+                        [
+                            473,
+                            473
+                        ],
+                        [
+                            485,
+                            487
+                        ],
+                        [
+                            526,
+                            529
+                        ],
+                        [
+                            560,
+                            560
+                        ],
+                        [
+                            576,
+                            576
+                        ],
+                        [
+                            586,
+                            588
+                        ],
+                        [
+                            598,
+                            600
+                        ],
+                        [
+                            620,
+                            620
+                        ],
+                        [
+                            630,
+                            630
+                        ],
+                        [
+                            648,
+                            648
+                        ],
+                        [
+                            658,
+                            658
+                        ],
+                        [
+                            729,
+                            735
+                        ]
+                    ]
+                }
+            }
+        }
     },
     "pylint-dev__pylint-6903": {
         "base_commit": "ca80f03a43bc39e4cc2c67dc99817b3c9f13b8a6",
@@ -367,7 +909,40 @@
             "base": [],
             "patched": []
         },
-        "non_python_files": []
+        "non_python_files": [],
+        "production_patch_provenance": {
+            "production_patch_source_dataset": "SWE-bench/SWE-bench_Verified",
+            "production_patch_repair": "restored_first_and_last_lines_from_matching_upstream_instance",
+            "original_production_patch_sha256": "664a4cfc041fb3c6bddd68f2aac7a9729292fae21af5277849373b45b52c59fd"
+        },
+        "documents": {
+            "base": {
+                "pylint/lint/run.py::_query_cpu": {
+                    "qualified_name": "_query_cpu",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/lint/run.py::_query_cpu",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            },
+            "patched": {
+                "pylint/lint/run.py::_query_cpu": {
+                    "qualified_name": "_query_cpu",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/lint/run.py::_query_cpu",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            }
+        }
     },
     "pylint-dev__pylint-7080": {
         "base_commit": "3c5eca2ded3dd2b59ebaf23eb289453b5d2930f0",
@@ -419,7 +994,40 @@
             "base": [],
             "patched": []
         },
-        "non_python_files": []
+        "non_python_files": [],
+        "production_patch_provenance": {
+            "production_patch_source_dataset": "SWE-bench/SWE-bench_Verified",
+            "production_patch_repair": "restored_first_and_last_lines_from_matching_upstream_instance",
+            "original_production_patch_sha256": "d8dd34b07a0ca7137117962c1d41410577ebdc403a55576b490efadf198cb4a3"
+        },
+        "documents": {
+            "base": {
+                "pylint/lint/expand_modules.py::_is_ignored_file": {
+                    "qualified_name": "_is_ignored_file",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/lint/expand_modules.py::_is_ignored_file",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            },
+            "patched": {
+                "pylint/lint/expand_modules.py::_is_ignored_file": {
+                    "qualified_name": "_is_ignored_file",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/lint/expand_modules.py::_is_ignored_file",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            }
+        }
     },
     "pylint-dev__pylint-7277": {
         "base_commit": "684a1d6aa0a6791e20078bc524f97c8906332390",
@@ -471,7 +1079,40 @@
             "base": [],
             "patched": []
         },
-        "non_python_files": []
+        "non_python_files": [],
+        "production_patch_provenance": {
+            "production_patch_source_dataset": "SWE-bench/SWE-bench_Verified",
+            "production_patch_repair": "restored_first_and_last_lines_from_matching_upstream_instance",
+            "original_production_patch_sha256": "1e479ebf860ebb3e6a27b5bfb202e5cff3d49c6a71f19f7513b1089f4af118ae"
+        },
+        "documents": {
+            "base": {
+                "pylint/__init__.py::modify_sys_path": {
+                    "qualified_name": "modify_sys_path",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/__init__.py::modify_sys_path",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            },
+            "patched": {
+                "pylint/__init__.py::modify_sys_path": {
+                    "qualified_name": "modify_sys_path",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/__init__.py::modify_sys_path",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            }
+        }
     },
     "pylint-dev__pylint-8898": {
         "base_commit": "1f8c4d9eb185c16a2c1d881c054f015e1c2eb334",
@@ -640,6 +1281,121 @@
             "base": [],
             "patched": []
         },
-        "non_python_files": []
+        "non_python_files": [],
+        "production_patch_provenance": {
+            "production_patch_source_dataset": "SWE-bench/SWE-bench_Verified",
+            "production_patch_repair": "restored_first_and_last_lines_from_matching_upstream_instance",
+            "original_production_patch_sha256": "aac328c7b6c4c13f0a6d2f68b01f293e089d19567bdd5485648457f53268d2c5"
+        },
+        "documents": {
+            "base": {
+                "pylint/config/argument.py::_regexp_csv_transfomer": {
+                    "qualified_name": "_regexp_csv_transfomer",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/argument.py::_regexp_csv_transfomer",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        },
+                        {
+                            "changed_symbol": "pylint/utils/utils.py::_check_regexp_csv",
+                            "reason": "existing_caller",
+                            "confidence": 0.8
+                        }
+                    ]
+                },
+                "pylint/utils/__init__.py::<module>": {
+                    "qualified_name": "<module>",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/utils/__init__.py::<module>",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/utils/__init__.py::__all__": {
+                    "qualified_name": "__all__",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/utils/__init__.py::__all__",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/utils/utils.py::<module>": {
+                    "qualified_name": "<module>",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/utils/utils.py::<module>",
+                            "reason": "existing_symbol",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            },
+            "patched": {
+                "pylint/config/argument.py::_regexp_csv_transfomer": {
+                    "qualified_name": "_regexp_csv_transfomer",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/config/argument.py::_regexp_csv_transfomer",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/utils/__init__.py::<module>": {
+                    "qualified_name": "<module>",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/utils/__init__.py::<module>",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/utils/__init__.py::__all__": {
+                    "qualified_name": "__all__",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/utils/__init__.py::__all__",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/utils/utils.py::<module>": {
+                    "qualified_name": "<module>",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/utils/utils.py::<module>",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                },
+                "pylint/utils/utils.py::_check_regexp_csv": {
+                    "qualified_name": "_check_regexp_csv",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "changed_symbol": "pylint/utils/utils.py::_check_regexp_csv",
+                            "reason": "changed_lines",
+                            "confidence": 1.0
+                        }
+                    ]
+                }
+            }
+        }
     }
 }

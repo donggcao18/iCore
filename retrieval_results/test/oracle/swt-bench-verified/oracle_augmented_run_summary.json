@@ -1,0 +1,267 @@
+{
+  "dataset": "eth-sri/SWT-bench_Verified_bm25_27k_zsb",
+  "input_csv": "data\\swt-bench-verified\\oracle_input_pylint_pytest.csv",
+  "input_csv_sha256": "df5cb6e9db5dbe6bc4775e5dfb4ac5a054220153f6d7db1713a9e5ab49427e68",
+  "production_patch_reference": "SWE-bench/SWE-bench_Verified",
+  "production_patch_repair_manifest": "data/swt-bench-verified/oracle_input_pylint_pytest_manifest.json",
+  "parameters": {
+    "top_k": 10,
+    "max_depth": 8,
+    "fallback": true
+  },
+  "retrieval_schema": "original code: seven-field objects; original tests: three-field lists",
+  "regression_tests_passed": 106,
+  "repositories": {
+    "pylint-dev/pylint": {
+      "instances": 6,
+      "original_base_tests": 2,
+      "augmented_tests": 51,
+      "base_code_objects": 17,
+      "empty_before": 4,
+      "empty_after": 0,
+      "empty_augmented_instances": [],
+      "module_proximity_instances": [],
+      "methods_with_class_context": 3,
+      "all_selected_snippets_verified_against_base_commit": true,
+      "all_code_fragments_verified_against_indicated_revision": true,
+      "generator_schema_verified": true,
+      "per_instance": [
+        {
+          "instance_id": "pylint-dev__pylint-4970",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "base_code_objects": 2,
+          "patched_code_objects": 2,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pylint-dev__pylint-6386",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "base_code_objects": 8,
+          "patched_code_objects": 8,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pylint-dev__pylint-6903",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "base_code_objects": 1,
+          "patched_code_objects": 1,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pylint-dev__pylint-7080",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "base_code_objects": 1,
+          "patched_code_objects": 1,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pylint-dev__pylint-7277",
+          "original_base": 1,
+          "production_selected": 1,
+          "augmented": 1,
+          "added": 0,
+          "base_code_objects": 1,
+          "patched_code_objects": 1,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pylint-dev__pylint-8898",
+          "original_base": 1,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 9,
+          "base_code_objects": 4,
+          "patched_code_objects": 5,
+          "source_verified": true
+        }
+      ]
+    },
+    "pytest-dev/pytest": {
+      "instances": 15,
+      "original_base_tests": 19,
+      "augmented_tests": 113,
+      "base_code_objects": 40,
+      "empty_before": 10,
+      "empty_after": 1,
+      "empty_augmented_instances": [
+        "pytest-dev__pytest-7236"
+      ],
+      "module_proximity_instances": [
+        "pytest-dev__pytest-10051",
+        "pytest-dev__pytest-10081",
+        "pytest-dev__pytest-10356",
+        "pytest-dev__pytest-6202",
+        "pytest-dev__pytest-7432",
+        "pytest-dev__pytest-7982"
+      ],
+      "methods_with_class_context": 16,
+      "all_selected_snippets_verified_against_base_commit": true,
+      "all_code_fragments_verified_against_indicated_revision": true,
+      "generator_schema_verified": true,
+      "per_instance": [
+        {
+          "instance_id": "pytest-dev__pytest-10051",
+          "original_base": 0,
+          "production_selected": 6,
+          "augmented": 6,
+          "added": 6,
+          "base_code_objects": 3,
+          "patched_code_objects": 4,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-10081",
+          "original_base": 0,
+          "production_selected": 1,
+          "augmented": 1,
+          "added": 1,
+          "base_code_objects": 2,
+          "patched_code_objects": 2,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-10356",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "base_code_objects": 2,
+          "patched_code_objects": 2,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-5262",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "base_code_objects": 1,
+          "patched_code_objects": 2,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-5631",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "base_code_objects": 1,
+          "patched_code_objects": 1,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-5787",
+          "original_base": 12,
+          "production_selected": 9,
+          "augmented": 10,
+          "added": 0,
+          "base_code_objects": 4,
+          "patched_code_objects": 12,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-5809",
+          "original_base": 1,
+          "production_selected": 0,
+          "augmented": 1,
+          "added": 0,
+          "base_code_objects": 1,
+          "patched_code_objects": 1,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-5840",
+          "original_base": 4,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 6,
+          "base_code_objects": 6,
+          "patched_code_objects": 5,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-6197",
+          "original_base": 0,
+          "production_selected": 9,
+          "augmented": 9,
+          "added": 9,
+          "base_code_objects": 7,
+          "patched_code_objects": 5,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-6202",
+          "original_base": 1,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 9,
+          "base_code_objects": 2,
+          "patched_code_objects": 2,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-7236",
+          "original_base": 0,
+          "production_selected": 0,
+          "augmented": 0,
+          "added": 0,
+          "base_code_objects": 4,
+          "patched_code_objects": 5,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-7324",
+          "original_base": 1,
+          "production_selected": 6,
+          "augmented": 6,
+          "added": 5,
+          "base_code_objects": 3,
+          "patched_code_objects": 4,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-7432",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "base_code_objects": 1,
+          "patched_code_objects": 1,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-7521",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "base_code_objects": 2,
+          "patched_code_objects": 2,
+          "source_verified": true
+        },
+        {
+          "instance_id": "pytest-dev__pytest-7982",
+          "original_base": 0,
+          "production_selected": 10,
+          "augmented": 10,
+          "added": 10,
+          "base_code_objects": 1,
+          "patched_code_objects": 1,
+          "source_verified": true
+        }
+      ]
+    }
+  }
+}

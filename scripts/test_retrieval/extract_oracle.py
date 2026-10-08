@@ -18,6 +18,8 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+from scripts.retrieval_formats import test_retrieval
+
 
 ROOT = Path(__file__).resolve().parents[2]
 DATASETS = {
@@ -339,8 +341,8 @@ def main() -> None:
         manifest_output[instance_id] = manifest
         print(f"{instance_id}: {len(patched)} changed tests, {len(base)} available at base")
 
-    write_json(output_dir / "related_tests_oracle_patched.json", patched_output)
-    write_json(output_dir / "related_tests_oracle_base.json", base_output)
+    write_json(output_dir / "related_tests_oracle_patched.json", test_retrieval(patched_output))
+    write_json(output_dir / "related_tests_oracle_base.json", test_retrieval(base_output))
     write_json(output_dir / "oracle_manifest.json", manifest_output)
     print(f"Wrote oracle context and manifest to {output_dir}")
 

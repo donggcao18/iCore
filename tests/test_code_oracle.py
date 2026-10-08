@@ -11,6 +11,7 @@ from scripts.code_retrieval.extract_oracle import (
 )
 from scripts.test_retrieval.augment_oracle import changed_symbols, production_changes
 from scripts.test_retrieval.static_dependencies import DependencyIndex
+from scripts.retrieval_formats import CODE_FIELDS
 
 
 def diff(path, before, after, *, new_file=False, deleted_file=False):
@@ -169,11 +170,20 @@ class CodeOracleTests(unittest.TestCase):
     def test_store_preserves_other_instances_and_updates_rerun(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            store_instance(root, "a", ({"old": {}}, {}, {"version": 1}))
-            store_instance(root, "b", ({"b": {}}, {}, {}))
-            store_instance(root, "a", ({"new": {}}, {}, {"version": 2}))
+            base, _, _ = serialize("def work():\n    return 1\n", "def work():\n    return 2\n")
+            document = base["core.py::work"]
+            store_instance(root, "a", ({"old": document}, {}, {"version": 1}))
+            store_instance(root, "b", ({"b": document}, {}, {}))
+            store_instance(root, "a", ({"new": document}, {}, {"version": 2}))
             output = json.loads((root / OUTPUT_FILES[0]).read_text(encoding="utf-8"))
-            self.assertEqual(output, {"a": {"new": {}}, "b": {"b": {}}})
+            self.assertEqual(set(output["a"]), {"new"})
+            self.assertEqual(set(output["b"]), {"b"})
+            self.assertEqual(set(output["a"]["new"]), set(CODE_FIELDS))
+            self.assertEqual(output["a"]["new"]["code_content"], document["code_content"])
+            manifests = json.loads((root / OUTPUT_FILES[2]).read_text(encoding="utf-8"))
+            self.assertEqual(manifests["a"]["version"], 2)
+            self.assertEqual(set(manifests["a"]["documents"]["base"]), {"new"})
+            self.assertEqual(manifests["b"]["documents"]["base"]["b"]["revision"], "base")
             self.assertFalse(list(root.glob("*.tmp")))
 
 

@@ -4,45 +4,19 @@
             "obj_name": "run",
             "node_type": "class_function",
             "path": "pylint/checkers/similar.py",
-            "parent": "Similar",
-            "qualified_name": "Similar.run",
             "code_start_line": 391,
             "code_end_line": 395,
             "code_content": "    def run(self) -> None:\n        \"\"\"start looking for similarities and display results on stdout\"\"\"\n        if self.min_lines == 0:\n            return\n        self._display_sims(self._compute_sims())",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/checkers/similar.py::Similar.run",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ],
-            "class_context_ids": [
-                "pylint/checkers/similar.py::Similar"
-            ]
+            "parent": "Similar"
         },
         "pylint/checkers/similar.py::Similar": {
             "obj_name": "Similar",
             "node_type": "class",
             "path": "pylint/checkers/similar.py",
-            "parent": null,
-            "qualified_name": "Similar",
             "code_start_line": 353,
             "code_end_line": 552,
             "code_content": "class Similar:\n    \"\"\"finds copy-pasted lines of code in a project\"\"\"\n\n    def __init__(\n        self,\n        min_lines: int = DEFAULT_MIN_SIMILARITY_LINE,\n        ignore_comments: bool = False,\n        ignore_docstrings: bool = False,\n        ignore_imports: bool = False,\n        ignore_signatures: bool = False,\n    ) -> None:\n        self.min_lines = min_lines\n        self.ignore_comments = ignore_comments\n        self.ignore_docstrings = ignore_docstrings\n        self.ignore_imports = ignore_imports\n        self.ignore_signatures = ignore_signatures\n        self.linesets: List[\"LineSet\"] = []\n\n    def append_stream(self, streamid: str, stream: TextIO, encoding=None) -> None:\n        \"\"\"append a file to search for similarities\"\"\"\n        if encoding is None:\n            readlines = stream.readlines\n        else:\n            readlines = decoding_stream(stream, encoding).readlines\n        try:\n            self.linesets.append(\n                LineSet(\n                    streamid,\n                    readlines(),\n                    self.ignore_comments,\n                    self.ignore_docstrings,\n                    self.ignore_imports,\n                    self.ignore_signatures,\n                )\n            )\n        except UnicodeDecodeError:\n            pass\n\n    def run(self) -> None:\n        \"\"\"start looking for similarities and display results on stdout\"\"\"\n        if self.min_lines == 0:\n            return\n        self._display_sims(self._compute_sims())\n\n    def _compute_sims(self) -> List[Tuple[int, Set[LinesChunkLimits_T]]]:\n        \"\"\"compute similarities in appended files\"\"\"\n        no_duplicates: Dict[int, List[Set[LinesChunkLimits_T]]] = defaultdict(list)\n\n        for commonality in self._iter_sims():\n            num = commonality.cmn_lines_nb\n            lineset1 = commonality.fst_lset\n            start_line_1 = commonality.fst_file_start\n            end_line_1 = commonality.fst_file_end\n            lineset2 = commonality.snd_lset\n            start_line_2 = commonality.snd_file_start\n            end_line_2 = commonality.snd_file_end\n\n            duplicate = no_duplicates[num]\n            couples: Set[LinesChunkLimits_T]\n            for couples in duplicate:\n                if (lineset1, start_line_1, end_line_1) in couples or (\n                    lineset2,\n                    start_line_2,\n                    end_line_2,\n                ) in couples:\n                    break\n            else:\n                duplicate.append(\n                    {\n                        (lineset1, start_line_1, end_line_1),\n                        (lineset2, start_line_2, end_line_2),\n                    }\n                )\n        sims: List[Tuple[int, Set[LinesChunkLimits_T]]] = []\n        ensembles: List[Set[LinesChunkLimits_T]]\n        for num, ensembles in no_duplicates.items():\n            cpls: Set[LinesChunkLimits_T]\n            for cpls in ensembles:\n                sims.append((num, cpls))\n        sims.sort()\n        sims.reverse()\n        return sims\n\n    def _display_sims(\n        self, similarities: List[Tuple[int, Set[LinesChunkLimits_T]]]\n    ) -> None:\n        \"\"\"Display computed similarities on stdout\"\"\"\n        report = self._get_similarity_report(similarities)\n        print(report)\n\n    def _get_similarity_report(\n        self, similarities: List[Tuple[int, Set[LinesChunkLimits_T]]]\n    ) -> str:\n        \"\"\"Create a report from similarities\"\"\"\n        report: str = \"\"\n        duplicated_line_number: int = 0\n        for number, couples in similarities:\n            report += f\"\\n{number} similar lines in {len(couples)} files\\n\"\n            couples_l = sorted(couples)\n            line_set = start_line = end_line = None\n            for line_set, start_line, end_line in couples_l:\n                report += f\"=={line_set.name}:[{start_line}:{end_line}]\\n\"\n            if line_set:\n                for line in line_set._real_lines[start_line:end_line]:\n                    report += f\"   {line.rstrip()}\\n\" if line.rstrip() else \"\\n\"\n            duplicated_line_number += number * (len(couples_l) - 1)\n        total_line_number: int = sum(len(lineset) for lineset in self.linesets)\n        report += f\"TOTAL lines={total_line_number} duplicates={duplicated_line_number} percent={duplicated_line_number * 100.0 / total_line_number:.2f}\\n\"\n        return report\n\n    def _find_common(\n        self, lineset1: \"LineSet\", lineset2: \"LineSet\"\n    ) -> Generator[Commonality, None, None]:\n        \"\"\"\n        Find similarities in the two given linesets.\n\n        This the core of the algorithm.\n        The idea is to compute the hashes of a minimal number of successive lines of each lineset and then compare the hashes.\n        Every match of such comparison is stored in a dict that links the couple of starting indices in both linesets to\n        the couple of corresponding starting and ending lines in both files.\n        Last regroups all successive couples in a bigger one. It allows to take into account common chunk of lines that have more\n        than the minimal number of successive lines required.\n        \"\"\"\n        hash_to_index_1: HashToIndex_T\n        hash_to_index_2: HashToIndex_T\n        index_to_lines_1: IndexToLines_T\n        index_to_lines_2: IndexToLines_T\n        hash_to_index_1, index_to_lines_1 = hash_lineset(lineset1, self.min_lines)\n        hash_to_index_2, index_to_lines_2 = hash_lineset(lineset2, self.min_lines)\n\n        hash_1: FrozenSet[LinesChunk] = frozenset(hash_to_index_1.keys())\n        hash_2: FrozenSet[LinesChunk] = frozenset(hash_to_index_2.keys())\n\n        common_hashes: Iterable[LinesChunk] = sorted(\n            hash_1 & hash_2, key=lambda m: hash_to_index_1[m][0]\n        )\n\n        # all_couples is a dict that links the couple of indices in both linesets that mark the beginning of\n        # successive common lines, to the corresponding starting and ending number lines in both files\n        all_couples: CplIndexToCplLines_T = {}\n\n        for c_hash in sorted(common_hashes, key=operator.attrgetter(\"_index\")):\n            for indices_in_linesets in itertools.product(\n                hash_to_index_1[c_hash], hash_to_index_2[c_hash]\n            ):\n                index_1 = indices_in_linesets[0]\n                index_2 = indices_in_linesets[1]\n                all_couples[\n                    LineSetStartCouple(index_1, index_2)\n                ] = CplSuccessiveLinesLimits(\n                    copy.copy(index_to_lines_1[index_1]),\n                    copy.copy(index_to_lines_2[index_2]),\n                    effective_cmn_lines_nb=self.min_lines,\n                )\n\n        remove_successives(all_couples)\n\n        for cml_stripped_l, cmn_l in all_couples.items():\n            start_index_1 = cml_stripped_l.fst_lineset_index\n            start_index_2 = cml_stripped_l.snd_lineset_index\n            nb_common_lines = cmn_l.effective_cmn_lines_nb\n\n            com = Commonality(\n                cmn_lines_nb=nb_common_lines,\n                fst_lset=lineset1,\n                fst_file_start=cmn_l.first_file.start,\n                fst_file_end=cmn_l.first_file.end,\n                snd_lset=lineset2,\n                snd_file_start=cmn_l.second_file.start,\n                snd_file_end=cmn_l.second_file.end,\n            )\n\n            eff_cmn_nb = filter_noncode_lines(\n                lineset1, start_index_1, lineset2, start_index_2, nb_common_lines\n            )\n\n            if eff_cmn_nb > self.min_lines:\n                yield com\n\n    def _iter_sims(self) -> Generator[Commonality, None, None]:\n        \"\"\"iterate on similarities among all files, by making a cartesian\n        product\n        \"\"\"\n        for idx, lineset in enumerate(self.linesets[:-1]):\n            for lineset2 in self.linesets[idx + 1 :]:\n                yield from self._find_common(lineset, lineset2)\n\n    def get_map_data(self):\n        \"\"\"Returns the data we can use for a map/reduce process\n\n        In this case we are returning this instance's Linesets, that is all file\n        information that will later be used for vectorisation.\n        \"\"\"\n        return self.linesets\n\n    def combine_mapreduce_data(self, linesets_collection):\n        \"\"\"Reduces and recombines data into a format that we can report on\n\n        The partner function of get_map_data()\"\"\"\n        self.linesets = [line for lineset in linesets_collection for line in lineset]",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "reason": "enclosing_class_context",
-                    "related_symbol": "pylint/checkers/similar.py::Similar.run",
-                    "class_symbol": "pylint/checkers/similar.py::Similar",
-                    "confidence": 1.0
-                }
-            ],
-            "context_for": [
-                "pylint/checkers/similar.py::Similar.run"
-            ],
-            "content_kind": "full_class"
+            "parent": null
         }
     },
     "pylint-dev__pylint-6386": {
@@ -50,287 +24,73 @@
             "obj_name": "__init__",
             "node_type": "class_function",
             "path": "pylint/config/argument.py",
-            "parent": "_CallableArgument",
-            "qualified_name": "_CallableArgument.__init__",
             "code_start_line": 451,
             "code_end_line": 477,
             "code_content": "    def __init__(\n        self,\n        *,\n        flags: list[str],\n        action: type[_CallbackAction],\n        arg_help: str,\n        kwargs: dict[str, Any],\n        hide_help: bool,\n        section: str | None,\n        metavar: str,\n    ) -> None:\n        super().__init__(\n            flags=flags, arg_help=arg_help, hide_help=hide_help, section=section\n        )\n\n        self.action = action\n        \"\"\"The action to perform with the argument.\"\"\"\n\n        self.kwargs = kwargs\n        \"\"\"Any additional arguments passed to the action.\"\"\"\n\n        self.metavar = metavar\n        \"\"\"The metavar of the argument.\n\n        See:\n        https://docs.python.org/3/library/argparse.html#metavar\n        \"\"\"",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/config/argument.py::_CallableArgument.__init__",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ],
-            "class_context_ids": [
-                "pylint/config/argument.py::_CallableArgument"
-            ]
+            "parent": "_CallableArgument"
         },
         "pylint/config/arguments_manager.py::_ArgumentsManager._add_parser_option": {
             "obj_name": "_add_parser_option",
             "node_type": "class_function",
             "path": "pylint/config/arguments_manager.py",
-            "parent": "_ArgumentsManager",
-            "qualified_name": "_ArgumentsManager._add_parser_option",
             "code_start_line": 158,
             "code_end_line": 235,
             "code_content": "    @staticmethod\n    def _add_parser_option(\n        section_group: argparse._ArgumentGroup, argument: _Argument\n    ) -> None:\n        \"\"\"Add an argument.\"\"\"\n        if isinstance(argument, _StoreArgument):\n            section_group.add_argument(\n                *argument.flags,\n                action=argument.action,\n                default=argument.default,\n                type=argument.type,  # type: ignore[arg-type] # incorrect typing in typeshed\n                help=argument.help,\n                metavar=argument.metavar,\n                choices=argument.choices,\n            )\n        elif isinstance(argument, _StoreOldNamesArgument):\n            section_group.add_argument(\n                *argument.flags,\n                **argument.kwargs,\n                action=argument.action,\n                default=argument.default,\n                type=argument.type,  # type: ignore[arg-type] # incorrect typing in typeshed\n                help=argument.help,\n                metavar=argument.metavar,\n                choices=argument.choices,\n            )\n            # We add the old name as hidden option to make it's default value gets loaded when\n            # argparse initializes all options from the checker\n            assert argument.kwargs[\"old_names\"]\n            for old_name in argument.kwargs[\"old_names\"]:\n                section_group.add_argument(\n                    f\"--{old_name}\",\n                    action=\"store\",\n                    default=argument.default,\n                    type=argument.type,  # type: ignore[arg-type] # incorrect typing in typeshed\n                    help=argparse.SUPPRESS,\n                    metavar=argument.metavar,\n                    choices=argument.choices,\n                )\n        elif isinstance(argument, _StoreNewNamesArgument):\n            section_group.add_argument(\n                *argument.flags,\n                **argument.kwargs,\n                action=argument.action,\n                default=argument.default,\n                type=argument.type,  # type: ignore[arg-type] # incorrect typing in typeshed\n                help=argument.help,\n                metavar=argument.metavar,\n                choices=argument.choices,\n            )\n        elif isinstance(argument, _StoreTrueArgument):\n            section_group.add_argument(\n                *argument.flags,\n                action=argument.action,\n                default=argument.default,\n                help=argument.help,\n            )\n        elif isinstance(argument, _CallableArgument):\n            section_group.add_argument(\n                *argument.flags,\n                **argument.kwargs,\n                action=argument.action,\n                help=argument.help,\n                metavar=argument.metavar,\n            )\n        elif isinstance(argument, _ExtendArgument):\n            section_group.add_argument(\n                *argument.flags,\n                action=argument.action,\n                default=argument.default,\n                type=argument.type,  # type: ignore[arg-type] # incorrect typing in typeshed\n                help=argument.help,\n                metavar=argument.metavar,\n                choices=argument.choices,\n                dest=argument.dest,\n            )\n        else:\n            raise UnrecognizedArgumentAction",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/config/arguments_manager.py::_ArgumentsManager._add_parser_option",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ],
-            "class_context_ids": [
-                "pylint/config/arguments_manager.py::_ArgumentsManager"
-            ]
+            "parent": "_ArgumentsManager"
         },
         "pylint/config/utils.py::PREPROCESSABLE_OPTIONS": {
             "obj_name": "PREPROCESSABLE_OPTIONS",
             "node_type": "global_var",
             "path": "pylint/config/utils.py",
-            "parent": null,
-            "qualified_name": "PREPROCESSABLE_OPTIONS",
             "code_start_line": 203,
             "code_end_line": 213,
             "code_content": "PREPROCESSABLE_OPTIONS: dict[\n    str, tuple[bool, Callable[[Run, str | None], None]]\n] = {  # pylint: disable=consider-using-namedtuple-or-dataclass\n    \"--init-hook\": (True, _init_hook),\n    \"--rcfile\": (True, _set_rcfile),\n    \"--output\": (True, _set_output),\n    \"--load-plugins\": (True, _add_plugins),\n    \"--verbose\": (False, _set_verbose_mode),\n    \"-v\": (False, _set_verbose_mode),\n    \"--enable-all-extensions\": (False, _enable_all_extensions),\n}",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/config/utils.py::PREPROCESSABLE_OPTIONS",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         },
         "pylint/config/utils.py::_convert_option_to_argument": {
             "obj_name": "_convert_option_to_argument",
             "node_type": "top-level function",
             "path": "pylint/config/utils.py",
-            "parent": null,
-            "qualified_name": "_convert_option_to_argument",
             "code_start_line": 31,
             "code_end_line": 146,
             "code_content": "def _convert_option_to_argument(\n    opt: str, optdict: dict[str, Any]\n) -> (\n    _StoreArgument\n    | _StoreTrueArgument\n    | _CallableArgument\n    | _StoreOldNamesArgument\n    | _StoreNewNamesArgument\n    | _ExtendArgument\n):\n    \"\"\"Convert an optdict to an Argument class instance.\"\"\"\n    if \"level\" in optdict and \"hide\" not in optdict:\n        warnings.warn(\n            \"The 'level' key in optdicts has been deprecated. \"\n            \"Use 'hide' with a boolean to hide an option from the help message.\",\n            DeprecationWarning,\n        )\n\n    # Get the long and short flags\n    flags = [f\"--{opt}\"]\n    if \"short\" in optdict:\n        flags += [f\"-{optdict['short']}\"]\n\n    # Get the action type\n    action = optdict.get(\"action\", \"store\")\n\n    if action == \"store_true\":\n        return _StoreTrueArgument(\n            flags=flags,\n            action=action,\n            default=optdict.get(\"default\", True),\n            arg_help=optdict.get(\"help\", \"\"),\n            hide_help=optdict.get(\"hide\", False),\n            section=optdict.get(\"group\", None),\n        )\n    if not isinstance(action, str) and issubclass(action, _CallbackAction):\n        return _CallableArgument(\n            flags=flags,\n            action=action,\n            arg_help=optdict.get(\"help\", \"\"),\n            kwargs=optdict.get(\"kwargs\", {}),\n            hide_help=optdict.get(\"hide\", False),\n            section=optdict.get(\"group\", None),\n            metavar=optdict.get(\"metavar\", None),\n        )\n    try:\n        default = optdict[\"default\"]\n    except KeyError:\n        warnings.warn(\n            \"An option dictionary should have a 'default' key to specify \"\n            \"the option's default value. This key will be required in pylint \"\n            \"3.0. It is not required for 'store_true' and callable actions.\",\n            DeprecationWarning,\n        )\n        default = None\n    if action == \"extend\":\n        return _ExtendArgument(\n            flags=flags,\n            action=action,\n            default=default,\n            arg_type=optdict[\"type\"],\n            choices=optdict.get(\"choices\", None),\n            arg_help=optdict.get(\"help\", \"\"),\n            metavar=optdict.get(\"metavar\", \"\"),\n            hide_help=optdict.get(\"hide\", False),\n            section=optdict.get(\"group\", None),\n            dest=optdict.get(\"dest\", None),\n        )\n    if \"kwargs\" in optdict:\n        if \"old_names\" in optdict[\"kwargs\"]:\n            return _StoreOldNamesArgument(\n                flags=flags,\n                default=default,\n                arg_type=optdict[\"type\"],\n                choices=optdict.get(\"choices\", None),\n                arg_help=optdict.get(\"help\", \"\"),\n                metavar=optdict.get(\"metavar\", \"\"),\n                hide_help=optdict.get(\"hide\", False),\n                kwargs=optdict.get(\"kwargs\", {}),\n                section=optdict.get(\"group\", None),\n            )\n        if \"new_names\" in optdict[\"kwargs\"]:\n            return _StoreNewNamesArgument(\n                flags=flags,\n                default=default,\n                arg_type=optdict[\"type\"],\n                choices=optdict.get(\"choices\", None),\n                arg_help=optdict.get(\"help\", \"\"),\n                metavar=optdict.get(\"metavar\", \"\"),\n                hide_help=optdict.get(\"hide\", False),\n                kwargs=optdict.get(\"kwargs\", {}),\n                section=optdict.get(\"group\", None),\n            )\n    if \"dest\" in optdict:\n        return _StoreOldNamesArgument(\n            flags=flags,\n            default=default,\n            arg_type=optdict[\"type\"],\n            choices=optdict.get(\"choices\", None),\n            arg_help=optdict.get(\"help\", \"\"),\n            metavar=optdict.get(\"metavar\", \"\"),\n            hide_help=optdict.get(\"hide\", False),\n            kwargs={\"old_names\": [optdict[\"dest\"]]},\n            section=optdict.get(\"group\", None),\n        )\n    return _StoreArgument(\n        flags=flags,\n        action=action,\n        default=default,\n        arg_type=optdict[\"type\"],\n        choices=optdict.get(\"choices\", None),\n        arg_help=optdict.get(\"help\", \"\"),\n        metavar=optdict.get(\"metavar\", \"\"),\n        hide_help=optdict.get(\"hide\", False),\n        section=optdict.get(\"group\", None),\n    )",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/config/utils.py::_convert_option_to_argument",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         },
         "pylint/config/utils.py::_preprocess_options": {
             "obj_name": "_preprocess_options",
             "node_type": "top-level function",
             "path": "pylint/config/utils.py",
-            "parent": null,
-            "qualified_name": "_preprocess_options",
             "code_start_line": 216,
             "code_end_line": 251,
             "code_content": "def _preprocess_options(run: Run, args: Sequence[str]) -> list[str]:\n    \"\"\"Preprocess options before full config parsing has started.\"\"\"\n    processed_args: list[str] = []\n\n    i = 0\n    while i < len(args):\n        argument = args[i]\n        if not argument.startswith(\"-\"):\n            processed_args.append(argument)\n            i += 1\n            continue\n\n        try:\n            option, value = argument.split(\"=\", 1)\n        except ValueError:\n            option, value = argument, None\n\n        if option not in PREPROCESSABLE_OPTIONS:\n            processed_args.append(argument)\n            i += 1\n            continue\n\n        takearg, cb = PREPROCESSABLE_OPTIONS[option]\n\n        if takearg and value is None:\n            i += 1\n            if i >= len(args) or args[i].startswith(\"-\"):\n                raise ArgumentPreprocessingError(f\"Option {option} expects a value\")\n            value = args[i]\n        elif not takearg and value is not None:\n            raise ArgumentPreprocessingError(f\"Option {option} doesn't expects a value\")\n\n        cb(run, value)\n        i += 1\n\n    return processed_args",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/config/utils.py::_preprocess_options",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         },
         "pylint/lint/base_options.py::_make_run_options": {
             "obj_name": "_make_run_options",
             "node_type": "top-level function",
             "path": "pylint/lint/base_options.py",
-            "parent": null,
-            "qualified_name": "_make_run_options",
             "code_start_line": 395,
             "code_end_line": 571,
             "code_content": "def _make_run_options(self: Run) -> Options:\n    \"\"\"Return the options used in a Run class.\"\"\"\n    return (\n        (\n            \"rcfile\",\n            {\n                \"action\": _DoNothingAction,\n                \"kwargs\": {},\n                \"group\": \"Commands\",\n                \"help\": \"Specify a configuration file to load.\",\n                \"hide_from_config_file\": True,\n            },\n        ),\n        (\n            \"output\",\n            {\n                \"action\": _DoNothingAction,\n                \"kwargs\": {},\n                \"group\": \"Commands\",\n                \"help\": \"Specify an output file.\",\n                \"hide_from_config_file\": True,\n            },\n        ),\n        (\n            \"init-hook\",\n            {\n                \"action\": _DoNothingAction,\n                \"kwargs\": {},\n                \"help\": \"Python code to execute, usually for sys.path \"\n                \"manipulation such as pygtk.require().\",\n            },\n        ),\n        (\n            \"help-msg\",\n            {\n                \"action\": _MessageHelpAction,\n                \"kwargs\": {\"Run\": self},\n                \"group\": \"Commands\",\n                \"help\": \"Display a help message for the given message id and \"\n                \"exit. The value may be a comma separated list of message ids.\",\n                \"hide_from_config_file\": True,\n            },\n        ),\n        (\n            \"list-msgs\",\n            {\n                \"action\": _ListMessagesAction,\n                \"kwargs\": {\"Run\": self},\n                \"group\": \"Commands\",\n                \"help\": \"Display a list of all pylint's messages divided by whether \"\n                \"they are emittable with the given interpreter.\",\n                \"hide_from_config_file\": True,\n            },\n        ),\n        (\n            \"list-msgs-enabled\",\n            {\n                \"action\": _ListMessagesEnabledAction,\n                \"kwargs\": {\"Run\": self},\n                \"group\": \"Commands\",\n                \"help\": \"Display a list of what messages are enabled, \"\n                \"disabled and non-emittable with the given configuration.\",\n                \"hide_from_config_file\": True,\n            },\n        ),\n        (\n            \"list-groups\",\n            {\n                \"action\": _ListCheckGroupsAction,\n                \"kwargs\": {\"Run\": self},\n                \"group\": \"Commands\",\n                \"help\": \"List pylint's message groups.\",\n                \"hide_from_config_file\": True,\n            },\n        ),\n        (\n            \"list-conf-levels\",\n            {\n                \"action\": _ListConfidenceLevelsAction,\n                \"kwargs\": {\"Run\": self},\n                \"group\": \"Commands\",\n                \"help\": \"Generate pylint's confidence levels.\",\n                \"hide_from_config_file\": True,\n            },\n        ),\n        (\n            \"list-extensions\",\n            {\n                \"action\": _ListExtensionsAction,\n                \"kwargs\": {\"Run\": self},\n                \"group\": \"Commands\",\n                \"help\": \"List available extensions.\",\n                \"hide_from_config_file\": True,\n            },\n        ),\n        (\n            \"full-documentation\",\n            {\n                \"action\": _FullDocumentationAction,\n                \"kwargs\": {\"Run\": self},\n                \"group\": \"Commands\",\n                \"help\": \"Generate pylint's full documentation.\",\n                \"hide_from_config_file\": True,\n            },\n        ),\n        (\n            \"generate-rcfile\",\n            {\n                \"action\": _GenerateRCFileAction,\n                \"kwargs\": {\"Run\": self},\n                \"group\": \"Commands\",\n                \"help\": \"Generate a sample configuration file according to \"\n                \"the current configuration. You can put other options \"\n                \"before this one to get them in the generated \"\n                \"configuration.\",\n                \"hide_from_config_file\": True,\n            },\n        ),\n        (\n            \"generate-toml-config\",\n            {\n                \"action\": _GenerateConfigFileAction,\n                \"kwargs\": {\"Run\": self},\n                \"group\": \"Commands\",\n                \"help\": \"Generate a sample configuration file according to \"\n                \"the current configuration. You can put other options \"\n                \"before this one to get them in the generated \"\n                \"configuration. The config is in the .toml format.\",\n                \"hide_from_config_file\": True,\n            },\n        ),\n        (\n            \"errors-only\",\n            {\n                \"action\": _ErrorsOnlyModeAction,\n                \"kwargs\": {\"Run\": self},\n                \"short\": \"E\",\n                \"help\": \"In error mode, checkers without error messages are \"\n                \"disabled and for others, only the ERROR messages are \"\n                \"displayed, and no reports are done by default.\",\n                \"hide_from_config_file\": True,\n            },\n        ),\n        (\n            \"verbose\",\n            {\n                \"action\": _DoNothingAction,\n                \"kwargs\": {},\n                \"short\": \"v\",\n                \"help\": \"In verbose mode, extra non-checker-related info \"\n                \"will be displayed.\",\n                \"hide_from_config_file\": True,\n                \"metavar\": \"\",\n            },\n        ),\n        (\n            \"enable-all-extensions\",\n            {\n                \"action\": _DoNothingAction,\n                \"kwargs\": {},\n                \"help\": \"Load and enable all available extensions. \"\n                \"Use --list-extensions to see a list all available extensions.\",\n                \"hide_from_config_file\": True,\n                \"metavar\": \"\",\n            },\n        ),\n        (\n            \"long-help\",\n            {\n                \"action\": _LongHelpAction,\n                \"kwargs\": {\"Run\": self},\n                \"help\": \"Show more verbose help.\",\n                \"group\": \"Commands\",\n                \"hide_from_config_file\": True,\n            },\n        ),\n    )",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/lint/base_options.py::_make_run_options",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         },
         "pylint/config/argument.py::_CallableArgument": {
             "obj_name": "_CallableArgument",
             "node_type": "class",
             "path": "pylint/config/argument.py",
-            "parent": null,
-            "qualified_name": "_CallableArgument",
             "code_start_line": 443,
             "code_end_line": 477,
             "code_content": "class _CallableArgument(_Argument):\n    \"\"\"Class representing an callable argument to be parsed by an argparse.ArgumentsParser.\n\n    This is based on the parameters passed to argparse.ArgumentsParser.add_message.\n    See:\n    https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument\n    \"\"\"\n\n    def __init__(\n        self,\n        *,\n        flags: list[str],\n        action: type[_CallbackAction],\n        arg_help: str,\n        kwargs: dict[str, Any],\n        hide_help: bool,\n        section: str | None,\n        metavar: str,\n    ) -> None:\n        super().__init__(\n            flags=flags, arg_help=arg_help, hide_help=hide_help, section=section\n        )\n\n        self.action = action\n        \"\"\"The action to perform with the argument.\"\"\"\n\n        self.kwargs = kwargs\n        \"\"\"Any additional arguments passed to the action.\"\"\"\n\n        self.metavar = metavar\n        \"\"\"The metavar of the argument.\n\n        See:\n        https://docs.python.org/3/library/argparse.html#metavar\n        \"\"\"",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "reason": "enclosing_class_context",
-                    "related_symbol": "pylint/config/argument.py::_CallableArgument.__init__",
-                    "class_symbol": "pylint/config/argument.py::_CallableArgument",
-                    "confidence": 1.0
-                }
-            ],
-            "context_for": [
-                "pylint/config/argument.py::_CallableArgument.__init__"
-            ],
-            "content_kind": "full_class"
+            "parent": null
         },
         "pylint/config/arguments_manager.py::_ArgumentsManager": {
             "obj_name": "_ArgumentsManager",
             "node_type": "class",
             "path": "pylint/config/arguments_manager.py",
-            "parent": null,
-            "qualified_name": "_ArgumentsManager",
             "code_start_line": 60,
             "code_end_line": 754,
             "code_content": "class _ArgumentsManager:\n    \"\"\"Arguments manager class used to handle command-line arguments and options.\"\"\"\n    def __init__(\n        self, prog: str, usage: str | None = None, description: str | None = None\n    ) -> None:\n        self._config = argparse.Namespace()\n        \"\"\"Namespace for all options.\"\"\"\n\n        self._arg_parser = argparse.ArgumentParser(\n            prog=prog,\n            usage=usage or \"%(prog)s [options]\",\n            description=description,\n            formatter_class=_HelpFormatter,\n        )\n        \"\"\"The command line argument parser.\"\"\"\n\n        self._argument_groups_dict: dict[str, argparse._ArgumentGroup] = {}\n        \"\"\"Dictionary of all the argument groups.\"\"\"\n\n        self._option_dicts: dict[str, OptionDict] = {}\n        \"\"\"All option dictionaries that have been registered.\"\"\"\n\n        # pylint: disable=fixme\n        # TODO: 3.0: Remove deprecated attributes introduced to keep API\n        # parity with optparse. Until '_maxlevel'\n        with warnings.catch_warnings():\n            warnings.filterwarnings(\"ignore\", category=DeprecationWarning)\n            self.reset_parsers(usage or \"\")\n        # list of registered options providers\n        self._options_providers: list[ConfigProvider] = []\n        # dictionary associating option name to checker\n        self._all_options: OrderedDict[str, ConfigProvider] = OrderedDict()\n        self._short_options: dict[str, str] = {}\n        self._nocallback_options: dict[ConfigProvider, str] = {}\n        self._mygroups: dict[str, optparse.OptionGroup] = {}\n        # verbosity\n        self._maxlevel: int = 0\n    @property\n    def config(self) -> argparse.Namespace:\n        ...  # Body omitted from class outline.\n    @config.setter\n    def config(self, value: argparse.Namespace) -> None:\n        ...  # Body omitted from class outline.\n    @property\n    def options_providers(self) -> list[ConfigProvider]:\n        # TODO: 3.0: Remove deprecated attribute. # pylint: disable=fixme\n        ...  # Body omitted from class outline.\n    @options_providers.setter\n    def options_providers(self, value: list[ConfigProvider]) -> None:\n        ...  # Body omitted from class outline.\n    def _register_options_provider(self, provider: _ArgumentsProvider) -> None:\n        ...  # Body omitted from class outline.\n    def _add_arguments_to_parser(\n        self, section: str, section_desc: str | None, argument: _Argument\n    ) -> None:\n        ...  # Body omitted from class outline.\n    @staticmethod\n    def _add_parser_option(\n        section_group: argparse._ArgumentGroup, argument: _Argument\n    ) -> None:\n        ...  # Body omitted from class outline.\n    def _load_default_argument_values(self) -> None:\n        ...  # Body omitted from class outline.\n    def _parse_configuration_file(self, arguments: list[str]) -> None:\n        ...  # Body omitted from class outline.\n    def _parse_command_line_configuration(\n        self, arguments: Sequence[str] | None = None\n    ) -> list[str]:\n        ...  # Body omitted from class outline.\n    def reset_parsers(self, usage: str = \"\") -> None:  # pragma: no cover\n        \"\"\"DEPRECATED.\"\"\"\n        warnings.warn(\n            \"reset_parsers has been deprecated. Parsers should be instantiated \"\n            \"once during initialization and do not need to be reset.\",\n            DeprecationWarning,\n        )\n        # configuration file parser\n        self.cfgfile_parser = configparser.ConfigParser(\n            inline_comment_prefixes=(\"#\", \";\")\n        )\n        # command line parser\n        self.cmdline_parser = OptionParser(Option, usage=usage)\n        self.cmdline_parser.options_manager = self  # type: ignore[attr-defined]\n        self._optik_option_attrs = set(self.cmdline_parser.option_class.ATTRS)\n    def register_options_provider(\n        self, provider: ConfigProvider, own_group: bool = True\n    ) -> None:  # pragma: no cover\n        ...  # Body omitted from class outline.\n    def add_option_group(\n        self,\n        group_name: str,\n        _: str | None,\n        options: list[tuple[str, OptionDict]],\n        provider: ConfigProvider,\n    ) -> None:  # pragma: no cover\n        ...  # Body omitted from class outline.\n    def add_optik_option(\n        self,\n        provider: ConfigProvider,\n        optikcontainer: optparse.OptionParser | optparse.OptionGroup,\n        opt: str,\n        optdict: OptionDict,\n    ) -> None:  # pragma: no cover\n        ...  # Body omitted from class outline.\n    def optik_option(\n        self, provider: ConfigProvider, opt: str, optdict: OptionDict\n    ) -> tuple[list[str], OptionDict]:  # pragma: no cover\n        ...  # Body omitted from class outline.\n    def generate_config(\n        self, stream: TextIO | None = None, skipsections: tuple[str, ...] = ()\n    ) -> None:  # pragma: no cover\n        ...  # Body omitted from class outline.\n    def load_provider_defaults(self) -> None:  # pragma: no cover\n        ...  # Body omitted from class outline.\n    def read_config_file(\n        self, config_file: Path | None = None, verbose: bool = False\n    ) -> None:  # pragma: no cover\n        ...  # Body omitted from class outline.\n    @staticmethod\n    def _parse_toml(\n        config_file: Path, parser: configparser.ConfigParser\n    ) -> None:  # pragma: no cover\n        ...  # Body omitted from class outline.\n    def load_config_file(self) -> None:  # pragma: no cover\n        ...  # Body omitted from class outline.\n    def load_configuration(self, **kwargs: Any) -> None:  # pragma: no cover\n        ...  # Body omitted from class outline.\n    def load_configuration_from_config(\n        self, config: dict[str, Any]\n    ) -> None:  # pragma: no cover\n        ...  # Body omitted from class outline.\n    def load_command_line_configuration(\n        self, args: list[str] | None = None\n    ) -> list[str]:  # pragma: no cover\n        ...  # Body omitted from class outline.\n    def help(self, level: int | None = None) -> str:\n        ...  # Body omitted from class outline.\n    def cb_set_provider_option(self, option, opt, value, parser):  # pragma: no cover\n        ...  # Body omitted from class outline.\n    def global_set_option(self, opt: str, value: Any) -> None:  # pragma: no cover\n        ...  # Body omitted from class outline.\n    def _generate_config_file(self) -> None:\n        ...  # Body omitted from class outline.\n    def set_option(\n        self,\n        optname: str,\n        value: Any,\n        action: str | None = \"default_value\",\n        optdict: None | str | OptionDict = \"default_value\",\n    ) -> None:\n        ...  # Body omitted from class outline.",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "reason": "enclosing_class_context",
-                    "related_symbol": "pylint/config/arguments_manager.py::_ArgumentsManager._add_parser_option",
-                    "class_symbol": "pylint/config/arguments_manager.py::_ArgumentsManager",
-                    "confidence": 1.0
-                }
-            ],
-            "context_for": [
-                "pylint/config/arguments_manager.py::_ArgumentsManager._add_parser_option"
-            ],
-            "content_kind": "class_outline",
-            "source_spans": [
-                [
-                    60,
-                    60
-                ],
-                [
-                    61,
-                    61
-                ],
-                [
-                    63,
-                    97
-                ],
-                [
-                    99,
-                    100
-                ],
-                [
-                    104,
-                    105
-                ],
-                [
-                    108,
-                    110
-                ],
-                [
-                    117,
-                    118
-                ],
-                [
-                    125,
-                    125
-                ],
-                [
-                    142,
-                    144
-                ],
-                [
-                    158,
-                    161
-                ],
-                [
-                    237,
-                    237
-                ],
-                [
-                    241,
-                    241
-                ],
-                [
-                    253,
-                    255
-                ],
-                [
-                    265,
-                    279
-                ],
-                [
-                    281,
-                    283
-                ],
-                [
-                    321,
-                    327
-                ],
-                [
-                    358,
-                    364
-                ],
-                [
-                    378,
-                    380
-                ],
-                [
-                    416,
-                    418
-                ],
-                [
-                    473,
-                    473
-                ],
-                [
-                    485,
-                    487
-                ],
-                [
-                    526,
-                    529
-                ],
-                [
-                    560,
-                    560
-                ],
-                [
-                    576,
-                    576
-                ],
-                [
-                    586,
-                    588
-                ],
-                [
-                    598,
-                    600
-                ],
-                [
-                    620,
-                    620
-                ],
-                [
-                    630,
-                    630
-                ],
-                [
-                    648,
-                    648
-                ],
-                [
-                    658,
-                    658
-                ],
-                [
-                    729,
-                    735
-                ]
-            ]
+            "parent": null
         }
     },
     "pylint-dev__pylint-6903": {
@@ -338,19 +98,10 @@
             "obj_name": "_query_cpu",
             "node_type": "top-level function",
             "path": "pylint/lint/run.py",
-            "parent": null,
-            "qualified_name": "_query_cpu",
             "code_start_line": 34,
             "code_end_line": 68,
             "code_content": "def _query_cpu() -> int | None:\n    \"\"\"Try to determine number of CPUs allotted in a docker container.\n\n    This is based on discussion and copied from suggestions in\n    https://bugs.python.org/issue36054.\n    \"\"\"\n    cpu_quota, avail_cpu = None, None\n\n    if Path(\"/sys/fs/cgroup/cpu/cpu.cfs_quota_us\").is_file():\n        with open(\"/sys/fs/cgroup/cpu/cpu.cfs_quota_us\", encoding=\"utf-8\") as file:\n            # Not useful for AWS Batch based jobs as result is -1, but works on local linux systems\n            cpu_quota = int(file.read().rstrip())\n\n    if (\n        cpu_quota\n        and cpu_quota != -1\n        and Path(\"/sys/fs/cgroup/cpu/cpu.cfs_period_us\").is_file()\n    ):\n        with open(\"/sys/fs/cgroup/cpu/cpu.cfs_period_us\", encoding=\"utf-8\") as file:\n            cpu_period = int(file.read().rstrip())\n        # Divide quota by period and you should get num of allotted CPU to the container, rounded down if fractional.\n        avail_cpu = int(cpu_quota / cpu_period)\n    elif Path(\"/sys/fs/cgroup/cpu/cpu.shares\").is_file():\n        with open(\"/sys/fs/cgroup/cpu/cpu.shares\", encoding=\"utf-8\") as file:\n            cpu_shares = int(file.read().rstrip())\n        # For AWS, gives correct value * 1024.\n        avail_cpu = int(cpu_shares / 1024)\n\n    # In K8s Pods also a fraction of a single core could be available\n    # As multiprocessing is not able to run only a \"fraction\" of process\n    # assume we have 1 CPU available\n    if avail_cpu == 0:\n        avail_cpu = 1\n\n    return avail_cpu",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/lint/run.py::_query_cpu",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         }
     },
     "pylint-dev__pylint-7080": {
@@ -358,19 +109,10 @@
             "obj_name": "_is_ignored_file",
             "node_type": "top-level function",
             "path": "pylint/lint/expand_modules.py",
-            "parent": null,
-            "qualified_name": "_is_ignored_file",
             "code_start_line": 49,
             "code_end_line": 61,
             "code_content": "def _is_ignored_file(\n    element: str,\n    ignore_list: list[str],\n    ignore_list_re: list[Pattern[str]],\n    ignore_list_paths_re: list[Pattern[str]],\n) -> bool:\n    element = os.path.normpath(element)\n    basename = os.path.basename(element)\n    return (\n        basename in ignore_list\n        or _is_in_ignore_list_re(basename, ignore_list_re)\n        or _is_in_ignore_list_re(element, ignore_list_paths_re)\n    )",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/lint/expand_modules.py::_is_ignored_file",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         }
     },
     "pylint-dev__pylint-7277": {
@@ -378,19 +120,10 @@
             "obj_name": "modify_sys_path",
             "node_type": "top-level function",
             "path": "pylint/__init__.py",
-            "parent": null,
-            "qualified_name": "modify_sys_path",
             "code_start_line": 80,
             "code_end_line": 106,
             "code_content": "def modify_sys_path() -> None:\n    \"\"\"Modify sys path for execution as Python module.\n\n    Strip out the current working directory from sys.path.\n    Having the working directory in `sys.path` means that `pylint` might\n    inadvertently import user code from modules having the same name as\n    stdlib or pylint's own modules.\n    CPython issue: https://bugs.python.org/issue33053\n\n    - Remove the first entry. This will always be either \"\" or the working directory\n    - Remove the working directory from the second and third entries\n      if PYTHONPATH includes a \":\" at the beginning or the end.\n      https://github.com/PyCQA/pylint/issues/3636\n      Don't remove it if PYTHONPATH contains the cwd or '.' as the entry will\n      only be added once.\n    - Don't remove the working directory from the rest. It will be included\n      if pylint is installed in an editable configuration (as the last item).\n      https://github.com/PyCQA/pylint/issues/4161\n    \"\"\"\n    cwd = os.getcwd()\n    if sys.path[0] in (\"\", \".\", cwd):\n        sys.path.pop(0)\n    env_pythonpath = os.environ.get(\"PYTHONPATH\", \"\")\n    if env_pythonpath.startswith(\":\") and env_pythonpath not in (f\":{cwd}\", \":.\"):\n        sys.path.pop(0)\n    elif env_pythonpath.endswith(\":\") and env_pythonpath not in (f\"{cwd}:\", \".:\"):\n        sys.path.pop(1)",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/__init__.py::modify_sys_path",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         }
     },
     "pylint-dev__pylint-8898": {
@@ -398,91 +131,46 @@
             "obj_name": "_regexp_csv_transfomer",
             "node_type": "top-level function",
             "path": "pylint/config/argument.py",
-            "parent": null,
-            "qualified_name": "_regexp_csv_transfomer",
             "code_start_line": 114,
             "code_end_line": 119,
             "code_content": "def _regexp_csv_transfomer(value: str) -> Sequence[Pattern[str]]:\n    \"\"\"Transforms a comma separated list of regular expressions.\"\"\"\n    patterns: list[Pattern[str]] = []\n    for pattern in pylint_utils._check_regexp_csv(value):\n        patterns.append(_regex_transformer(pattern))\n    return patterns",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/config/argument.py::_regexp_csv_transfomer",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         },
         "pylint/utils/__init__.py::<module>": {
             "obj_name": "__init__",
             "node_type": "file",
             "path": "pylint/utils/__init__.py",
-            "parent": null,
-            "qualified_name": "<module>",
             "code_start_line": 1,
             "code_end_line": 53,
             "code_content": "# Licensed under the GPL: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html\n# For details: https://github.com/pylint-dev/pylint/blob/main/LICENSE\n# Copyright (c) https://github.com/pylint-dev/pylint/blob/main/CONTRIBUTORS.txt\n\n\"\"\"Some various utilities and helper classes, most of them used in the\nmain pylint class.\n\"\"\"\n\nfrom pylint.utils.ast_walker import ASTWalker\nfrom pylint.utils.docs import print_full_documentation\nfrom pylint.utils.file_state import FileState\nfrom pylint.utils.linterstats import LinterStats, ModuleStats, merge_stats\nfrom pylint.utils.utils import (\n    HAS_ISORT_5,\n    IsortDriver,\n    _check_csv,\n    _check_regexp_csv,\n    _splitstrip,\n    _unquote,\n    decoding_stream,\n    diff_string,\n    format_section,\n    get_module_and_frameid,\n    get_rst_section,\n    get_rst_title,\n    normalize_text,\n    register_plugins,\n    tokenize_module,\n)\n\n__all__ = [\n    \"ASTWalker\",\n    \"HAS_ISORT_5\",\n    \"IsortDriver\",\n    \"_check_csv\",\n    \"_check_regexp_csv\",\n    \"_splitstrip\",\n    \"_unquote\",\n    \"decoding_stream\",\n    \"diff_string\",\n    \"FileState\",\n    \"format_section\",\n    \"get_module_and_frameid\",\n    \"get_rst_section\",\n    \"get_rst_title\",\n    \"normalize_text\",\n    \"register_plugins\",\n    \"tokenize_module\",\n    \"merge_stats\",\n    \"LinterStats\",\n    \"ModuleStats\",\n    \"print_full_documentation\",\n]",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/utils/__init__.py::<module>",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         },
         "pylint/utils/__init__.py::__all__": {
             "obj_name": "__all__",
             "node_type": "global_var",
             "path": "pylint/utils/__init__.py",
-            "parent": null,
-            "qualified_name": "__all__",
             "code_start_line": 31,
             "code_end_line": 53,
             "code_content": "__all__ = [\n    \"ASTWalker\",\n    \"HAS_ISORT_5\",\n    \"IsortDriver\",\n    \"_check_csv\",\n    \"_check_regexp_csv\",\n    \"_splitstrip\",\n    \"_unquote\",\n    \"decoding_stream\",\n    \"diff_string\",\n    \"FileState\",\n    \"format_section\",\n    \"get_module_and_frameid\",\n    \"get_rst_section\",\n    \"get_rst_title\",\n    \"normalize_text\",\n    \"register_plugins\",\n    \"tokenize_module\",\n    \"merge_stats\",\n    \"LinterStats\",\n    \"ModuleStats\",\n    \"print_full_documentation\",\n]",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/utils/__init__.py::__all__",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         },
         "pylint/utils/utils.py::<module>": {
             "obj_name": "utils",
             "node_type": "file",
             "path": "pylint/utils/utils.py",
-            "parent": null,
-            "qualified_name": "<module>",
             "code_start_line": 1,
             "code_end_line": 388,
             "code_content": "# Licensed under the GPL: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html\n# For details: https://github.com/pylint-dev/pylint/blob/main/LICENSE\n# Copyright (c) https://github.com/pylint-dev/pylint/blob/main/CONTRIBUTORS.txt\n\nfrom __future__ import annotations\n\ntry:\n    import isort.api\n    import isort.settings\n\n    HAS_ISORT_5 = True\nexcept ImportError:  # isort < 5\n    import isort\n\n    HAS_ISORT_5 = False\n\nimport argparse\nimport codecs\nimport os\nimport re\nimport sys\nimport textwrap\nimport tokenize\nimport warnings\nfrom collections import deque\nfrom collections.abc import Iterable, Sequence\nfrom io import BufferedReader, BytesIO\nfrom typing import (\n    TYPE_CHECKING,\n    Any,\n    List,\n    Literal,\n    Pattern,\n    TextIO,\n    Tuple,\n    TypeVar,\n    Union,\n)\n\nfrom astroid import Module, modutils, nodes\n\nfrom pylint.constants import PY_EXTS\nfrom pylint.typing import OptionDict\n\nif TYPE_CHECKING:\n    from pylint.lint import PyLinter\n\nDEFAULT_LINE_LENGTH = 79\n\n# These are types used to overload get_global_option() and refer to the options type\nGLOBAL_OPTION_BOOL = Literal[\n    \"suggestion-mode\",\n    \"analyse-fallback-blocks\",\n    \"allow-global-unused-variables\",\n]\nGLOBAL_OPTION_INT = Literal[\"max-line-length\", \"docstring-min-length\"]\nGLOBAL_OPTION_LIST = Literal[\"ignored-modules\"]\nGLOBAL_OPTION_PATTERN = Literal[\n    \"no-docstring-rgx\",\n    \"dummy-variables-rgx\",\n    \"ignored-argument-names\",\n    \"mixin-class-rgx\",\n]\nGLOBAL_OPTION_PATTERN_LIST = Literal[\"exclude-too-few-public-methods\", \"ignore-paths\"]\nGLOBAL_OPTION_TUPLE_INT = Literal[\"py-version\"]\nGLOBAL_OPTION_NAMES = Union[\n    GLOBAL_OPTION_BOOL,\n    GLOBAL_OPTION_INT,\n    GLOBAL_OPTION_LIST,\n    GLOBAL_OPTION_PATTERN,\n    GLOBAL_OPTION_PATTERN_LIST,\n    GLOBAL_OPTION_TUPLE_INT,\n]\nT_GlobalOptionReturnTypes = TypeVar(\n    \"T_GlobalOptionReturnTypes\",\n    bool,\n    int,\n    List[str],\n    Pattern[str],\n    List[Pattern[str]],\n    Tuple[int, ...],\n)\n\n\ndef normalize_text(\n    text: str, line_len: int = DEFAULT_LINE_LENGTH, indent: str = \"\"\n) -> str:\n    \"\"\"Wrap the text on the given line length.\"\"\"\n    return \"\\n\".join(\n        textwrap.wrap(\n            text, width=line_len, initial_indent=indent, subsequent_indent=indent\n        )\n    )\n\n\nCMPS = [\"=\", \"-\", \"+\"]\n\n\n# py3k has no more cmp builtin\ndef cmp(a: int | float, b: int | float) -> int:\n    return (a > b) - (a < b)\n\n\ndef diff_string(old: int | float, new: int | float) -> str:\n    \"\"\"Given an old and new int value, return a string representing the\n    difference.\n    \"\"\"\n    diff = abs(old - new)\n    diff_str = f\"{CMPS[cmp(old, new)]}{diff and f'{diff:.2f}' or ''}\"\n    return diff_str\n\n\ndef get_module_and_frameid(node: nodes.NodeNG) -> tuple[str, str]:\n    \"\"\"Return the module name and the frame id in the module.\"\"\"\n    frame = node.frame()\n    module, obj = \"\", []\n    while frame:\n        if isinstance(frame, Module):\n            module = frame.name\n        else:\n            obj.append(getattr(frame, \"name\", \"<lambda>\"))\n        try:\n            frame = frame.parent.frame()\n        except AttributeError:\n            break\n    obj.reverse()\n    return module, \".\".join(obj)\n\n\ndef get_rst_title(title: str, character: str) -> str:\n    \"\"\"Permit to get a title formatted as ReStructuredText test (underlined with a\n    chosen character).\n    \"\"\"\n    return f\"{title}\\n{character * len(title)}\\n\"\n\n\ndef get_rst_section(\n    section: str | None,\n    options: list[tuple[str, OptionDict, Any]],\n    doc: str | None = None,\n) -> str:\n    \"\"\"Format an option's section using as a ReStructuredText formatted output.\"\"\"\n    result = \"\"\n    if section:\n        result += get_rst_title(section, \"'\")\n    if doc:\n        formatted_doc = normalize_text(doc)\n        result += f\"{formatted_doc}\\n\\n\"\n    for optname, optdict, value in options:\n        help_opt = optdict.get(\"help\")\n        result += f\":{optname}:\\n\"\n        if help_opt:\n            assert isinstance(help_opt, str)\n            formatted_help = normalize_text(help_opt, indent=\"  \")\n            result += f\"{formatted_help}\\n\"\n        if value and optname != \"py-version\":\n            value = str(_format_option_value(optdict, value))\n            result += f\"\\n  Default: ``{value.replace('`` ', '```` ``')}``\\n\"\n    return result\n\n\ndef decoding_stream(\n    stream: BufferedReader | BytesIO,\n    encoding: str,\n    errors: Literal[\"strict\"] = \"strict\",\n) -> codecs.StreamReader:\n    try:\n        reader_cls = codecs.getreader(encoding or sys.getdefaultencoding())\n    except LookupError:\n        reader_cls = codecs.getreader(sys.getdefaultencoding())\n    return reader_cls(stream, errors)\n\n\ndef tokenize_module(node: nodes.Module) -> list[tokenize.TokenInfo]:\n    with node.stream() as stream:\n        readline = stream.readline\n        return list(tokenize.tokenize(readline))\n\n\ndef register_plugins(linter: PyLinter, directory: str) -> None:\n    \"\"\"Load all module and package in the given directory, looking for a\n    'register' function in each one, used to register pylint checkers.\n    \"\"\"\n    imported = {}\n    for filename in os.listdir(directory):\n        base, extension = os.path.splitext(filename)\n        if base in imported or base == \"__pycache__\":\n            continue\n        if (\n            extension in PY_EXTS\n            and base != \"__init__\"\n            or (\n                not extension\n                and os.path.isdir(os.path.join(directory, base))\n                and not filename.startswith(\".\")\n            )\n        ):\n            try:\n                module = modutils.load_module_from_file(\n                    os.path.join(directory, filename)\n                )\n            except ValueError:\n                # empty module name (usually Emacs auto-save files)\n                continue\n            except ImportError as exc:\n                print(f\"Problem importing module {filename}: {exc}\", file=sys.stderr)\n            else:\n                if hasattr(module, \"register\"):\n                    module.register(linter)\n                    imported[base] = 1\n\n\ndef _splitstrip(string: str, sep: str = \",\") -> list[str]:\n    \"\"\"Return a list of stripped string by splitting the string given as\n    argument on `sep` (',' by default), empty strings are discarded.\n\n    >>> _splitstrip('a, b, c   ,  4,,')\n    ['a', 'b', 'c', '4']\n    >>> _splitstrip('a')\n    ['a']\n    >>> _splitstrip('a,\\nb,\\nc,')\n    ['a', 'b', 'c']\n\n    :type string: str or unicode\n    :param string: a csv line\n\n    :type sep: str or unicode\n    :param sep: field separator, default to the comma (',')\n\n    :rtype: str or unicode\n    :return: the unquoted string (or the input string if it wasn't quoted)\n    \"\"\"\n    return [word.strip() for word in string.split(sep) if word.strip()]\n\n\ndef _unquote(string: str) -> str:\n    \"\"\"Remove optional quotes (simple or double) from the string.\n\n    :param string: an optionally quoted string\n    :return: the unquoted string (or the input string if it wasn't quoted)\n    \"\"\"\n    if not string:\n        return string\n    if string[0] in \"\\\"'\":\n        string = string[1:]\n    if string[-1] in \"\\\"'\":\n        string = string[:-1]\n    return string\n\n\ndef _check_csv(value: list[str] | tuple[str] | str) -> Sequence[str]:\n    if isinstance(value, (list, tuple)):\n        return value\n    return _splitstrip(value)\n\n\ndef _check_regexp_csv(value: list[str] | tuple[str] | str) -> Iterable[str]:\n    r\"\"\"Split a comma-separated list of regexps, taking care to avoid splitting\n    a regex employing a comma as quantifier, as in `\\d{1,2}`.\"\"\"\n    if isinstance(value, (list, tuple)):\n        yield from value\n    else:\n        # None is a sentinel value here\n        regexps: deque[deque[str] | None] = deque([None])\n        open_braces = False\n        for char in value:\n            if char == \"{\":\n                open_braces = True\n            elif char == \"}\" and open_braces:\n                open_braces = False\n\n            if char == \",\" and not open_braces:\n                regexps.append(None)\n            elif regexps[-1] is None:\n                regexps.pop()\n                regexps.append(deque([char]))\n            else:\n                regexps[-1].append(char)\n        yield from (\"\".join(regexp).strip() for regexp in regexps if regexp is not None)\n\n\ndef _comment(string: str) -> str:\n    \"\"\"Return string as a comment.\"\"\"\n    lines = [line.strip() for line in string.splitlines()]\n    sep = \"\\n\"\n    return \"# \" + f\"{sep}# \".join(lines)\n\n\ndef _format_option_value(optdict: OptionDict, value: Any) -> str:\n    \"\"\"Return the user input's value from a 'compiled' value.\n\n    TODO: Refactor the code to not use this deprecated function\n    \"\"\"\n    if optdict.get(\"type\", None) == \"py_version\":\n        value = \".\".join(str(item) for item in value)\n    elif isinstance(value, (list, tuple)):\n        value = \",\".join(_format_option_value(optdict, item) for item in value)\n    elif isinstance(value, dict):\n        value = \",\".join(f\"{k}:{v}\" for k, v in value.items())\n    elif hasattr(value, \"match\"):  # optdict.get('type') == 'regexp'\n        # compiled regexp\n        value = value.pattern\n    elif optdict.get(\"type\") == \"yn\":\n        value = \"yes\" if value else \"no\"\n    elif isinstance(value, str) and value.isspace():\n        value = f\"'{value}'\"\n    return str(value)\n\n\ndef format_section(\n    stream: TextIO,\n    section: str,\n    options: list[tuple[str, OptionDict, Any]],\n    doc: str | None = None,\n) -> None:\n    \"\"\"Format an option's section using the INI format.\"\"\"\n    warnings.warn(\n        \"format_section has been deprecated. It will be removed in pylint 3.0.\",\n        DeprecationWarning,\n        stacklevel=2,\n    )\n    if doc:\n        print(_comment(doc), file=stream)\n    print(f\"[{section}]\", file=stream)\n    with warnings.catch_warnings():\n        warnings.filterwarnings(\"ignore\", category=DeprecationWarning)\n        _ini_format(stream, options)\n\n\ndef _ini_format(stream: TextIO, options: list[tuple[str, OptionDict, Any]]) -> None:\n    \"\"\"Format options using the INI format.\"\"\"\n    warnings.warn(\n        \"_ini_format has been deprecated. It will be removed in pylint 3.0.\",\n        DeprecationWarning,\n        stacklevel=2,\n    )\n    for optname, optdict, value in options:\n        # Skip deprecated option\n        if \"kwargs\" in optdict:\n            assert isinstance(optdict[\"kwargs\"], dict)\n            if \"new_names\" in optdict[\"kwargs\"]:\n                continue\n        value = _format_option_value(optdict, value)\n        help_opt = optdict.get(\"help\")\n        if help_opt:\n            assert isinstance(help_opt, str)\n            help_opt = normalize_text(help_opt, indent=\"# \")\n            print(file=stream)\n            print(help_opt, file=stream)\n        else:\n            print(file=stream)\n        if value in {\"None\", \"False\"}:\n            print(f\"#{optname}=\", file=stream)\n        else:\n            value = str(value).strip()\n            if re.match(r\"^([\\w-]+,)+[\\w-]+$\", str(value)):\n                separator = \"\\n \" + \" \" * len(optname)\n                value = separator.join(x + \",\" for x in str(value).split(\",\"))\n                # remove trailing ',' from last element of the list\n                value = value[:-1]\n            print(f\"{optname}={value}\", file=stream)\n\n\nclass IsortDriver:\n    \"\"\"A wrapper around isort API that changed between versions 4 and 5.\"\"\"\n\n    def __init__(self, config: argparse.Namespace) -> None:\n        if HAS_ISORT_5:\n            self.isort5_config = isort.settings.Config(\n                # There is no typo here. EXTRA_standard_library is\n                # what most users want. The option has been named\n                # KNOWN_standard_library for ages in pylint, and we\n                # don't want to break compatibility.\n                extra_standard_library=config.known_standard_library,\n                known_third_party=config.known_third_party,\n            )\n        else:\n            # pylint: disable-next=no-member\n            self.isort4_obj = isort.SortImports(  # type: ignore[attr-defined]\n                file_contents=\"\",\n                known_standard_library=config.known_standard_library,\n                known_third_party=config.known_third_party,\n            )\n\n    def place_module(self, package: str) -> str:\n        if HAS_ISORT_5:\n            return isort.api.place_module(package, self.isort5_config)\n        return self.isort4_obj.place_module(package)  # type: ignore[no-any-return]",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/utils/utils.py::<module>",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         },
         "pylint/utils/utils.py::_check_regexp_csv": {
             "obj_name": "_check_regexp_csv",
             "node_type": "top-level function",
             "path": "pylint/utils/utils.py",
-            "parent": null,
-            "qualified_name": "_check_regexp_csv",
             "code_start_line": 257,
             "code_end_line": 279,
             "code_content": "def _check_regexp_csv(value: list[str] | tuple[str] | str) -> Iterable[str]:\n    r\"\"\"Split a comma-separated list of regexps, taking care to avoid splitting\n    a regex employing a comma as quantifier, as in `\\d{1,2}`.\"\"\"\n    if isinstance(value, (list, tuple)):\n        yield from value\n    else:\n        # None is a sentinel value here\n        regexps: deque[deque[str] | None] = deque([None])\n        open_braces = False\n        for char in value:\n            if char == \"{\":\n                open_braces = True\n            elif char == \"}\" and open_braces:\n                open_braces = False\n\n            if char == \",\" and not open_braces:\n                regexps.append(None)\n            elif regexps[-1] is None:\n                regexps.pop()\n                regexps.append(deque([char]))\n            else:\n                regexps[-1].append(char)\n        yield from (\"\".join(regexp).strip() for regexp in regexps if regexp is not None)",
-            "revision": "patched",
-            "selection_evidence": [
-                {
-                    "changed_symbol": "pylint/utils/utils.py::_check_regexp_csv",
-                    "reason": "changed_lines",
-                    "confidence": 1.0
-                }
-            ]
+            "parent": null
         }
     }
 }

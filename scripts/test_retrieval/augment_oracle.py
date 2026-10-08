@@ -26,6 +26,7 @@ from scripts.test_retrieval.extract_oracle import (
     extract_instance, parse_patch, read_repo_rows, repository_name, run_git,
 )
 from scripts.test_retrieval.static_dependencies import DependencyIndex
+from scripts.retrieval_formats import test_retrieval
 
 
 @dataclass
@@ -426,6 +427,10 @@ def augment_instance(row: dict[str, str], repo_dir: Path, *, max_depth=8, top_k=
                 "analysis": report, "patched_parse_errors": after.diagnostics}
     if original_error:
         manifest["original_oracle_error"] = original_error
+    provenance = {key: row[key] for key in ("production_patch_source_dataset", "production_patch_repair",
+                                           "original_production_patch_sha256") if row.get(key)}
+    if provenance:
+        manifest["production_patch_provenance"] = provenance
     if not symbols:
         manifest["retrieval_reason"] = "No parsed Python production symbols changed"
     elif not retrieved:
@@ -505,7 +510,7 @@ def main():
         for destination, value in zip(outputs, (retrieved, combined, manifest)):
             destination[row["instance_id"]] = value
         for filename, value in zip(filenames, outputs):
-            _save(output / filename, value)
+            _save(output / filename, test_retrieval(value) if filename.startswith("related_tests_") else value)
         counts = manifest["counts"]
         print(f"{row['instance_id']}: base={counts['original_base']}, production={len(retrieved)}, augmented={len(combined)}", flush=True)
     print(f"Wrote augmented oracle context to {output}")

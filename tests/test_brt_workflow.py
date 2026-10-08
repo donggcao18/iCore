@@ -16,6 +16,7 @@ from unittest.mock import Mock, patch
 
 from scripts import run_brt as brt
 from scripts.utils.benchmark_data import load_selected_csv
+from scripts.generator.make_prompt_util import get_retrieval_docs, get_related_test
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,7 +52,7 @@ class BrtWorkflowTests(unittest.TestCase):
         self.rows = [dict(repo=repo, instance_id=repo.replace('/', '__') + '-1',
                           problem_statement='bug', base_commit='abc', version='1.0',
                           source_dataset=brt.BENCHMARKS['swt-verified'].source_dataset,
-                          patch='diff --git a/code.py b/code.py\n',
+                          patch='diff --git a/code.py b/code.py\n--- a/code.py\n+++ b/code.py\n@@ -1 +1 @@\n-buggy\n+fixed\n',
                           test_patch='diff --git a/test.py b/test.py\n') for repo in REPOS]
         write_csv(self.csv, self.rows)
         self.args = ['--model', MODEL, '--dataset-csv', str(self.csv), '--output-root', str(self.output)]
@@ -75,13 +76,18 @@ class BrtWorkflowTests(unittest.TestCase):
             output.mkdir(parents=True, exist_ok=True)
             for row in rows:
                 for sample in range(1, samples + 1):
-                    (output / f'{row["instance_id"]}_n{sample}.txt').write_text('def test_bug(): assert False')
+                    candidate = output / f'{row["instance_id"]}_n{sample}.txt'
+                    if not candidate.exists():
+                        candidate.write_text('def test_bug(): assert False')
         else:
             options = dict(zip(args[::2], args[1::2]))
-            results = {row['instance_id']: {
-                f'{row["instance_id"]}_n{sample}.txt': {'success': sample == 1}
-                for sample in range(1, samples + 1)} for row in rows}
-            Path(options['--result_file']).write_text(json.dumps(results))
+            result_path = Path(options['--result_file'])
+            results = json.loads(result_path.read_text()) if result_path.exists() else {}
+            for row in rows:
+                instance_results = results.setdefault(row['instance_id'], {})
+                for sample in range(1, samples + 1):
+                    instance_results.setdefault(f'{row["instance_id"]}_n{sample}.txt', {'success': sample == 1})
+            result_path.write_text(json.dumps(results))
 
     def test_two_repositories_use_matching_context_csv_and_isolated_outputs(self):
         with patch.object(brt, 'preflight'), patch.object(brt, 'run_module', side_effect=self.run_module):
@@ -135,67 +141,83 @@ class BrtWorkflowTests(unittest.TestCase):
     def add_no_code_instances(self):
         paths = brt.artifact_paths(self.output, 'swt-verified', MODEL, REPOS[0])
         code = json.loads(paths.code.read_text())
-        skipped = []
+        no_code = []
+        tests_path = paths.tests / 'related_tests_4.json'
+        tests = json.loads(tests_path.read_text())
         for index, value in enumerate((None, {}, {'symbol': None})):
             row = dict(self.rows[0], instance_id=f'pylint-no-code-{index}')
             self.rows.append(row)
-            skipped.append(row['instance_id'])
+            no_code.append(row['instance_id'])
             code[row['instance_id']] = value
+            tests[row['instance_id']] = []
         # A single null keyword must not exclude an instance with another hit.
         code[self.rows[0]['instance_id']]['missing_symbol'] = None
         paths.code.write_text(json.dumps(code))
+        tests_path.write_text(json.dumps(tests))
         write_csv(self.csv, self.rows)
-        return paths, skipped
+        return paths, no_code
 
-    def test_no_code_instances_are_excluded_from_generation_evaluation_and_rate(self):
-        paths, skipped = self.add_no_code_instances()
-        # The skipped IDs deliberately have no test context.
+    def test_no_code_instances_are_included_in_generation_evaluation_and_rate(self):
+        paths, no_code = self.add_no_code_instances()
         with patch.object(brt, 'preflight') as preflight, patch.object(brt, 'run_module', side_effect=self.run_module):
             brt.main(self.args)
-        preflight.assert_called_once_with(self.rows[:2], MODEL)
+        expected_rows = [self.rows[0], *self.rows[2:], self.rows[1]]
+        preflight.assert_called_once_with(expected_rows, MODEL)
         root = paths.category('brt') / 'i3_s1'
-        self.assertEqual((root / 'selections/selected_ids.txt').read_text().split(), [self.rows[0]['instance_id']])
+        self.assertEqual((root / 'selections/selected_ids.txt').read_text().split(),
+                         [self.rows[0]['instance_id'], *no_code])
         summary = json.loads((root / 'summary.json').read_text())
-        self.assertEqual(summary['instances'], 1)
+        self.assertEqual(summary['instances'], 4)
         self.assertEqual(summary['total_selected_instances'], 4)
-        self.assertEqual(summary['skipped_no_code_instance_ids'], skipped)
+        self.assertEqual(summary['no_code_instance_ids'], no_code)
+        self.assertNotIn('skipped_no_code_instance_ids', summary)
         self.assertEqual(summary['instance_reproduction_rate'], 1)
-        self.assertFalse(any((root / 'generated_tests' / f'{bug_id}_n1.txt').exists() for bug_id in skipped))
+        self.assertTrue(all((root / 'generated_tests' / f'{bug_id}_n1.txt').exists() for bug_id in no_code))
+        results = json.loads((root / 'execution_results.json').read_text())
+        self.assertTrue(all(bug_id in results for bug_id in no_code))
 
-    def test_resume_old_manifest_preserves_candidates_and_excludes_old_no_code_results(self):
-        paths, skipped = self.add_no_code_instances()
+    def test_resume_skip_manifest_restores_no_code_instances_and_preserves_completed_results(self):
+        paths, no_code = self.add_no_code_instances()
         with patch.object(brt, 'preflight'), patch.object(brt, 'run_module', side_effect=self.run_module):
             brt.main(self.args)
         root = paths.category('brt') / 'i3_s1'
         manifest_path = root / 'run_config.json'
         manifest = json.loads(manifest_path.read_text())
-        del manifest['skipped_no_code_instance_ids']
+        del manifest['no_code_instance_ids']
+        manifest['skipped_no_code_instance_ids'] = no_code
         manifest_path.write_text(json.dumps(manifest))
         result_path = root / 'execution_results.json'
         results = json.loads(result_path.read_text())
-        results[skipped[0]] = {f'{skipped[0]}_n1.txt': {'success': True}}
+        for bug_id in no_code:
+            del results[bug_id]
+            (root / 'generated_tests' / f'{bug_id}_n1.txt').unlink()
+        results[self.rows[0]['instance_id']][f'{self.rows[0]["instance_id"]}_n1.txt']['success'] = False
         result_path.write_text(json.dumps(results))
         candidate = root / 'generated_tests' / f'{self.rows[0]["instance_id"]}_n1.txt'
-        original = candidate.read_text()
-        with patch.object(brt, 'preflight'), patch.object(brt, 'run_module'):
-            brt.main(self.args + ['--stage', 'evaluate'])
+        original = 'def test_completed(): assert True'
+        candidate.write_text(original)
+        with patch.object(brt, 'preflight'), patch.object(brt, 'run_module', side_effect=self.run_module):
+            brt.main(self.args)
         self.assertEqual(candidate.read_text(), original)
-        self.assertIn(skipped[0], json.loads(result_path.read_text()))
-        self.assertEqual(json.loads((root / 'summary.json').read_text())['fail_to_pass_candidates'], 1)
+        self.assertTrue(all(bug_id in json.loads(result_path.read_text()) for bug_id in no_code))
+        summary = json.loads((root / 'summary.json').read_text())
+        self.assertEqual(summary['fail_to_pass_candidates'], 3)
+        self.assertEqual(summary['instance_reproduction_rate'], 3 / 4)
+        self.assertNotIn('skipped_no_code_instance_ids', json.loads(manifest_path.read_text()))
 
-    def test_all_null_repository_is_skipped_and_next_repository_runs(self):
+    def test_all_null_repository_still_generates_and_evaluates(self):
         paths = brt.artifact_paths(self.output, 'swt-verified', MODEL, REPOS[0])
         paths.code.write_text(json.dumps({self.rows[0]['instance_id']: {'symbol': None}}))
-        (paths.tests / 'related_tests_4.json').unlink()
         with patch.object(brt, 'preflight') as preflight, patch.object(brt, 'run_module', side_effect=self.run_module):
             brt.main(self.args)
-        preflight.assert_called_once_with([self.rows[1]], MODEL)
-        self.assertEqual(len(self.commands), 2)
+        preflight.assert_called_once_with(self.rows, MODEL)
+        self.assertEqual(len(self.commands), 4)
         summary = json.loads((paths.category('brt') / 'i3_s1/summary.json').read_text())
-        self.assertEqual(summary['instances'], 0)
-        self.assertIsNone(summary['instance_reproduction_rate'])
+        self.assertEqual(summary['instances'], 1)
+        self.assertEqual(summary['instance_reproduction_rate'], 1)
+        self.assertEqual(summary['no_code_instance_ids'], [self.rows[0]['instance_id']])
 
-    def test_missing_or_malformed_code_is_not_silently_excluded(self):
+    def test_missing_or_malformed_code_still_raises(self):
         paths = brt.artifact_paths(self.output, 'swt-verified', MODEL, REPOS[0])
         for value in ({}, {self.rows[0]['instance_id']: {'symbol': {'code_content': ''}}},
                       {self.rows[0]['instance_id']: ['invalid node']}):
@@ -205,8 +227,47 @@ class BrtWorkflowTests(unittest.TestCase):
                     brt.main(self.args)
                 run.assert_not_called()
 
+    def test_plain_unified_fix_is_accepted_before_generation(self):
+        self.rows[0]['patch'] = '--- a/code.py\n+++ b/code.py\n@@ -1,4 +1,4 @@\n-buggy\n+fixed'
+        write_csv(self.csv, self.rows)
+        with patch.object(brt, 'preflight'), patch.object(brt, 'run_module', side_effect=self.run_module):
+            brt.main(self.args)
+        self.assertEqual(len(self.commands), 4)
+
+    def test_missing_reference_fix_reports_instance_and_prevents_generation(self):
+        self.rows[0]['patch'] = ''
+        write_csv(self.csv, self.rows)
+        with patch.object(brt, 'preflight'), patch.object(brt, 'run_module') as run:
+            with self.assertRaisesRegex(ValueError, self.rows[0]['instance_id'] + ': missing reference'):
+                brt.main(self.args)
+        run.assert_not_called()
+
 
 class EvaluationTests(unittest.TestCase):
+    def test_null_code_omits_only_code_section_and_retains_issue_and_test_context(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            code_path, tests_path = root / 'code.json', root / 'tests.json'
+            tests_path.write_text(json.dumps({'bug-1': [dict(
+                file='tests/test_one.py', name='test_one', code_content='def test_one(): assert True')]}))
+            namespace = {'ROOT_DIR': str(root), 'Path': Path, 'os': os, 're': re, 'json': json,
+                         'get_retrieval_docs': get_retrieval_docs, 'get_related_test': get_related_test}
+            load_functions(ROOT / 'scripts/generator/llm_query.py', ['make_messages_from_dataset'], namespace)
+            for value in (None, {}, {'symbol': None}):
+                with self.subTest(code=value):
+                    code_path.write_text(json.dumps({'bug-1': value}))
+                    messages = namespace['make_messages_from_dataset'](
+                        'brt', dict(instance_id='bug-1', problem_statement='issue text'),
+                        str(code_path), str(tests_path),
+                        str(ROOT / 'data/prompt_templates/prompt_with_code_and_tests.json'),
+                        prompt_dir=root / 'prompts')
+                    content = messages[-1]['content']
+                    self.assertIn('issue text', content)
+                    self.assertIn('<test>', content)
+                    self.assertIn('def test_one(): assert True', content)
+                    self.assertNotIn('<code>', content)
+                    self.assertNotIn('{{relevant_docs}}', content)
+
     def test_pytest_exit_status_and_real_execution_are_required(self):
         namespace = {'re': re, 'os': os, 'remove_ansi_escape_sequences': lambda value: value,
                      'swe_util': SimpleNamespace(swe_test_cmd=lambda *args: 'pytest test.py'),

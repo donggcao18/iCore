@@ -250,8 +250,24 @@ both repositories (`pylint-dev/pylint`, `pytest-dev/pytest`) directly to
 the code/test retrieval launchers. It requires completed `related_tests_4.json`
 by default and generates one final candidate per instance at temperature 0.7.
 It uses the exact local SWT Verified rows for generation and evaluation.
+Instances with no retrieved production code (a `null` instance, an empty
+mapping, or all keyword matches `null`) still run final BRT generation and
+evaluation. Their prompts contain the issue and retrieved tests, with the
+production-code section omitted. A null keyword alongside a usable code match
+is ignored while the usable snippets are included. The BRT selection CSV and
+IDs retain all selected instances; `run_config.json` and `summary.json` record
+`no_code_instance_ids`, and reproduction rates include these instances.
+Rerunning a previous run that excluded null-code instances restores them while
+reusing completed candidates/results. Missing or malformed retrieval records
+still stop the workflow.
 The issue and retrieved buggy code/tests enter the prompt; the reference
 production fix is used only when evaluating the fixed revision.
+Production fixes may use Git-style `diff --git` headers or plain unified
+`---`/`+++` headers. BRT preflight validates their syntax with Git before
+generation. Patch application ensures a final newline and recounts hunk line
+counts from the diff body, as required by the SWT production fixes. A missing
+or malformed fix reports the affected instance ID; patches that do not apply
+to the buggy checkout still fail during evaluation.
 
 The evaluator injects each candidate into the first retrieved reference's
 file/class (or uses lexical placement for an empty reference selection), then
