@@ -8,6 +8,7 @@ from email.utils import parsedate_to_datetime
 from openai import OpenAI, APIError, RateLimitError
 
 from scripts.config import API_KEY, BASE_URL
+from scripts.utils.request_watchdog import request_watchdog
 
 
 class CompletionResponseError(RuntimeError):
@@ -72,19 +73,27 @@ def create_chat_completion(client, **kwargs):
         kwargs.setdefault('max_tokens', int(os.environ['ICORE_LLM_MAX_TOKENS']))
     if os.getenv('ICORE_LLM_TIMEOUT'):
         kwargs['timeout'] = float(os.environ['ICORE_LLM_TIMEOUT'])
+    kwargs.setdefault('timeout', 300)
     client = client.with_options(max_retries=0)
     for attempt in range(5):
         try:
-            response = client.chat.completions.create(**kwargs)
-            if not kwargs.get('stream'):
-                validate_completion(response, kwargs.get('model'))
-                return response
-            # Callers execute tools only after receiving this complete response.
-            # A failed attempt's partial text/tool arguments are discarded.
-            try:
-                return list(response)
-            finally:
-                response.close()
+            with request_watchdog(kwargs.get('model'), float(kwargs['timeout'])):
+                response = client.chat.completions.create(**kwargs)
+                if not kwargs.get('stream'):
+                    validate_completion(response, kwargs.get('model'))
+                    usage = getattr(response, 'usage', None)
+                    details = getattr(usage, 'completion_tokens_details', None)
+                    print(f'LLM response: id={getattr(response, "id", None)}; '
+                          f'finish={getattr(response.choices[0], "finish_reason", None)}; '
+                          f'completion_tokens={getattr(usage, "completion_tokens", None)}; '
+                          f'reasoning_tokens={getattr(details, "reasoning_tokens", None)}', flush=True)
+                    return response
+                # Callers execute tools only after receiving this complete response.
+                # A failed attempt's partial text/tool arguments are discarded.
+                try:
+                    return list(response)
+                finally:
+                    response.close()
         except (APIError, CompletionResponseError) as e:
             status = getattr(e, 'status_code', None)
             message = str(e).lower()
@@ -156,6 +165,8 @@ def query_chat_llm(prompt, model, temperature=0.7):
     except Exception as e:
         logging.exception('Chat completion failed for model %s (%s): %s', model_name, type(e).__name__, e)
         return None
+    finally:
+        client.close()
 
 def query_llm(prompt, model, temperature=0.7):
     return query_chat_llm(prompt, model, temperature=temperature)

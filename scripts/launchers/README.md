@@ -116,7 +116,8 @@ Both code and test launchers derive the same paths from their arguments in
 `scripts/run_retrieval.py`. A new benchmark can be registered in its `BENCHMARKS`
 mapping without changing artifact paths or stage commands.
 Existing stages resume cached outputs. Use a fresh `--output-root` for a new
-experiment; resume checks reject changed model/provider/request settings.
+experiment; resume checks reject changed model, provider, or token limit.
+Transport timeouts can change when resuming the same experiment.
 
 For example, `--output-root experiments/run2` produces
 `experiments/run2/<benchmark>/<escaped-model-id>/...`. Pass the base directory,
@@ -141,6 +142,25 @@ The Python runner contains no fixed model or repository selection. Optional
 runtime flags such as `--preflight-only`, `--iterations`, and `--output-root`
 can still be appended to the running command; use the same output root for both
 stages.
+
+Keyword extraction waits for a complete assistant answer. An HTTP 200 log line
+does not mean extraction has finished. Requests now print elapsed-time updates
+every 30 seconds and report response IDs, finish reasons, and token usage on
+completion. On the Linux server's main thread, `--timeout` enforces an elapsed
+deadline per API attempt in addition to the SDK's network timeout; on Windows
+or worker threads, only the SDK's I/O timeout applies. Deadline failures are not
+automatically retried. Keyword results are saved after each instance, and a
+failed extraction stops the stage so subsequent instances do not hide the error.
+
+To resume a slow run with a shorter timeout, stop the previous process with
+Ctrl+C, sync the updated code to the server, then run:
+
+```bash
+bash scripts/launchers/code_retrieval_swt_verified.sh --timeout 180
+```
+
+Saved successful keyword results are reused. This option does not change the
+model's reasoning settings or generation token limit.
 
 The generic `retrieve_code.sh`, `retrieve_tests.sh`, and `run_retrieval_all.sh`
 launchers still require explicit model and repository arguments.

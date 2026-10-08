@@ -336,7 +336,9 @@ def main(argv=None):
         }
         if manifest_path.exists():
             previous = json.loads(manifest_path.read_text(encoding='utf-8'))
-            for key in ('benchmark', 'model', 'provider', 'source_dataset', 'base_url', 'repo', 'instance_ids', 'max_tokens', 'timeout'):
+            # Transport timeouts do not change successful model output and may
+            # be adjusted when resuming a stalled request.
+            for key in ('benchmark', 'model', 'provider', 'source_dataset', 'base_url', 'repo', 'instance_ids', 'max_tokens'):
                 if previous.get(key) != manifest[key]:
                     raise RuntimeError(f'Run configuration changed ({key}); use a separate --output-root.')
         selected_csv, env = prepare_selection(paths.selection, rows)

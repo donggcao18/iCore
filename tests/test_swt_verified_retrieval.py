@@ -1,6 +1,7 @@
 import ast
 import copy
 import csv
+from contextlib import nullcontext
 import json
 import os
 from pathlib import Path
@@ -188,6 +189,7 @@ class RetrievalPipelineTests(unittest.TestCase):
         client.with_options = lambda **kw: client
         completion = load_function(pipeline.ROOT / 'scripts/utils/llm_api.py', 'create_chat_completion', {
             'os': os,
+            'request_watchdog': lambda *args: nullcontext(),
             'APIError': RuntimeError, 'CompletionResponseError': ValueError,
         })
         with patch.dict(os.environ, {'ICORE_LLM_PROVIDER': 'test-provider',
@@ -241,6 +243,20 @@ class RetrievalPipelineTests(unittest.TestCase):
         for _, _, env in self.commands:
             self.assertNotIn('ICORE_LLM_PROVIDER', env)
             self.assertNotIn('ICORE_LLM_TIMEOUT', env)
+
+    def test_timeout_can_change_when_resuming_the_same_experiment(self):
+        self.commands = []
+        output = self.root / 'outputs'
+        with patch.object(pipeline, 'ROOT', self.root), patch.object(pipeline, 'preflight'), \
+             patch.object(pipeline, 'run_module', side_effect=self.fake_stage):
+            for timeout in ('300', '180'):
+                pipeline.main(['--model', TEST_MODEL, '--repo', TEST_REPOS[0],
+                               '--dataset-csv', str(self.csv), '--output-root', str(output),
+                               '--stage', 'code', '--timeout', timeout])
+        paths = pipeline.artifact_paths(output, 'swt-verified', TEST_MODEL, TEST_REPOS[0])
+        self.assertEqual(json.loads(paths.manifest.read_text())['timeout'], 180)
+        self.assertTrue(paths.code.is_file())
+        self.assertEqual(self.commands[-1][2]['ICORE_LLM_TIMEOUT'], '180')
 
     def test_artifact_layout_preserves_original_categories_and_full_repository_identity(self):
         paths = pipeline.artifact_paths(self.root, 'swt-verified', 'deepseek/model:variant', 'owner/project')

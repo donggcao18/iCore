@@ -51,6 +51,7 @@ def extract_keywords(bug_report, model):
     file_handler = logging.FileHandler(log_file)
     logger.addHandler(file_handler)
     try:
+        logger.info('Starting keyword extraction: instance=%s; model=%s', id, model)
         problem_desc = bug_report["problem_statement"]
         content = KEYWORD_EXTRACT_PROMPT.format(bug_report=problem_desc)
         prompt = [
@@ -90,6 +91,7 @@ def extract_keywords(bug_report, model):
         keywords = None
     finally:
         logger.removeHandler(file_handler)
+        file_handler.close()
     return keywords
         
 if __name__ == "__main__":
@@ -135,6 +137,11 @@ if __name__ == "__main__":
                 continue
             keywords = extract_keywords(bug_report, model)
             all_keywords[bug_report["instance_id"]] = keywords
+            with open(keywords_path, "w") as f:
+                json.dump(all_keywords, f, indent=4)
+            if keywords is None:
+                raise RuntimeError(f'Keyword extraction failed for {id}; stopping. '
+                                   'See the request error above. Completed instances are saved.')
     finally:
         with open(keywords_path, "w") as f:
             json.dump(all_keywords, f, indent=4)
