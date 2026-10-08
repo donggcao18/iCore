@@ -1,0 +1,90 @@
+{
+    "pylint-dev__pylint-4970": [
+        {
+            "file": "tests/checkers/unittest_similar.py",
+            "name": "test_set_duplicate_lines_to_zero",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pylint-dev__pylint-6386": [
+        {
+            "file": "tests/config/test_config.py",
+            "name": "test_short_verbose",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pylint-dev__pylint-6903": [
+        {
+            "file": "tests/test_pylint_runners.py",
+            "name": "test_pylint_run_jobs_equal_zero_dont_crash_with_cpu_fraction",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pylint-dev__pylint-7080": [
+        {
+            "file": "tests/test_self.py",
+            "name": "TestRunTC.test_ignore_path_recursive_current_dir",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pylint-dev__pylint-7277": [
+        {
+            "file": "tests/test_self.py",
+            "name": "TestRunTC.test_modify_sys_path",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": true
+        }
+    ],
+    "pylint-dev__pylint-8898": [
+        {
+            "file": "tests/config/test_config.py",
+            "name": "test_csv_regex_error",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": true
+        },
+        {
+            "file": "tests/config/test_config.py",
+            "name": "test_csv_regex_comma_in_quantifier",
+            "kind": "new",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": false
+        }
+    ]
+}

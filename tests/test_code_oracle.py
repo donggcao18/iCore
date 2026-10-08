@@ -178,6 +178,26 @@ class CodeOracleTests(unittest.TestCase):
 
 
 class CodeOracleIntegrationTests(unittest.TestCase):
+    def test_verified_plain_unified_patch_selects_base_method_and_class(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            def git(*args):
+                return subprocess.run(["git", "-c", f"safe.directory={root.as_posix()}", *args], cwd=root,
+                                      capture_output=True, check=True, text=True).stdout.strip()
+            git("init")
+            old = "class Engine:\n    def run(self):\n        return 1\n"
+            new = old.replace("return 1", "return 2")
+            (root / "core.py").write_text(old, encoding="utf-8")
+            git("add", ".")
+            git("-c", "user.name=Oracle Test", "-c", "user.email=oracle@example.invalid", "commit", "-m", "base")
+            patch_text = "".join(difflib.unified_diff(old.splitlines(True), new.splitlines(True),
+                                                     fromfile="a/core.py", tofile="b/core.py")).rstrip("\n")
+            patch_text = patch_text.replace("@@ -1,3 +1,3 @@", "@@ -1,4 +1,4 @@")
+            base, patched, _ = extract_instance({"base_commit": git("rev-parse", "HEAD"), "patch": patch_text}, root)
+            self.assertEqual(base["core.py::Engine"]["code_content"], old.rstrip())
+            self.assertEqual(patched["core.py::Engine"]["code_content"], new.rstrip())
+            self.assertEqual(base["core.py::Engine.run"]["class_context_ids"], ["core.py::Engine"])
+
     def test_git_snapshot_deletion_addition_and_non_python_hunks(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

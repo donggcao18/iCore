@@ -3,11 +3,13 @@ Configuration for LLM test generator w/ different datasets.
 """
 import os
 
-REPO_ROOT_DIR = '/research/cbim/vast/qt60/any-ssr/utils/iCore/repos'
+REPO_ROOT_DIR = os.getenv('REPO_ROOT_DIR') or '/research/cbim/vast/qt60/any-ssr/utils/iCore/repos'
 ROOT_DIR = '.'
 ENV_NAME_TEMPLATE = 'setup_{name1}_{name2}__{version}'
+DEEPSEEK_OPENROUTER_MODEL = 'deepseek/deepseek-v4-flash-0731'
 
 API_KEY = {
+    DEEPSEEK_OPENROUTER_MODEL: os.getenv('OPENROUTER_API_KEY') or os.getenv('DEEPSEEK_API_KEY'),
     'gpt-4o': os.getenv('OPENAI_API_KEY'),
     'gpt-4o-2024-08-06': os.getenv('OPENAI_API_KEY'),
     'qwen-32b': os.getenv('QWEN_API_KEY'),
@@ -18,6 +20,7 @@ API_KEY = {
 }
 
 BASE_URL = {
+    DEEPSEEK_OPENROUTER_MODEL: 'https://openrouter.ai/api/v1',
     'gpt-4o': os.getenv('OPENAI_BASE_URL') or None,
     'gpt-4o-2024-08-06': os.getenv('OPENAI_BASE_URL') or None,
     'qwen-32b': os.getenv('QWEN_BASE_URL') or None,

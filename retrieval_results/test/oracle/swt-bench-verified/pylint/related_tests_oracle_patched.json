@@ -1,0 +1,49 @@
+{
+    "pylint-dev__pylint-4970": [
+        {
+            "name": "test_set_duplicate_lines_to_zero",
+            "file": "tests/checkers/unittest_similar.py",
+            "code_content": "def test_set_duplicate_lines_to_zero() -> None:\n    output = StringIO()\n    with redirect_stdout(output), pytest.raises(SystemExit) as ex:\n        similar.Run([\"--duplicates=0\", SIMILAR1, SIMILAR2])\n    assert ex.value.code == 0\n    assert output.getvalue() == \"\""
+        }
+    ],
+    "pylint-dev__pylint-6386": [
+        {
+            "name": "test_short_verbose",
+            "file": "tests/config/test_config.py",
+            "code_content": "def test_short_verbose(capsys: CaptureFixture) -> None:\n    \"\"\"Check that we correctly handle the -v flag.\"\"\"\n    Run([str(EMPTY_MODULE), \"-v\"], exit=False)\n    output = capsys.readouterr()\n    assert \"Using config file\" in output.err"
+        }
+    ],
+    "pylint-dev__pylint-6903": [
+        {
+            "name": "test_pylint_run_jobs_equal_zero_dont_crash_with_cpu_fraction",
+            "file": "tests/test_pylint_runners.py",
+            "code_content": "def test_pylint_run_jobs_equal_zero_dont_crash_with_cpu_fraction(\n    tmpdir: LocalPath,\n) -> None:\n    \"\"\"Check that the pylint runner does not crash if `pylint.lint.run._query_cpu`\n    determines only a fraction of a CPU core to be available.\n    \"\"\"\n    builtin_open = open\n\n    def _mock_open(*args, **kwargs):\n        if args[0] == \"/sys/fs/cgroup/cpu/cpu.cfs_quota_us\":\n            return mock_open(read_data=b\"-1\")(*args, **kwargs)\n        if args[0] == \"/sys/fs/cgroup/cpu/cpu.shares\":\n            return mock_open(read_data=b\"2\")(*args, **kwargs)\n        return builtin_open(*args, **kwargs)\n\n    pathlib_path = pathlib.Path\n\n    def _mock_path(*args, **kwargs):\n        if args[0] == \"/sys/fs/cgroup/cpu/cpu.shares\":\n            return MagicMock(is_file=lambda: True)\n        return pathlib_path(*args, **kwargs)\n\n    filepath = os.path.abspath(__file__)\n    testargs = [filepath, \"--jobs=0\"]\n    with tmpdir.as_cwd():\n        with pytest.raises(SystemExit) as err:\n            with patch(\"builtins.open\", _mock_open):\n                with patch(\"pylint.lint.run.Path\", _mock_path):\n                    Run(testargs, reporter=Reporter())\n        assert err.value.code == 0"
+        }
+    ],
+    "pylint-dev__pylint-7080": [
+        {
+            "name": "TestRunTC.test_ignore_path_recursive_current_dir",
+            "file": "tests/test_self.py",
+            "code_content": "class TestRunTC:\n    def test_ignore_path_recursive_current_dir(self) -> None:\n        \"\"\"Tests that path is normalized before checked that is ignored. GitHub issue #6964\"\"\"\n        with _test_sys_path():\n            # pytest is including directory HERE/regrtest_data to sys.path which causes\n            # astroid to believe that directory is a package.\n            sys.path = [\n                path\n                for path in sys.path\n                if not os.path.basename(path) == \"regrtest_data\"\n            ]\n            with _test_cwd():\n                os.chdir(join(HERE, \"regrtest_data\", \"directory\"))\n                self._runtest(\n                    [\n                        \".\",\n                        \"--recursive=y\",\n                        \"--ignore-paths=^ignored_subdirectory/.*\",\n                    ],\n                    code=0,\n                )"
+        }
+    ],
+    "pylint-dev__pylint-7277": [
+        {
+            "name": "TestRunTC.test_modify_sys_path",
+            "file": "tests/test_self.py",
+            "code_content": "class TestRunTC:\n    @staticmethod\n    def test_modify_sys_path() -> None:\n        cwd = \"/tmp/pytest-of-root/pytest-0/test_do_not_import_files_from_0\"\n        default_paths = [\n            \"/usr/local/lib/python39.zip\",\n            \"/usr/local/lib/python3.9\",\n            \"/usr/local/lib/python3.9/lib-dynload\",\n            \"/usr/local/lib/python3.9/site-packages\",\n        ]\n        with _test_sys_path(), patch(\"os.getcwd\") as mock_getcwd:\n            mock_getcwd.return_value = cwd\n            paths = [cwd, *default_paths]\n            sys.path = copy(paths)\n            with _test_environ_pythonpath():\n                modify_sys_path()\n            assert sys.path == paths[1:]\n\n            paths = [\"\", *default_paths]\n            sys.path = copy(paths)\n            with _test_environ_pythonpath():\n                modify_sys_path()\n            assert sys.path == paths[1:]\n\n            paths = [\".\", *default_paths]\n            sys.path = copy(paths)\n            with _test_environ_pythonpath():\n                modify_sys_path()\n            assert sys.path == paths[1:]\n\n            paths = [\"/do_not_remove\", *default_paths]\n            sys.path = copy(paths)\n            with _test_environ_pythonpath():\n                modify_sys_path()\n            assert sys.path == paths\n\n            paths = [cwd, cwd, *default_paths]\n            sys.path = copy(paths)\n            with _test_environ_pythonpath(\".\"):\n                modify_sys_path()\n            assert sys.path == paths[1:]\n\n            paths = [cwd, \"/custom_pythonpath\", *default_paths]\n            sys.path = copy(paths)\n            with _test_environ_pythonpath(\"/custom_pythonpath\"):\n                modify_sys_path()\n            assert sys.path == paths[1:]\n\n            paths = [cwd, \"/custom_pythonpath\", cwd, *default_paths]\n            sys.path = copy(paths)\n            with _test_environ_pythonpath(\"/custom_pythonpath:\"):\n                modify_sys_path()\n            assert sys.path == [paths[1]] + paths[3:]\n\n            paths = [\"\", cwd, \"/custom_pythonpath\", *default_paths]\n            sys.path = copy(paths)\n            with _test_environ_pythonpath(\":/custom_pythonpath\"):\n                modify_sys_path()\n            assert sys.path == paths[2:]\n\n            paths = [cwd, cwd, \"/custom_pythonpath\", *default_paths]\n            sys.path = copy(paths)\n            with _test_environ_pythonpath(\":/custom_pythonpath:\"):\n                modify_sys_path()\n            assert sys.path == paths[2:]\n\n            paths = [cwd, cwd, *default_paths]\n            sys.path = copy(paths)\n            with _test_environ_pythonpath(\":.\"):\n                modify_sys_path()\n            assert sys.path == paths[1:]\n            sys.path = copy(paths)\n            with _test_environ_pythonpath(f\":{cwd}\"):\n                modify_sys_path()\n            assert sys.path == paths[1:]\n\n            sys.path = copy(paths)\n            with _test_environ_pythonpath(\".:\"):\n                modify_sys_path()\n            assert sys.path == paths[1:]\n            sys.path = copy(paths)\n            with _test_environ_pythonpath(f\"{cwd}:\"):\n                modify_sys_path()\n            assert sys.path == paths[1:]\n\n            paths = [\"\", cwd, *default_paths, cwd]\n            sys.path = copy(paths)\n            with _test_environ_pythonpath(cwd):\n                modify_sys_path()\n            assert sys.path == paths[1:]"
+        }
+    ],
+    "pylint-dev__pylint-8898": [
+        {
+            "name": "test_csv_regex_error",
+            "file": "tests/config/test_config.py",
+            "code_content": "def test_csv_regex_error(capsys: CaptureFixture) -> None:\n    \"\"\"Check that we correctly error when an option is passed and one\n    of its comma-separated regular expressions values is an invalid regular expression.\n    \"\"\"\n    with pytest.raises(SystemExit):\n        Run(\n            [str(EMPTY_MODULE), r\"--bad-names-rgx=(foo{1,}, foo{1,3}})\"],\n            exit=False,\n        )\n    output = capsys.readouterr()\n    assert (\n        r\"Error in provided regular expression: (foo{1,} beginning at index 0: missing ), unterminated subpattern\"\n        in output.err\n    )"
+        },
+        {
+            "name": "test_csv_regex_comma_in_quantifier",
+            "file": "tests/config/test_config.py",
+            "code_content": "@pytest.mark.parametrize(\"in_string,expected\", CSV_REGEX_COMMA_CASES)\ndef test_csv_regex_comma_in_quantifier(in_string: str, expected: list[str]) -> None:\n    \"\"\"Check that we correctly parse a comma-separated regex when there are one\n    or more commas within quantifier expressions.\n    \"\"\"\n\n    def _template_run(in_string: str) -> list[re.Pattern[Any]]:\n        r = Run(\n            [str(EMPTY_MODULE), rf\"--bad-names-rgx={in_string}\"],\n            exit=False,\n        )\n        bad_names_rgxs: list[re.Pattern[Any]] = r.linter.config.bad_names_rgxs\n        return bad_names_rgxs\n\n    assert _template_run(in_string) == [re.compile(regex) for regex in expected]"
+        }
+    ]
+}

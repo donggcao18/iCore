@@ -1,0 +1,245 @@
+{
+  "pytest-dev__pytest-10051": [
+    {
+      "file": "testing/logging/test_fixture.py",
+      "name": "test_caplog_captures_for_all_stages",
+      "code_content": "def test_caplog_captures_for_all_stages(caplog, logging_during_setup_and_teardown):\n    assert not caplog.records\n    assert not caplog.get_records(\"call\")\n    logger.info(\"a_call_log\")\n    assert [x.message for x in caplog.get_records(\"call\")] == [\"a_call_log\"]\n\n    assert [x.message for x in caplog.get_records(\"setup\")] == [\"a_setup_log\"]\n\n    # This reaches into private API, don't use this type of thing in real tests!\n    assert set(caplog._item.stash[caplog_records_key]) == {\"setup\", \"call\"}"
+    },
+    {
+      "file": "testing/logging/test_formatter.py",
+      "name": "test_colored_short_level",
+      "code_content": "def test_colored_short_level() -> None:\n    logfmt = \"%(levelname).1s %(message)s\"\n\n    record = logging.LogRecord(\n        name=\"dummy\",\n        level=logging.INFO,\n        pathname=\"dummypath\",\n        lineno=10,\n        msg=\"Test Message\",\n        args=(),\n        exc_info=None,\n    )\n\n    class ColorConfig:\n        class option:\n            pass\n\n    tw = TerminalWriter()\n    tw.hasmarkup = True\n    formatter = ColoredLevelFormatter(tw, logfmt)\n    output = formatter.format(record)\n    # the I (of INFO) is colored\n    assert output == (\"\\x1b[32mI\\x1b[0m Test Message\")"
+    },
+    {
+      "file": "testing/logging/test_formatter.py",
+      "name": "test_coloredlogformatter",
+      "code_content": "def test_coloredlogformatter() -> None:\n    logfmt = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\n\n    record = logging.LogRecord(\n        name=\"dummy\",\n        level=logging.INFO,\n        pathname=\"dummypath\",\n        lineno=10,\n        msg=\"Test Message\",\n        args=(),\n        exc_info=None,\n    )\n\n    tw = TerminalWriter()\n    tw.hasmarkup = True\n    formatter = ColoredLevelFormatter(tw, logfmt)\n    output = formatter.format(record)\n    assert output == (\n        \"dummypath                   10 \\x1b[32mINFO    \\x1b[0m Test Message\"\n    )\n\n    tw.hasmarkup = False\n    formatter = ColoredLevelFormatter(tw, logfmt)\n    output = formatter.format(record)\n    assert output == (\"dummypath                   10 INFO     Test Message\")"
+    },
+    {
+      "file": "testing/logging/test_formatter.py",
+      "name": "test_coloredlogformatter_with_width_precision",
+      "code_content": "def test_coloredlogformatter_with_width_precision() -> None:\n    logfmt = \"%(filename)-25s %(lineno)4d %(levelname)-8.8s %(message)s\"\n\n    record = logging.LogRecord(\n        name=\"dummy\",\n        level=logging.INFO,\n        pathname=\"dummypath\",\n        lineno=10,\n        msg=\"Test Message\",\n        args=(),\n        exc_info=None,\n    )\n\n    tw = TerminalWriter()\n    tw.hasmarkup = True\n    formatter = ColoredLevelFormatter(tw, logfmt)\n    output = formatter.format(record)\n    assert output == (\n        \"dummypath                   10 \\x1b[32mINFO    \\x1b[0m Test Message\"\n    )\n\n    tw.hasmarkup = False\n    formatter = ColoredLevelFormatter(tw, logfmt)\n    output = formatter.format(record)\n    assert output == (\"dummypath                   10 INFO     Test Message\")"
+    },
+    {
+      "file": "testing/logging/test_formatter.py",
+      "name": "test_multiline_message",
+      "code_content": "def test_multiline_message() -> None:\n    from _pytest.logging import PercentStyleMultiline\n\n    logfmt = \"%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s\"\n\n    record: Any = logging.LogRecord(\n        name=\"dummy\",\n        level=logging.INFO,\n        pathname=\"dummypath\",\n        lineno=10,\n        msg=\"Test Message line1\\nline2\",\n        args=(),\n        exc_info=None,\n    )\n    # this is called by logging.Formatter.format\n    record.message = record.getMessage()\n\n    ai_on_style = PercentStyleMultiline(logfmt, True)\n    output = ai_on_style.format(record)\n    assert output == (\n        \"dummypath                   10 INFO     Test Message line1\\n\"\n        \"                                        line2\"\n    )\n\n    ai_off_style = PercentStyleMultiline(logfmt, False)\n    output = ai_off_style.format(record)\n    assert output == (\n        \"dummypath                   10 INFO     Test Message line1\\nline2\"\n    )\n\n    ai_none_style = PercentStyleMultiline(logfmt, None)\n    output = ai_none_style.format(record)\n    assert output == (\n        \"dummypath                   10 INFO     Test Message line1\\nline2\"\n    )\n\n    record.auto_indent = False\n    output = ai_on_style.format(record)\n    assert output == (\n        \"dummypath                   10 INFO     Test Message line1\\nline2\"\n    )\n\n    record.auto_indent = True\n    output = ai_off_style.format(record)\n    assert output == (\n        \"dummypath                   10 INFO     Test Message line1\\n\"\n        \"                                        line2\"\n    )\n\n    record.auto_indent = \"False\"\n    output = ai_on_style.format(record)\n    assert output == (\n        \"dummypath                   10 INFO     Test Message line1\\nline2\"\n    )\n\n    record.auto_indent = \"True\"\n    output = ai_off_style.format(record)\n    assert output == (\n        \"dummypath                   10 INFO     Test Message line1\\n\"\n        \"                                        line2\"\n    )\n\n    # bad string values default to False\n    record.auto_indent = \"junk\"\n    output = ai_off_style.format(record)\n    assert output == (\n        \"dummypath                   10 INFO     Test Message line1\\nline2\"\n    )\n\n    # anything other than string or int will default to False\n    record.auto_indent = dict()\n    output = ai_off_style.format(record)\n    assert output == (\n        \"dummypath                   10 INFO     Test Message line1\\nline2\"\n    )\n\n    record.auto_indent = \"5\"\n    output = ai_off_style.format(record)\n    assert output == (\n        \"dummypath                   10 INFO     Test Message line1\\n     line2\"\n    )\n\n    record.auto_indent = 5\n    output = ai_off_style.format(record)\n    assert output == (\n        \"dummypath                   10 INFO     Test Message line1\\n     line2\"\n    )"
+    },
+    {
+      "file": "testing/logging/test_reporting.py",
+      "name": "test_live_logging_suspends_capture",
+      "code_content": "@pytest.mark.parametrize(\"has_capture_manager\", [True, False])\ndef test_live_logging_suspends_capture(\n    has_capture_manager: bool, request: FixtureRequest\n) -> None:\n    \"\"\"Test that capture manager is suspended when we emitting messages for live logging.\n\n    This tests the implementation calls instead of behavior because it is difficult/impossible to do it using\n    ``pytester`` facilities because they do their own capturing.\n\n    We parametrize the test to also make sure _LiveLoggingStreamHandler works correctly if no capture manager plugin\n    is installed.\n    \"\"\"\n    import logging\n    import contextlib\n    from functools import partial\n    from _pytest.logging import _LiveLoggingStreamHandler\n\n    class MockCaptureManager:\n        calls = []\n\n        @contextlib.contextmanager\n        def global_and_fixture_disabled(self):\n            self.calls.append(\"enter disabled\")\n            yield\n            self.calls.append(\"exit disabled\")\n\n    class DummyTerminal(io.StringIO):\n        def section(self, *args, **kwargs):\n            pass\n\n    out_file = cast(TerminalReporter, DummyTerminal())\n    capture_manager = (\n        cast(CaptureManager, MockCaptureManager()) if has_capture_manager else None\n    )\n    handler = _LiveLoggingStreamHandler(out_file, capture_manager)\n    handler.set_when(\"call\")\n\n    logger = logging.getLogger(__name__ + \".test_live_logging_suspends_capture\")\n    logger.addHandler(handler)\n    request.addfinalizer(partial(logger.removeHandler, handler))\n\n    logger.critical(\"some message\")\n    if has_capture_manager:\n        assert MockCaptureManager.calls == [\"enter disabled\", \"exit disabled\"]\n    else:\n        assert MockCaptureManager.calls == []\n    assert cast(io.StringIO, out_file).getvalue() == \"\\nsome message\\n\""
+    }
+  ],
+  "pytest-dev__pytest-10081": [
+    {
+      "file": "testing/test_unittest.py",
+      "name": "test_testcase_totally_incompatible_exception_info",
+      "code_content": "def test_testcase_totally_incompatible_exception_info(pytester: Pytester) -> None:\n    import _pytest.unittest\n\n    (item,) = pytester.getitems(\n        \"\"\"\n        from unittest import TestCase\n        class MyTestCase(TestCase):\n            def test_hello(self):\n                pass\n    \"\"\"\n    )\n    assert isinstance(item, _pytest.unittest.TestCaseFunction)\n    item.addError(None, 42)  # type: ignore[arg-type]\n    excinfo = item._excinfo\n    assert excinfo is not None\n    assert \"ERROR: Unknown Incompatible\" in str(excinfo.pop(0).getrepr())"
+    }
+  ],
+  "pytest-dev__pytest-10356": [
+    {
+      "file": "testing/python/fixtures.py",
+      "name": "TestRequestBasic.test_request_attributes",
+      "code_content": "class TestRequestBasic:\n    def test_request_attributes(self, pytester: Pytester) -> None:\n        item = pytester.getitem(\n            \"\"\"\n            import pytest\n\n            @pytest.fixture\n            def something(request): pass\n            def test_func(something): pass\n        \"\"\"\n        )\n        assert isinstance(item, Function)\n        req = fixtures.FixtureRequest(item, _ispytest=True)\n        assert req.function == item.obj\n        assert req.keywords == item.keywords\n        assert hasattr(req.module, \"test_func\")\n        assert req.cls is None\n        assert req.function.__name__ == \"test_func\"\n        assert req.config == item.config\n        assert repr(req).find(req.function.__name__) != -1"
+    },
+    {
+      "file": "testing/test_collection.py",
+      "name": "TestNodeKeywords.test_duplicates_handled_correctly",
+      "code_content": "class TestNodeKeywords:\n    def test_duplicates_handled_correctly(self, pytester: Pytester) -> None:\n        item = pytester.getitem(\n            \"\"\"\n            import pytest\n            pytestmark = pytest.mark.kw\n            class TestClass:\n                pytestmark = pytest.mark.kw\n                def test_method(self): pass\n                test_method.kw = 'method'\n        \"\"\",\n            \"test_method\",\n        )\n        assert item.parent is not None and item.parent.parent is not None\n        item.parent.parent.keywords[\"kw\"] = \"class\"\n\n        assert item.keywords[\"kw\"] == \"method\"\n        assert len(item.keywords) == len(set(item.keywords))"
+    },
+    {
+      "file": "testing/test_faulthandler.py",
+      "name": "test_timeout",
+      "code_content": "@pytest.mark.parametrize(\n    \"enabled\",\n    [\n        pytest.param(\n            True, marks=pytest.mark.skip(reason=\"sometimes crashes on CI (#7022)\")\n        ),\n        False,\n    ],\n)\ndef test_timeout(pytester: Pytester, enabled: bool) -> None:\n    \"\"\"Test option to dump tracebacks after a certain timeout.\n\n    If faulthandler is disabled, no traceback will be dumped.\n    \"\"\"\n    pytester.makepyfile(\n        \"\"\"\n    import os, time\n    def test_timeout():\n        time.sleep(1 if \"CI\" in os.environ else 0.1)\n    \"\"\"\n    )\n    pytester.makeini(\n        \"\"\"\n        [pytest]\n        faulthandler_timeout = 0.01\n        \"\"\"\n    )\n    args = [\"-p\", \"no:faulthandler\"] if not enabled else []\n\n    result = pytester.runpytest_subprocess(*args)\n    tb_output = \"most recent call first\"\n    if enabled:\n        result.stderr.fnmatch_lines([\"*%s*\" % tb_output])\n    else:\n        assert tb_output not in result.stderr.str()\n    result.stdout.fnmatch_lines([\"*1 passed*\"])\n    assert result.ret == 0"
+    },
+    {
+      "file": "testing/test_mark.py",
+      "name": "test_parameterset_for_parametrize_marks",
+      "code_content": "@pytest.mark.parametrize(\"mark\", [None, \"\", \"skip\", \"xfail\"])\ndef test_parameterset_for_parametrize_marks(\n    pytester: Pytester, mark: Optional[str]\n) -> None:\n    if mark is not None:\n        pytester.makeini(\n            \"\"\"\n        [pytest]\n        {}={}\n        \"\"\".format(\n                EMPTY_PARAMETERSET_OPTION, mark\n            )\n        )\n\n    config = pytester.parseconfig()\n    from _pytest.mark import pytest_configure, get_empty_parameterset_mark\n\n    pytest_configure(config)\n    result_mark = get_empty_parameterset_mark(config, [\"a\"], all)\n    if mark in (None, \"\"):\n        # normalize to the requested name\n        mark = \"skip\"\n    assert result_mark.name == mark\n    assert result_mark.kwargs[\"reason\"].startswith(\"got empty parameter set \")\n    if mark == \"xfail\":\n        assert result_mark.kwargs.get(\"run\") is False"
+    },
+    {
+      "file": "testing/test_warnings.py",
+      "name": "test_removed_in_x_warning_as_error",
+      "code_content": "@pytest.mark.skip(\"not relevant until pytest 8.0\")\n@pytest.mark.parametrize(\"change_default\", [None, \"ini\", \"cmdline\"])\ndef test_removed_in_x_warning_as_error(pytester: Pytester, change_default) -> None:\n    \"\"\"This ensures that PytestRemovedInXWarnings raised by pytest are turned into errors.\n\n    This test should be enabled as part of each major release, and skipped again afterwards\n    to ensure our deprecations are turning into warnings as expected.\n    \"\"\"\n    pytester.makepyfile(\n        \"\"\"\n        import warnings, pytest\n        def test():\n            warnings.warn(pytest.PytestRemovedIn8Warning(\"some warning\"))\n    \"\"\"\n    )\n    if change_default == \"ini\":\n        pytester.makeini(\n            \"\"\"\n            [pytest]\n            filterwarnings =\n                ignore::pytest.PytestRemovedIn8Warning\n        \"\"\"\n        )\n\n    args = (\n        (\"-Wignore::pytest.PytestRemovedIn8Warning\",)\n        if change_default == \"cmdline\"\n        else ()\n    )\n    result = pytester.runpytest(*args)\n    if change_default is None:\n        result.stdout.fnmatch_lines([\"* 1 failed in *\"])\n    else:\n        assert change_default in (\"ini\", \"cmdline\")\n        result.stdout.fnmatch_lines([\"* 1 passed in *\"])"
+    },
+    {
+      "file": "testing/python/metafunc.py",
+      "name": "TestMetafunc.test_bytes_idval",
+      "code_content": "class TestMetafunc:\n    def test_bytes_idval(self) -> None:\n        \"\"\"Unit test for the expected behavior to obtain ids for parametrized\n        bytes values: bytes objects are always escaped using \"binary escape\".\"\"\"\n        values = [\n            (b\"\", r\"\"),\n            (b\"\\xc3\\xb4\\xff\\xe4\", r\"\\xc3\\xb4\\xff\\xe4\"),\n            (b\"ascii\", r\"ascii\"),\n            (\"αρά\".encode(), r\"\\xce\\xb1\\xcf\\x81\\xce\\xac\"),\n        ]\n        for val, expected in values:\n            assert (\n                IdMaker([], [], None, None, None, None, None)._idval(val, \"a\", 6)\n                == expected\n            )"
+    },
+    {
+      "file": "testing/python/metafunc.py",
+      "name": "TestMetafunc.test_class_or_function_idval",
+      "code_content": "class TestMetafunc:\n    def test_class_or_function_idval(self) -> None:\n        \"\"\"Unit test for the expected behavior to obtain ids for parametrized\n        values that are classes or functions: their __name__.\"\"\"\n\n        class TestClass:\n            pass\n\n        def test_function():\n            pass\n\n        values = [(TestClass, \"TestClass\"), (test_function, \"test_function\")]\n        for val, expected in values:\n            assert (\n                IdMaker([], [], None, None, None, None, None)._idval(val, \"a\", 6)\n                == expected\n            )"
+    },
+    {
+      "file": "testing/python/metafunc.py",
+      "name": "TestMetafunc.test_idval_hypothesis",
+      "code_content": "class TestMetafunc:\n    @hypothesis.given(strategies.text() | strategies.binary())\n    @hypothesis.settings(\n        deadline=400.0\n    )  # very close to std deadline and CI boxes are not reliable in CPU power\n    def test_idval_hypothesis(self, value) -> None:\n        escaped = IdMaker([], [], None, None, None, None, None)._idval(value, \"a\", 6)\n        assert isinstance(escaped, str)\n        escaped.encode(\"ascii\")"
+    },
+    {
+      "file": "testing/python/metafunc.py",
+      "name": "TestMetafunc.test_notset_idval",
+      "code_content": "class TestMetafunc:\n    def test_notset_idval(self) -> None:\n        \"\"\"Test that a NOTSET value (used by an empty parameterset) generates\n        a proper ID.\n\n        Regression test for #7686.\n        \"\"\"\n        assert (\n            IdMaker([], [], None, None, None, None, None)._idval(NOTSET, \"a\", 0) == \"a0\"\n        )"
+    },
+    {
+      "file": "testing/python/metafunc.py",
+      "name": "TestMetafunc.test_unicode_idval",
+      "code_content": "class TestMetafunc:\n    def test_unicode_idval(self) -> None:\n        \"\"\"Test that Unicode strings outside the ASCII character set get\n        escaped, using byte escapes if they're in that range or unicode\n        escapes if they're not.\n\n        \"\"\"\n        values = [\n            (\"\", r\"\"),\n            (\"ascii\", r\"ascii\"),\n            (\"ação\", r\"a\\xe7\\xe3o\"),\n            (\"josé@blah.com\", r\"jos\\xe9@blah.com\"),\n            (\n                r\"δοκ.ιμή@παράδειγμα.δοκιμή\",\n                r\"\\u03b4\\u03bf\\u03ba.\\u03b9\\u03bc\\u03ae@\\u03c0\\u03b1\\u03c1\\u03ac\\u03b4\\u03b5\\u03b9\\u03b3\"\n                r\"\\u03bc\\u03b1.\\u03b4\\u03bf\\u03ba\\u03b9\\u03bc\\u03ae\",\n            ),\n        ]\n        for val, expected in values:\n            assert (\n                IdMaker([], [], None, None, None, None, None)._idval(val, \"a\", 6)\n                == expected\n            )"
+    }
+  ],
+  "pytest-dev__pytest-5262": [
+    {
+      "file": "testing/test_capture.py",
+      "name": "test_dupfile",
+      "code_content": "@needsosdup\ndef test_dupfile(tmpfile):\n    flist = []\n    for i in range(5):\n        nf = capture.safe_text_dupfile(tmpfile, \"wb\")\n        assert nf != tmpfile\n        assert nf.fileno() != tmpfile.fileno()\n        assert nf not in flist\n        print(i, end=\"\", file=nf)\n        flist.append(nf)\n\n    fname_open = flist[0].name\n    assert fname_open == repr(flist[0].buffer)\n\n    for i in range(5):\n        f = flist[i]\n        f.close()\n    fname_closed = flist[0].name\n    assert fname_closed == repr(flist[0].buffer)\n    assert fname_closed != fname_open\n    tmpfile.seek(0)\n    s = tmpfile.read()\n    assert \"01234\" in repr(s)\n    tmpfile.close()\n    assert fname_closed == repr(flist[0].buffer)"
+    },
+    {
+      "file": "testing/test_capture.py",
+      "name": "test_dupfile_on_bytesio",
+      "code_content": "def test_dupfile_on_bytesio():\n    bio = io.BytesIO()\n    f = capture.safe_text_dupfile(bio, \"wb\")\n    f.write(\"hello\")\n    assert bio.getvalue() == b\"hello\"\n    assert \"BytesIO object\" in f.name"
+    },
+    {
+      "file": "testing/test_capture.py",
+      "name": "test_dupfile_on_textio",
+      "code_content": "def test_dupfile_on_textio():\n    tio = py.io.TextIO()\n    f = capture.safe_text_dupfile(tio, \"wb\")\n    f.write(\"hello\")\n    assert tio.getvalue() == \"hello\"\n    assert not hasattr(f, \"name\")"
+    },
+    {
+      "file": "testing/test_capture.py",
+      "name": "test_pickling_and_unpickling_encoded_file",
+      "code_content": "def test_pickling_and_unpickling_encoded_file():\n    # See https://bitbucket.org/pytest-dev/pytest/pull-request/194\n    # pickle.loads() raises infinite recursion if\n    # EncodedFile.__getattr__ is not implemented properly\n    ef = capture.EncodedFile(None, None)\n    ef_as_str = pickle.dumps(ef)\n    pickle.loads(ef_as_str)"
+    },
+    {
+      "file": "testing/test_capture.py",
+      "name": "TestFDCapture.test_simple",
+      "code_content": "class TestFDCapture(object):\n    def test_simple(self, tmpfile):\n        fd = tmpfile.fileno()\n        cap = capture.FDCapture(fd)\n        data = b\"hello\"\n        os.write(fd, data)\n        s = cap.snap()\n        cap.done()\n        assert not s\n        cap = capture.FDCapture(fd)\n        cap.start()\n        os.write(fd, data)\n        s = cap.snap()\n        cap.done()\n        assert s == \"hello\""
+    },
+    {
+      "file": "testing/test_capture.py",
+      "name": "TestFDCapture.test_simple_fail_second_start",
+      "code_content": "class TestFDCapture(object):\n    def test_simple_fail_second_start(self, tmpfile):\n        fd = tmpfile.fileno()\n        cap = capture.FDCapture(fd)\n        cap.done()\n        pytest.raises(ValueError, cap.start)"
+    },
+    {
+      "file": "testing/test_capture.py",
+      "name": "TestFDCapture.test_simple_resume_suspend",
+      "code_content": "class TestFDCapture(object):\n    def test_simple_resume_suspend(self, tmpfile):\n        with saved_fd(1):\n            cap = capture.FDCapture(1)\n            cap.start()\n            data = b\"hello\"\n            os.write(1, data)\n            sys.stdout.write(\"whatever\")\n            s = cap.snap()\n            assert s == \"hellowhatever\"\n            cap.suspend()\n            os.write(1, b\"world\")\n            sys.stdout.write(\"qlwkej\")\n            assert not cap.snap()\n            cap.resume()\n            os.write(1, b\"but now\")\n            sys.stdout.write(\" yes\\n\")\n            s = cap.snap()\n            assert s == \"but now yes\\n\"\n            cap.suspend()\n            cap.done()\n            pytest.raises(AttributeError, cap.suspend)"
+    },
+    {
+      "file": "testing/test_capture.py",
+      "name": "TestFDCapture.test_stderr",
+      "code_content": "class TestFDCapture(object):\n    def test_stderr(self):\n        cap = capture.FDCapture(2)\n        cap.start()\n        print(\"hello\", file=sys.stderr)\n        s = cap.snap()\n        cap.done()\n        assert s == \"hello\\n\""
+    },
+    {
+      "file": "testing/test_capture.py",
+      "name": "TestFDCapture.test_stdin",
+      "code_content": "class TestFDCapture(object):\n    def test_stdin(self, tmpfile):\n        cap = capture.FDCapture(0)\n        cap.start()\n        x = os.read(0, 100).strip()\n        cap.done()\n        assert x == b\"\""
+    },
+    {
+      "file": "testing/test_capture.py",
+      "name": "TestFDCapture.test_writeorg",
+      "code_content": "class TestFDCapture(object):\n    def test_writeorg(self, tmpfile):\n        data1, data2 = b\"foo\", b\"bar\"\n        cap = capture.FDCapture(tmpfile.fileno())\n        cap.start()\n        tmpfile.write(data1)\n        tmpfile.flush()\n        cap.writeorg(data2)\n        scap = cap.snap()\n        cap.done()\n        assert scap == data1.decode(\"ascii\")\n        with open(tmpfile.name, \"rb\") as stmp_file:\n            stmp = stmp_file.read()\n            assert stmp == data2"
+    }
+  ],
+  "pytest-dev__pytest-5631": [
+    {
+      "file": "testing/python/fixtures.py",
+      "name": "test_getfuncargnames",
+      "code_content": "def test_getfuncargnames():\n    def f():\n        pass\n\n    assert not fixtures.getfuncargnames(f)\n\n    def g(arg):\n        pass\n\n    assert fixtures.getfuncargnames(g) == (\"arg\",)\n\n    def h(arg1, arg2=\"hello\"):\n        pass\n\n    assert fixtures.getfuncargnames(h) == (\"arg1\",)\n\n    def j(arg1, arg2, arg3=\"hello\"):\n        pass\n\n    assert fixtures.getfuncargnames(j) == (\"arg1\", \"arg2\")\n\n    class A:\n        def f(self, arg1, arg2=\"hello\"):\n            pass\n\n        @staticmethod\n        def static(arg1, arg2):\n            pass\n\n    assert fixtures.getfuncargnames(A().f) == (\"arg1\",)\n    assert fixtures.getfuncargnames(A.static, cls=A) == (\"arg1\", \"arg2\")"
+    },
+    {
+      "file": "testing/python/integration.py",
+      "name": "TestMockDecoration.test_getfuncargnames_patching",
+      "code_content": "class TestMockDecoration:\n    def test_getfuncargnames_patching(self):\n        from _pytest.compat import getfuncargnames\n        from unittest.mock import patch\n\n        class T:\n            def original(self, x, y, z):\n                pass\n\n        @patch.object(T, \"original\")\n        def f(x, y, z):\n            pass\n\n        values = getfuncargnames(f)\n        assert values == (\"y\", \"z\")"
+    },
+    {
+      "file": "testing/python/integration.py",
+      "name": "TestMockDecoration.test_wrapped_getfuncargnames",
+      "code_content": "class TestMockDecoration:\n    def test_wrapped_getfuncargnames(self):\n        from _pytest.compat import getfuncargnames\n\n        def wrap(f):\n            def func():\n                pass\n\n            func.__wrapped__ = f\n            return func\n\n        @wrap\n        def f(x):\n            pass\n\n        values = getfuncargnames(f)\n        assert values == (\"x\",)"
+    },
+    {
+      "file": "testing/python/metafunc.py",
+      "name": "TestMetafunc.test_function_basic",
+      "code_content": "class TestMetafunc:\n    def test_function_basic(self):\n        def func(arg1, arg2=\"qwe\"):\n            pass\n\n        metafunc = self.Metafunc(func)\n        assert len(metafunc.fixturenames) == 1\n        assert \"arg1\" in metafunc.fixturenames\n        assert metafunc.function is func\n        assert metafunc.cls is None"
+    },
+    {
+      "file": "testing/python/metafunc.py",
+      "name": "TestMetafunc.test_no_funcargs",
+      "code_content": "class TestMetafunc:\n    def test_no_funcargs(self, testdir):\n        def function():\n            pass\n\n        metafunc = self.Metafunc(function)\n        assert not metafunc.fixturenames\n        repr(metafunc._calls)"
+    },
+    {
+      "file": "testing/python/metafunc.py",
+      "name": "TestMetafunc.test_parametrize_and_id",
+      "code_content": "class TestMetafunc:\n    def test_parametrize_and_id(self):\n        def func(x, y):\n            pass\n\n        metafunc = self.Metafunc(func)\n\n        metafunc.parametrize(\"x\", [1, 2], ids=[\"basic\", \"advanced\"])\n        metafunc.parametrize(\"y\", [\"abc\", \"def\"])\n        ids = [x.id for x in metafunc._calls]\n        assert ids == [\"basic-abc\", \"basic-def\", \"advanced-abc\", \"advanced-def\"]"
+    },
+    {
+      "file": "testing/python/metafunc.py",
+      "name": "TestMetafunc.test_parametrize_and_id_unicode",
+      "code_content": "class TestMetafunc:\n    def test_parametrize_and_id_unicode(self):\n        \"\"\"Allow unicode strings for \"ids\" parameter in Python 2 (##1905)\"\"\"\n\n        def func(x):\n            pass\n\n        metafunc = self.Metafunc(func)\n        metafunc.parametrize(\"x\", [1, 2], ids=[\"basic\", \"advanced\"])\n        ids = [x.id for x in metafunc._calls]\n        assert ids == [\"basic\", \"advanced\"]"
+    },
+    {
+      "file": "testing/python/metafunc.py",
+      "name": "TestMetafunc.test_parametrize_bad_scope",
+      "code_content": "class TestMetafunc:\n    def test_parametrize_bad_scope(self, testdir):\n        def func(x):\n            pass\n\n        metafunc = self.Metafunc(func)\n        with pytest.raises(\n            pytest.fail.Exception,\n            match=r\"parametrize\\(\\) call in func got an unexpected scope value 'doggy'\",\n        ):\n            metafunc.parametrize(\"x\", [1], scope=\"doggy\")"
+    },
+    {
+      "file": "testing/python/metafunc.py",
+      "name": "TestMetafunc.test_parametrize_empty_list",
+      "code_content": "class TestMetafunc:\n    def test_parametrize_empty_list(self):\n        \"\"\"#510\"\"\"\n\n        def func(y):\n            pass\n\n        class MockConfig:\n            def getini(self, name):\n                return \"\"\n\n            @property\n            def hook(self):\n                return self\n\n            def pytest_make_parametrize_id(self, **kw):\n                pass\n\n        metafunc = self.Metafunc(func, MockConfig())\n        metafunc.parametrize(\"y\", [])\n        assert \"skip\" == metafunc._calls[0].marks[0].name"
+    },
+    {
+      "file": "testing/python/metafunc.py",
+      "name": "TestMetafunc.test_parametrize_error",
+      "code_content": "class TestMetafunc:\n    def test_parametrize_error(self):\n        def func(x, y):\n            pass\n\n        metafunc = self.Metafunc(func)\n        metafunc.parametrize(\"x\", [1, 2])\n        pytest.raises(ValueError, lambda: metafunc.parametrize(\"x\", [5, 6]))\n        pytest.raises(ValueError, lambda: metafunc.parametrize(\"x\", [5, 6]))\n        metafunc.parametrize(\"y\", [1, 2])\n        pytest.raises(ValueError, lambda: metafunc.parametrize(\"y\", [5, 6]))\n        pytest.raises(ValueError, lambda: metafunc.parametrize(\"y\", [5, 6]))"
+    }
+  ],
+  "pytest-dev__pytest-5787": [
+    {
+      "file": "testing/test_reports.py",
+      "name": "TestReportSerialization.test_collectreport_fail",
+      "code_content": "class TestReportSerialization:\n    def test_collectreport_fail(self, testdir):\n        \"\"\"This test came originally from test_remote.py in xdist (ca03269).\"\"\"\n        reprec = testdir.inline_runsource(\"qwe abc\")\n        reports = reprec.getreports(\"pytest_collectreport\")\n        assert reports\n        for rep in reports:\n            d = rep._to_json()\n            newrep = CollectReport._from_json(d)\n            assert newrep.passed == rep.passed\n            assert newrep.failed == rep.failed\n            assert newrep.skipped == rep.skipped\n            if rep.failed:\n                assert newrep.longrepr == str(rep.longrepr)"
+    },
+    {
+      "file": "testing/test_runner.py",
+      "name": "test_report_extra_parameters",
+      "code_content": "@pytest.mark.parametrize(\n    \"reporttype\", reporttypes, ids=[x.__name__ for x in reporttypes]\n)\ndef test_report_extra_parameters(reporttype):\n    if hasattr(inspect, \"signature\"):\n        args = list(inspect.signature(reporttype.__init__).parameters.keys())[1:]\n    else:\n        args = inspect.getargspec(reporttype.__init__)[0][1:]\n    basekw = dict.fromkeys(args, [])\n    report = reporttype(newthing=1, **basekw)\n    assert report.newthing == 1"
+    },
+    {
+      "file": "testing/test_reports.py",
+      "name": "TestReportSerialization.test_collectreport_passed",
+      "code_content": "class TestReportSerialization:\n    def test_collectreport_passed(self, testdir):\n        \"\"\"This test came originally from test_remote.py in xdist (ca03269).\"\"\"\n        reprec = testdir.inline_runsource(\"def test_func(): pass\")\n        reports = reprec.getreports(\"pytest_collectreport\")\n        for rep in reports:\n            d = rep._to_json()\n            newrep = CollectReport._from_json(d)\n            assert newrep.passed == rep.passed\n            assert newrep.failed == rep.failed\n            assert newrep.skipped == rep.skipped"
+    },
+    {
+      "file": "testing/test_reports.py",
+      "name": "TestReportSerialization.test_extended_report_deserialization",
+      "code_content": "class TestReportSerialization:\n    def test_extended_report_deserialization(self, testdir):\n        \"\"\"This test came originally from test_remote.py in xdist (ca03269).\"\"\"\n        reprec = testdir.inline_runsource(\"qwe abc\")\n        reports = reprec.getreports(\"pytest_collectreport\")\n        assert reports\n        for rep in reports:\n            rep.extra = True\n            d = rep._to_json()\n            newrep = CollectReport._from_json(d)\n            assert newrep.extra\n            assert newrep.passed == rep.passed\n            assert newrep.failed == rep.failed\n            assert newrep.skipped == rep.skipped\n            if rep.failed:\n                assert newrep.longrepr == str(rep.longrepr)"
+    },
+    {
+      "file": "testing/test_reports.py",
+      "name": "TestReportSerialization.test_itemreport_outcomes",
+      "code_content": "class TestReportSerialization:\n    def test_itemreport_outcomes(self, testdir):\n        \"\"\"\n        This test came originally from test_remote.py in xdist (ca03269).\n        \"\"\"\n        reprec = testdir.inline_runsource(\n            \"\"\"\n            import py\n            def test_pass(): pass\n            def test_fail(): 0/0\n            @py.test.mark.skipif(\"True\")\n            def test_skip(): pass\n            def test_skip_imperative():\n                py.test.skip(\"hello\")\n            @py.test.mark.xfail(\"True\")\n            def test_xfail(): 0/0\n            def test_xfail_imperative():\n                py.test.xfail(\"hello\")\n        \"\"\"\n        )\n        reports = reprec.getreports(\"pytest_runtest_logreport\")\n        assert len(reports) == 17  # with setup/teardown \"passed\" reports\n        for rep in reports:\n            d = rep._to_json()\n            newrep = TestReport._from_json(d)\n            assert newrep.passed == rep.passed\n            assert newrep.failed == rep.failed\n            assert newrep.skipped == rep.skipped\n            if newrep.skipped and not hasattr(newrep, \"wasxfail\"):\n                assert len(newrep.longrepr) == 3\n            assert newrep.outcome == rep.outcome\n            assert newrep.when == rep.when\n            assert newrep.keywords == rep.keywords\n            if rep.failed:\n                assert newrep.longreprtext == rep.longreprtext"
+    },
+    {
+      "file": "testing/test_reports.py",
+      "name": "TestReportSerialization.test_reprentries_serialization_170",
+      "code_content": "class TestReportSerialization:\n    def test_reprentries_serialization_170(self, testdir):\n        \"\"\"Regarding issue pytest-xdist#170\n\n        This test came originally from test_remote.py in xdist (ca03269).\n        \"\"\"\n        from _pytest._code.code import ReprEntry\n\n        reprec = testdir.inline_runsource(\n            \"\"\"\n                            def test_repr_entry():\n                                x = 0\n                                assert x\n                        \"\"\",\n            \"--showlocals\",\n        )\n        reports = reprec.getreports(\"pytest_runtest_logreport\")\n        assert len(reports) == 3\n        rep = reports[1]\n        d = rep._to_json()\n        a = TestReport._from_json(d)\n\n        rep_entries = rep.longrepr.reprtraceback.reprentries\n        a_entries = a.longrepr.reprtraceback.reprentries\n        for i in range(len(a_entries)):\n            assert isinstance(rep_entries[i], ReprEntry)\n            assert rep_entries[i].lines == a_entries[i].lines\n            assert rep_entries[i].reprfileloc.lineno == a_entries[i].reprfileloc.lineno\n            assert (\n                rep_entries[i].reprfileloc.message == a_entries[i].reprfileloc.message\n            )\n            assert rep_entries[i].reprfileloc.path == a_entries[i].reprfileloc.path\n            assert rep_entries[i].reprfuncargs.args == a_entries[i].reprfuncargs.args\n            assert rep_entries[i].reprlocals.lines == a_entries[i].reprlocals.lines\n            assert rep_entries[i].style == a_entries[i].style"
+    },
+    {
+      "file": "testing/test_reports.py",
+      "name": "TestReportSerialization.test_reprentries_serialization_196",
+      "code_content": "class TestReportSerialization:\n    def test_reprentries_serialization_196(self, testdir):\n        \"\"\"Regarding issue pytest-xdist#196\n\n        This test came originally from test_remote.py in xdist (ca03269).\n        \"\"\"\n        from _pytest._code.code import ReprEntryNative\n\n        reprec = testdir.inline_runsource(\n            \"\"\"\n                            def test_repr_entry_native():\n                                x = 0\n                                assert x\n                        \"\"\",\n            \"--tb=native\",\n        )\n        reports = reprec.getreports(\"pytest_runtest_logreport\")\n        assert len(reports) == 3\n        rep = reports[1]\n        d = rep._to_json()\n        a = TestReport._from_json(d)\n\n        rep_entries = rep.longrepr.reprtraceback.reprentries\n        a_entries = a.longrepr.reprtraceback.reprentries\n        for i in range(len(a_entries)):\n            assert isinstance(rep_entries[i], ReprEntryNative)\n            assert rep_entries[i].lines == a_entries[i].lines"
+    },
+    {
+      "file": "testing/test_reports.py",
+      "name": "TestReportSerialization.test_unserialization_failure",
+      "code_content": "class TestReportSerialization:\n    def test_unserialization_failure(self, testdir):\n        \"\"\"Check handling of failure during unserialization of report types.\"\"\"\n        testdir.makepyfile(\n            \"\"\"\n            def test_a():\n                assert False\n        \"\"\"\n        )\n        reprec = testdir.inline_run()\n        reports = reprec.getreports(\"pytest_runtest_logreport\")\n        assert len(reports) == 3\n        test_a_call = reports[1]\n        data = test_a_call._to_json()\n        entry = data[\"longrepr\"][\"reprtraceback\"][\"reprentries\"][0]\n        assert entry[\"type\"] == \"ReprEntry\"\n\n        entry[\"type\"] = \"Unknown\"\n        with pytest.raises(\n            RuntimeError, match=\"INTERNALERROR: Unknown entry type returned: Unknown\"\n        ):\n            TestReport._from_json(data)"
+    },
+    {
+      "file": "testing/test_reports.py",
+      "name": "TestReportSerialization.test_xdist_report_longrepr_reprcrash_130",
+      "code_content": "class TestReportSerialization:\n    def test_xdist_report_longrepr_reprcrash_130(self, testdir):\n        \"\"\"Regarding issue pytest-xdist#130\n\n        This test came originally from test_remote.py in xdist (ca03269).\n        \"\"\"\n        reprec = testdir.inline_runsource(\n            \"\"\"\n                    def test_fail():\n                        assert False, 'Expected Message'\n                \"\"\"\n        )\n        reports = reprec.getreports(\"pytest_runtest_logreport\")\n        assert len(reports) == 3\n        rep = reports[1]\n        added_section = (\"Failure Metadata\", \"metadata metadata\", \"*\")\n        rep.longrepr.sections.append(added_section)\n        d = rep._to_json()\n        a = TestReport._from_json(d)\n        # Check assembled == rep\n        assert a.__dict__.keys() == rep.__dict__.keys()\n        for key in rep.__dict__.keys():\n            if key != \"longrepr\":\n                assert getattr(a, key) == getattr(rep, key)\n        assert rep.longrepr.reprcrash.lineno == a.longrepr.reprcrash.lineno\n        assert rep.longrepr.reprcrash.message == a.longrepr.reprcrash.message\n        assert rep.longrepr.reprcrash.path == a.longrepr.reprcrash.path\n        assert rep.longrepr.reprtraceback.entrysep == a.longrepr.reprtraceback.entrysep\n        assert (\n            rep.longrepr.reprtraceback.extraline == a.longrepr.reprtraceback.extraline\n        )\n        assert rep.longrepr.reprtraceback.style == a.longrepr.reprtraceback.style\n        assert rep.longrepr.sections == a.longrepr.sections\n        # Missing section attribute PR171\n        assert added_section in a.longrepr.sections"
+    }
+  ],
+  "pytest-dev__pytest-5809": []
+}

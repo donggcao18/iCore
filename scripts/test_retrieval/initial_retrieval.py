@@ -7,6 +7,7 @@ from scripts.utils.llm_api import create_chat_completion
 from scripts.test_retrieval.function_calls import FunctionCalls, get_tools
 from scripts.test_retrieval.utils import get_related_test
 from scripts.test_retrieval.response_parser import parse_test_selection
+from scripts.utils.benchmark_data import load_selected_csv
 from scripts.utils.git_utils import *
 import json
 import os
@@ -187,12 +188,15 @@ if __name__ == "__main__":
     parser.add_argument("--swt", action="store_true", help="Whether to use the SWT-bench dataset.")
     parser.add_argument("--tdd", action="store_true", help="Whether to use the TDD-bench dataset.")
     parser.add_argument("--model", type=str, default="qwen-32b", help="LLM model to use.")
+    parser.add_argument("--dataset_csv", help="Read a local benchmark CSV, filtered by SWT_IDS_FILE.")
 
     args = parser.parse_args()
 
     use_swt = args.swt
     use_tdd = args.tdd
-    if use_swt:
+    if args.dataset_csv:
+        ds = load_selected_csv(args.dataset_csv)
+    elif use_swt:
         ds = load_dataset("SWE-bench/SWE-bench_Lite")["test"]
         with open(os.environ.get("SWT_IDS_FILE", "swt.txt"), "r") as f:
             swt = f.read().strip().split("\n")
@@ -203,6 +207,9 @@ if __name__ == "__main__":
             tdd = f.read().strip().split("\n")
         ds = [bug_report for bug_report in ds if bug_report["instance_id"] in tdd]
     
+    else:
+        parser.error('Select --dataset_csv, --swt, or --tdd')
+
     flag = False
 
     related_tests = {}

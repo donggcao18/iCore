@@ -12,6 +12,7 @@ import configparser
 import io
 import json
 import os
+import re
 import shlex
 import subprocess
 import tempfile
@@ -47,17 +48,53 @@ def safe_path(path: str) -> str:
 
 
 def production_changes(patch: str) -> list[ProductionChange]:
+    """Parse Git diffs and plain unified diffs used by SWT Verified."""
     changes = []
     current = None
     in_hunk = False
     old_line = new_line = 0
-    for line in patch.splitlines():
+    old_remaining = new_remaining = 0
+    git_header_pending = False
+    lines = patch.splitlines()
+    for position, line in enumerate(lines):
         if line.startswith("diff --git "):
             parts = shlex.split(line)
             if len(parts) != 4 or not parts[2].startswith("a/") or not parts[3].startswith("b/"):
                 raise ValueError(f"Unsupported diff header: {line}")
             current = ProductionChange(safe_path(parts[2][2:]), safe_path(parts[3][2:]))
             changes.append(current)
+            in_hunk = False
+            git_header_pending = True
+            continue
+        if line.startswith("--- ") and (not in_hunk or not old_remaining and not new_remaining):
+            if position + 1 >= len(lines) or not lines[position + 1].startswith("+++ "):
+                raise ValueError("Production file header is missing its +++ path")
+            paths = []
+            for header, prefix in ((line, "a/"), (lines[position + 1], "b/")):
+                value = header[4:].split("\t", 1)[0]
+                if value.startswith('"'):
+                    quoted = shlex.split(value)
+                    if len(quoted) != 1:
+                        raise ValueError(f"Unsupported file header: {header}")
+                    value = quoted[0]
+                if value == "/dev/null":
+                    paths.append(None)
+                elif value.startswith(prefix):
+                    paths.append(safe_path(value[len(prefix):]))
+                else:
+                    raise ValueError(f"Unsupported file header: {header}")
+            old_path, new_path = paths
+            if old_path is None and new_path is None:
+                raise ValueError("Production file headers cannot both use /dev/null")
+            if not git_header_pending:
+                current = ProductionChange(old_path or new_path, new_path or old_path)
+                changes.append(current)
+            elif ((old_path is not None and old_path != current.old_path)
+                  or (new_path is not None and new_path != current.path)):
+                raise ValueError("Production file paths disagree with the Git diff header")
+            current.new_file = current.new_file or old_path is None
+            current.deleted_file = current.deleted_file or new_path is None
+            git_header_pending = False
             in_hunk = False
             continue
         if current is None:
@@ -69,6 +106,11 @@ def production_changes(patch: str) -> list[ProductionChange]:
         match = HUNK_HEADER.match(line)
         if match:
             old_line, new_line = map(int, match.groups())
+            # HUNK_HEADER only exposes starting lines; counts distinguish file
+            # headers from header-like source lines inside an unfinished hunk.
+            counts = re.match(r"^@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@", line)
+            old_remaining, new_remaining = (int(value) if value is not None else 1
+                                            for value in counts.groups())
             in_hunk = True
             continue
         if not in_hunk or line.startswith("\\ No newline"):
@@ -76,16 +118,20 @@ def production_changes(patch: str) -> list[ProductionChange]:
         if line.startswith("+"):
             current.new_lines.add(new_line)
             new_line += 1
+            new_remaining -= 1
         elif line.startswith("-"):
             current.old_lines.add(old_line)
             old_line += 1
+            old_remaining -= 1
         elif line.startswith(" "):
             old_line += 1
             new_line += 1
+            old_remaining -= 1
+            new_remaining -= 1
         else:
             raise ValueError(f"Unexpected patch line: {line[:80]}")
     if patch.strip() and not changes:
-        raise ValueError("Production patch has no diff --git headers")
+        raise ValueError("Production patch has no supported file headers")
     return changes
 
 
@@ -207,8 +253,13 @@ def apply_production_patch(repo_dir: Path, commit: str, patch: str,
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(value)
         patch_file = root / "__oracle_production.patch"
-        patch_file.write_text(patch, encoding="utf-8", newline="")
-        run_git("apply", "--whitespace=nowarn", str(patch_file), cwd=root)
+        # SWT production diffs omit the final newline. Git needs the diff's
+        # last line terminated; preserve all context whitespace and content.
+        patch_file.write_text(patch if patch.endswith("\n") else patch + "\n", encoding="utf-8", newline="")
+        # Some Verified diffs also trim trailing blank context lines while
+        # retaining the original hunk counts. Recount the supplied lines;
+        # this changes no added/deleted content and fabricates no source.
+        run_git("apply", "--recount", "--whitespace=nowarn", str(patch_file), cwd=root)
         for change in changes:
             if change.path.endswith(".py"):
                 after[change.path] = None if change.deleted_file else decode_source((root / change.path).read_bytes())

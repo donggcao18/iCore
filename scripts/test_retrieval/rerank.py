@@ -9,6 +9,7 @@ from scripts.test_retrieval.function_calls import FunctionCalls, get_tools
 from scripts.test_retrieval.initial_retrieval import extract_function_call
 from scripts.test_retrieval.utils import get_related_test
 from scripts.test_retrieval.response_parser import parse_test_selection
+from scripts.utils.benchmark_data import load_selected_csv
 from scripts.utils.git_utils import *
 import json
 import os
@@ -188,6 +189,7 @@ if __name__ == "__main__":
     parser.add_argument("--swt", action='store_true', default=False)
     parser.add_argument("--tdd", action='store_true', default=False)
     parser.add_argument("--model", type=str, default="gpt-4o-2024-08-06")
+    parser.add_argument("--dataset_csv", help="Read a local benchmark CSV, filtered by SWT_IDS_FILE.")
 
     args = parser.parse_args()
     message_dir = args.message_dir
@@ -197,14 +199,16 @@ if __name__ == "__main__":
     assert os.path.exists(test_similarity_dir)
     assert os.path.exists(last_related_tests_path)
 
-    with open(os.environ.get('SWT_IDS_FILE', 'swt.txt'), 'r') as f:
-        swt = f.read().strip().split('\n')
-    with open('tdd.txt', 'r') as f:
-        tdd = f.read().strip().split('\n')
-    if args.tdd:
+    if args.dataset_csv:
+        swe_bench = load_selected_csv(args.dataset_csv)
+    elif args.tdd:
+        with open('tdd.txt', 'r') as f:
+            tdd = f.read().strip().split('\n')
         swe_bench = load_dataset("princeton-nlp/SWE-bench_Verified")["test"]
         swe_bench = [bug_report for bug_report in swe_bench if bug_report["instance_id"] in tdd]
     else:
+        with open(os.environ.get('SWT_IDS_FILE', 'swt.txt'), 'r') as f:
+            swt = f.read().strip().split('\n')
         swe_bench = load_dataset("SWE-bench/SWE-bench_Lite")["test"]
         swe_bench = [bug_report for bug_report in swe_bench if bug_report["instance_id"] in swt]
     related_tests = {}

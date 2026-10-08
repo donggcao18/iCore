@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 from datasets import load_dataset
+from scripts.utils.benchmark_data import load_selected_csv
 import sqlite3
 import concurrent.futures
 
@@ -260,18 +261,21 @@ if __name__ == '__main__':
     parser.add_argument("--max_workers", type=int, default=MAX_WORKERS, help="Concurrent processes count")
     parser.add_argument("--swt", action='store_true', default=False)
     parser.add_argument("--tdd", action='store_true', default=False)
+    parser.add_argument("--dataset_csv", help="Read a local benchmark CSV, filtered by SWT_IDS_FILE.")
     args = parser.parse_args()
 
     OUTPUT_ROOT_DIR = args.output_dir
 
-    with open(os.environ.get('SWT_IDS_FILE', 'swt.txt'), 'r') as f:
-        swt = f.read().strip().split('\n')
-    with open('tdd.txt', 'r') as f:
-        tdd = f.read().strip().split('\n')
-    if args.tdd:
+    if args.dataset_csv:
+        swe_bench = load_selected_csv(args.dataset_csv)
+    elif args.tdd:
+        with open('tdd.txt', 'r') as f:
+            tdd = f.read().strip().split('\n')
         swe_bench = load_dataset("princeton-nlp/SWE-bench_Verified")["test"]
         swe_bench = [bug_report for bug_report in swe_bench if bug_report["instance_id"] in tdd]
     else:
+        with open(os.environ.get('SWT_IDS_FILE', 'swt.txt'), 'r') as f:
+            swt = f.read().strip().split('\n')
         swe_bench = load_dataset("SWE-bench/SWE-bench_Lite")["test"]
         swe_bench = [bug_report for bug_report in swe_bench if bug_report["instance_id"] in swt]
     

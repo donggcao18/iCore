@@ -1,0 +1,514 @@
+{
+    "pytest-dev__pytest-10051": {
+        "src/_pytest/logging.py::<module>": {
+            "obj_name": "logging",
+            "node_type": "file",
+            "path": "src/_pytest/logging.py",
+            "parent": null,
+            "qualified_name": "<module>",
+            "code_start_line": 1,
+            "code_end_line": 829,
+            "code_content": "\"\"\"Access and control log capturing.\"\"\"\nimport io\nimport logging\nimport os\nimport re\nfrom contextlib import contextmanager\nfrom contextlib import nullcontext\nfrom io import StringIO\nfrom pathlib import Path\nfrom typing import AbstractSet\nfrom typing import Dict\nfrom typing import Generator\nfrom typing import List\nfrom typing import Mapping\nfrom typing import Optional\nfrom typing import Tuple\nfrom typing import TYPE_CHECKING\nfrom typing import TypeVar\nfrom typing import Union\n\nfrom _pytest import nodes\nfrom _pytest._io import TerminalWriter\nfrom _pytest.capture import CaptureManager\nfrom _pytest.compat import final\nfrom _pytest.config import _strtobool\nfrom _pytest.config import Config\nfrom _pytest.config import create_terminal_writer\nfrom _pytest.config import hookimpl\nfrom _pytest.config import UsageError\nfrom _pytest.config.argparsing import Parser\nfrom _pytest.deprecated import check_ispytest\nfrom _pytest.fixtures import fixture\nfrom _pytest.fixtures import FixtureRequest\nfrom _pytest.main import Session\nfrom _pytest.stash import StashKey\nfrom _pytest.terminal import TerminalReporter\n\nif TYPE_CHECKING:\n    logging_StreamHandler = logging.StreamHandler[StringIO]\nelse:\n    logging_StreamHandler = logging.StreamHandler\n\nDEFAULT_LOG_FORMAT = \"%(levelname)-8s %(name)s:%(filename)s:%(lineno)d %(message)s\"\nDEFAULT_LOG_DATE_FORMAT = \"%H:%M:%S\"\n_ANSI_ESCAPE_SEQ = re.compile(r\"\\x1b\\[[\\d;]+m\")\ncaplog_handler_key = StashKey[\"LogCaptureHandler\"]()\ncaplog_records_key = StashKey[Dict[str, List[logging.LogRecord]]]()\n\n\ndef _remove_ansi_escape_sequences(text: str) -> str:\n    return _ANSI_ESCAPE_SEQ.sub(\"\", text)\n\n\nclass ColoredLevelFormatter(logging.Formatter):\n    \"\"\"A logging formatter which colorizes the %(levelname)..s part of the\n    log format passed to __init__.\"\"\"\n\n    LOGLEVEL_COLOROPTS: Mapping[int, AbstractSet[str]] = {\n        logging.CRITICAL: {\"red\"},\n        logging.ERROR: {\"red\", \"bold\"},\n        logging.WARNING: {\"yellow\"},\n        logging.WARN: {\"yellow\"},\n        logging.INFO: {\"green\"},\n        logging.DEBUG: {\"purple\"},\n        logging.NOTSET: set(),\n    }\n    LEVELNAME_FMT_REGEX = re.compile(r\"%\\(levelname\\)([+-.]?\\d*(?:\\.\\d+)?s)\")\n\n    def __init__(self, terminalwriter: TerminalWriter, *args, **kwargs) -> None:\n        super().__init__(*args, **kwargs)\n        self._terminalwriter = terminalwriter\n        self._original_fmt = self._style._fmt\n        self._level_to_fmt_mapping: Dict[int, str] = {}\n\n        for level, color_opts in self.LOGLEVEL_COLOROPTS.items():\n            self.add_color_level(level, *color_opts)\n\n    def add_color_level(self, level: int, *color_opts: str) -> None:\n        \"\"\"Add or update color opts for a log level.\n\n        :param level:\n            Log level to apply a style to, e.g. ``logging.INFO``.\n        :param color_opts:\n            ANSI escape sequence color options. Capitalized colors indicates\n            background color, i.e. ``'green', 'Yellow', 'bold'`` will give bold\n            green text on yellow background.\n\n        .. warning::\n            This is an experimental API.\n        \"\"\"\n\n        assert self._fmt is not None\n        levelname_fmt_match = self.LEVELNAME_FMT_REGEX.search(self._fmt)\n        if not levelname_fmt_match:\n            return\n        levelname_fmt = levelname_fmt_match.group()\n\n        formatted_levelname = levelname_fmt % {\"levelname\": logging.getLevelName(level)}\n\n        # add ANSI escape sequences around the formatted levelname\n        color_kwargs = {name: True for name in color_opts}\n        colorized_formatted_levelname = self._terminalwriter.markup(\n            formatted_levelname, **color_kwargs\n        )\n        self._level_to_fmt_mapping[level] = self.LEVELNAME_FMT_REGEX.sub(\n            colorized_formatted_levelname, self._fmt\n        )\n\n    def format(self, record: logging.LogRecord) -> str:\n        fmt = self._level_to_fmt_mapping.get(record.levelno, self._original_fmt)\n        self._style._fmt = fmt\n        return super().format(record)\n\n\nclass PercentStyleMultiline(logging.PercentStyle):\n    \"\"\"A logging style with special support for multiline messages.\n\n    If the message of a record consists of multiple lines, this style\n    formats the message as if each line were logged separately.\n    \"\"\"\n\n    def __init__(self, fmt: str, auto_indent: Union[int, str, bool, None]) -> None:\n        super().__init__(fmt)\n        self._auto_indent = self._get_auto_indent(auto_indent)\n\n    @staticmethod\n    def _get_auto_indent(auto_indent_option: Union[int, str, bool, None]) -> int:\n        \"\"\"Determine the current auto indentation setting.\n\n        Specify auto indent behavior (on/off/fixed) by passing in\n        extra={\"auto_indent\": [value]} to the call to logging.log() or\n        using a --log-auto-indent [value] command line or the\n        log_auto_indent [value] config option.\n\n        Default behavior is auto-indent off.\n\n        Using the string \"True\" or \"on\" or the boolean True as the value\n        turns auto indent on, using the string \"False\" or \"off\" or the\n        boolean False or the int 0 turns it off, and specifying a\n        positive integer fixes the indentation position to the value\n        specified.\n\n        Any other values for the option are invalid, and will silently be\n        converted to the default.\n\n        :param None|bool|int|str auto_indent_option:\n            User specified option for indentation from command line, config\n            or extra kwarg. Accepts int, bool or str. str option accepts the\n            same range of values as boolean config options, as well as\n            positive integers represented in str form.\n\n        :returns:\n            Indentation value, which can be\n            -1 (automatically determine indentation) or\n            0 (auto-indent turned off) or\n            >0 (explicitly set indentation position).\n        \"\"\"\n\n        if auto_indent_option is None:\n            return 0\n        elif isinstance(auto_indent_option, bool):\n            if auto_indent_option:\n                return -1\n            else:\n                return 0\n        elif isinstance(auto_indent_option, int):\n            return int(auto_indent_option)\n        elif isinstance(auto_indent_option, str):\n            try:\n                return int(auto_indent_option)\n            except ValueError:\n                pass\n            try:\n                if _strtobool(auto_indent_option):\n                    return -1\n            except ValueError:\n                return 0\n\n        return 0\n\n    def format(self, record: logging.LogRecord) -> str:\n        if \"\\n\" in record.message:\n            if hasattr(record, \"auto_indent\"):\n                # Passed in from the \"extra={}\" kwarg on the call to logging.log().\n                auto_indent = self._get_auto_indent(record.auto_indent)  # type: ignore[attr-defined]\n            else:\n                auto_indent = self._auto_indent\n\n            if auto_indent:\n                lines = record.message.splitlines()\n                formatted = self._fmt % {**record.__dict__, \"message\": lines[0]}\n\n                if auto_indent < 0:\n                    indentation = _remove_ansi_escape_sequences(formatted).find(\n                        lines[0]\n                    )\n                else:\n                    # Optimizes logging by allowing a fixed indentation.\n                    indentation = auto_indent\n                lines[0] = formatted\n                return (\"\\n\" + \" \" * indentation).join(lines)\n        return self._fmt % record.__dict__\n\n\ndef get_option_ini(config: Config, *names: str):\n    for name in names:\n        ret = config.getoption(name)  # 'default' arg won't work as expected\n        if ret is None:\n            ret = config.getini(name)\n        if ret:\n            return ret\n\n\ndef pytest_addoption(parser: Parser) -> None:\n    \"\"\"Add options to control log capturing.\"\"\"\n    group = parser.getgroup(\"logging\")\n\n    def add_option_ini(option, dest, default=None, type=None, **kwargs):\n        parser.addini(\n            dest, default=default, type=type, help=\"Default value for \" + option\n        )\n        group.addoption(option, dest=dest, **kwargs)\n\n    add_option_ini(\n        \"--log-level\",\n        dest=\"log_level\",\n        default=None,\n        metavar=\"LEVEL\",\n        help=(\n            \"Level of messages to catch/display.\"\n            \" Not set by default, so it depends on the root/parent log handler's\"\n            ' effective level, where it is \"WARNING\" by default.'\n        ),\n    )\n    add_option_ini(\n        \"--log-format\",\n        dest=\"log_format\",\n        default=DEFAULT_LOG_FORMAT,\n        help=\"Log format used by the logging module\",\n    )\n    add_option_ini(\n        \"--log-date-format\",\n        dest=\"log_date_format\",\n        default=DEFAULT_LOG_DATE_FORMAT,\n        help=\"Log date format used by the logging module\",\n    )\n    parser.addini(\n        \"log_cli\",\n        default=False,\n        type=\"bool\",\n        help='Enable log display during test run (also known as \"live logging\")',\n    )\n    add_option_ini(\n        \"--log-cli-level\", dest=\"log_cli_level\", default=None, help=\"CLI logging level\"\n    )\n    add_option_ini(\n        \"--log-cli-format\",\n        dest=\"log_cli_format\",\n        default=None,\n        help=\"Log format used by the logging module\",\n    )\n    add_option_ini(\n        \"--log-cli-date-format\",\n        dest=\"log_cli_date_format\",\n        default=None,\n        help=\"Log date format used by the logging module\",\n    )\n    add_option_ini(\n        \"--log-file\",\n        dest=\"log_file\",\n        default=None,\n        help=\"Path to a file when logging will be written to\",\n    )\n    add_option_ini(\n        \"--log-file-level\",\n        dest=\"log_file_level\",\n        default=None,\n        help=\"Log file logging level\",\n    )\n    add_option_ini(\n        \"--log-file-format\",\n        dest=\"log_file_format\",\n        default=DEFAULT_LOG_FORMAT,\n        help=\"Log format used by the logging module\",\n    )\n    add_option_ini(\n        \"--log-file-date-format\",\n        dest=\"log_file_date_format\",\n        default=DEFAULT_LOG_DATE_FORMAT,\n        help=\"Log date format used by the logging module\",\n    )\n    add_option_ini(\n        \"--log-auto-indent\",\n        dest=\"log_auto_indent\",\n        default=None,\n        help=\"Auto-indent multiline messages passed to the logging module. Accepts true|on, false|off or an integer.\",\n    )\n\n\n_HandlerType = TypeVar(\"_HandlerType\", bound=logging.Handler)\n\n\n# Not using @contextmanager for performance reasons.\nclass catching_logs:\n    \"\"\"Context manager that prepares the whole logging machinery properly.\"\"\"\n\n    __slots__ = (\"handler\", \"level\", \"orig_level\")\n\n    def __init__(self, handler: _HandlerType, level: Optional[int] = None) -> None:\n        self.handler = handler\n        self.level = level\n\n    def __enter__(self):\n        root_logger = logging.getLogger()\n        if self.level is not None:\n            self.handler.setLevel(self.level)\n        root_logger.addHandler(self.handler)\n        if self.level is not None:\n            self.orig_level = root_logger.level\n            root_logger.setLevel(min(self.orig_level, self.level))\n        return self.handler\n\n    def __exit__(self, type, value, traceback):\n        root_logger = logging.getLogger()\n        if self.level is not None:\n            root_logger.setLevel(self.orig_level)\n        root_logger.removeHandler(self.handler)\n\n\nclass LogCaptureHandler(logging_StreamHandler):\n    \"\"\"A logging handler that stores log records and the log text.\"\"\"\n\n    def __init__(self) -> None:\n        \"\"\"Create a new log handler.\"\"\"\n        super().__init__(StringIO())\n        self.records: List[logging.LogRecord] = []\n\n    def emit(self, record: logging.LogRecord) -> None:\n        \"\"\"Keep the log records in a list in addition to the log text.\"\"\"\n        self.records.append(record)\n        super().emit(record)\n\n    def reset(self) -> None:\n        self.records = []\n        self.stream = StringIO()\n\n    def clear(self) -> None:\n        self.records.clear()\n        self.stream = StringIO()\n\n    def handleError(self, record: logging.LogRecord) -> None:\n        if logging.raiseExceptions:\n            # Fail the test if the log message is bad (emit failed).\n            # The default behavior of logging is to print \"Logging error\"\n            # to stderr with the call stack and some extra details.\n            # pytest wants to make such mistakes visible during testing.\n            raise\n\n\n@final\nclass LogCaptureFixture:\n    \"\"\"Provides access and control of log capturing.\"\"\"\n\n    def __init__(self, item: nodes.Node, *, _ispytest: bool = False) -> None:\n        check_ispytest(_ispytest)\n        self._item = item\n        self._initial_handler_level: Optional[int] = None\n        # Dict of log name -> log level.\n        self._initial_logger_levels: Dict[Optional[str], int] = {}\n\n    def _finalize(self) -> None:\n        \"\"\"Finalize the fixture.\n\n        This restores the log levels changed by :meth:`set_level`.\n        \"\"\"\n        # Restore log levels.\n        if self._initial_handler_level is not None:\n            self.handler.setLevel(self._initial_handler_level)\n        for logger_name, level in self._initial_logger_levels.items():\n            logger = logging.getLogger(logger_name)\n            logger.setLevel(level)\n\n    @property\n    def handler(self) -> LogCaptureHandler:\n        \"\"\"Get the logging handler used by the fixture.\n\n        :rtype: LogCaptureHandler\n        \"\"\"\n        return self._item.stash[caplog_handler_key]\n\n    def get_records(self, when: str) -> List[logging.LogRecord]:\n        \"\"\"Get the logging records for one of the possible test phases.\n\n        :param str when:\n            Which test phase to obtain the records from. Valid values are: \"setup\", \"call\" and \"teardown\".\n\n        :returns: The list of captured records at the given stage.\n        :rtype: List[logging.LogRecord]\n\n        .. versionadded:: 3.4\n        \"\"\"\n        return self._item.stash[caplog_records_key].get(when, [])\n\n    @property\n    def text(self) -> str:\n        \"\"\"The formatted log text.\"\"\"\n        return _remove_ansi_escape_sequences(self.handler.stream.getvalue())\n\n    @property\n    def records(self) -> List[logging.LogRecord]:\n        \"\"\"The list of log records.\"\"\"\n        return self.handler.records\n\n    @property\n    def record_tuples(self) -> List[Tuple[str, int, str]]:\n        \"\"\"A list of a stripped down version of log records intended\n        for use in assertion comparison.\n\n        The format of the tuple is:\n\n            (logger_name, log_level, message)\n        \"\"\"\n        return [(r.name, r.levelno, r.getMessage()) for r in self.records]\n\n    @property\n    def messages(self) -> List[str]:\n        \"\"\"A list of format-interpolated log messages.\n\n        Unlike 'records', which contains the format string and parameters for\n        interpolation, log messages in this list are all interpolated.\n\n        Unlike 'text', which contains the output from the handler, log\n        messages in this list are unadorned with levels, timestamps, etc,\n        making exact comparisons more reliable.\n\n        Note that traceback or stack info (from :func:`logging.exception` or\n        the `exc_info` or `stack_info` arguments to the logging functions) is\n        not included, as this is added by the formatter in the handler.\n\n        .. versionadded:: 3.7\n        \"\"\"\n        return [r.getMessage() for r in self.records]\n\n    def clear(self) -> None:\n        \"\"\"Reset the list of log records and the captured log text.\"\"\"\n        self.handler.clear()\n\n    def set_level(self, level: Union[int, str], logger: Optional[str] = None) -> None:\n        \"\"\"Set the level of a logger for the duration of a test.\n\n        .. versionchanged:: 3.4\n            The levels of the loggers changed by this function will be\n            restored to their initial values at the end of the test.\n\n        :param int level: The level.\n        :param str logger: The logger to update. If not given, the root logger.\n        \"\"\"\n        logger_obj = logging.getLogger(logger)\n        # Save the original log-level to restore it during teardown.\n        self._initial_logger_levels.setdefault(logger, logger_obj.level)\n        logger_obj.setLevel(level)\n        if self._initial_handler_level is None:\n            self._initial_handler_level = self.handler.level\n        self.handler.setLevel(level)\n\n    @contextmanager\n    def at_level(\n        self, level: Union[int, str], logger: Optional[str] = None\n    ) -> Generator[None, None, None]:\n        \"\"\"Context manager that sets the level for capturing of logs. After\n        the end of the 'with' statement the level is restored to its original\n        value.\n\n        :param int level: The level.\n        :param str logger: The logger to update. If not given, the root logger.\n        \"\"\"\n        logger_obj = logging.getLogger(logger)\n        orig_level = logger_obj.level\n        logger_obj.setLevel(level)\n        handler_orig_level = self.handler.level\n        self.handler.setLevel(level)\n        try:\n            yield\n        finally:\n            logger_obj.setLevel(orig_level)\n            self.handler.setLevel(handler_orig_level)\n\n\n@fixture\ndef caplog(request: FixtureRequest) -> Generator[LogCaptureFixture, None, None]:\n    \"\"\"Access and control log capturing.\n\n    Captured logs are available through the following properties/methods::\n\n    * caplog.messages        -> list of format-interpolated log messages\n    * caplog.text            -> string containing formatted log output\n    * caplog.records         -> list of logging.LogRecord instances\n    * caplog.record_tuples   -> list of (logger_name, level, message) tuples\n    * caplog.clear()         -> clear captured records and formatted log output string\n    \"\"\"\n    result = LogCaptureFixture(request.node, _ispytest=True)\n    yield result\n    result._finalize()\n\n\ndef get_log_level_for_setting(config: Config, *setting_names: str) -> Optional[int]:\n    for setting_name in setting_names:\n        log_level = config.getoption(setting_name)\n        if log_level is None:\n            log_level = config.getini(setting_name)\n        if log_level:\n            break\n    else:\n        return None\n\n    if isinstance(log_level, str):\n        log_level = log_level.upper()\n    try:\n        return int(getattr(logging, log_level, log_level))\n    except ValueError as e:\n        # Python logging does not recognise this as a logging level\n        raise UsageError(\n            \"'{}' is not recognized as a logging level name for \"\n            \"'{}'. Please consider passing the \"\n            \"logging level num instead.\".format(log_level, setting_name)\n        ) from e\n\n\n# run after terminalreporter/capturemanager are configured\n@hookimpl(trylast=True)\ndef pytest_configure(config: Config) -> None:\n    config.pluginmanager.register(LoggingPlugin(config), \"logging-plugin\")\n\n\nclass LoggingPlugin:\n    \"\"\"Attaches to the logging module and captures log messages for each test.\"\"\"\n\n    def __init__(self, config: Config) -> None:\n        \"\"\"Create a new plugin to capture log messages.\n\n        The formatter can be safely shared across all handlers so\n        create a single one for the entire test session here.\n        \"\"\"\n        self._config = config\n\n        # Report logging.\n        self.formatter = self._create_formatter(\n            get_option_ini(config, \"log_format\"),\n            get_option_ini(config, \"log_date_format\"),\n            get_option_ini(config, \"log_auto_indent\"),\n        )\n        self.log_level = get_log_level_for_setting(config, \"log_level\")\n        self.caplog_handler = LogCaptureHandler()\n        self.caplog_handler.setFormatter(self.formatter)\n        self.report_handler = LogCaptureHandler()\n        self.report_handler.setFormatter(self.formatter)\n\n        # File logging.\n        self.log_file_level = get_log_level_for_setting(config, \"log_file_level\")\n        log_file = get_option_ini(config, \"log_file\") or os.devnull\n        if log_file != os.devnull:\n            directory = os.path.dirname(os.path.abspath(log_file))\n            if not os.path.isdir(directory):\n                os.makedirs(directory)\n\n        self.log_file_handler = _FileHandler(log_file, mode=\"w\", encoding=\"UTF-8\")\n        log_file_format = get_option_ini(config, \"log_file_format\", \"log_format\")\n        log_file_date_format = get_option_ini(\n            config, \"log_file_date_format\", \"log_date_format\"\n        )\n\n        log_file_formatter = logging.Formatter(\n            log_file_format, datefmt=log_file_date_format\n        )\n        self.log_file_handler.setFormatter(log_file_formatter)\n\n        # CLI/live logging.\n        self.log_cli_level = get_log_level_for_setting(\n            config, \"log_cli_level\", \"log_level\"\n        )\n        if self._log_cli_enabled():\n            terminal_reporter = config.pluginmanager.get_plugin(\"terminalreporter\")\n            capture_manager = config.pluginmanager.get_plugin(\"capturemanager\")\n            # if capturemanager plugin is disabled, live logging still works.\n            self.log_cli_handler: Union[\n                _LiveLoggingStreamHandler, _LiveLoggingNullHandler\n            ] = _LiveLoggingStreamHandler(terminal_reporter, capture_manager)\n        else:\n            self.log_cli_handler = _LiveLoggingNullHandler()\n        log_cli_formatter = self._create_formatter(\n            get_option_ini(config, \"log_cli_format\", \"log_format\"),\n            get_option_ini(config, \"log_cli_date_format\", \"log_date_format\"),\n            get_option_ini(config, \"log_auto_indent\"),\n        )\n        self.log_cli_handler.setFormatter(log_cli_formatter)\n\n    def _create_formatter(self, log_format, log_date_format, auto_indent):\n        # Color option doesn't exist if terminal plugin is disabled.\n        color = getattr(self._config.option, \"color\", \"no\")\n        if color != \"no\" and ColoredLevelFormatter.LEVELNAME_FMT_REGEX.search(\n            log_format\n        ):\n            formatter: logging.Formatter = ColoredLevelFormatter(\n                create_terminal_writer(self._config), log_format, log_date_format\n            )\n        else:\n            formatter = logging.Formatter(log_format, log_date_format)\n\n        formatter._style = PercentStyleMultiline(\n            formatter._style._fmt, auto_indent=auto_indent\n        )\n\n        return formatter\n\n    def set_log_path(self, fname: str) -> None:\n        \"\"\"Set the filename parameter for Logging.FileHandler().\n\n        Creates parent directory if it does not exist.\n\n        .. warning::\n            This is an experimental API.\n        \"\"\"\n        fpath = Path(fname)\n\n        if not fpath.is_absolute():\n            fpath = self._config.rootpath / fpath\n\n        if not fpath.parent.exists():\n            fpath.parent.mkdir(exist_ok=True, parents=True)\n\n        # https://github.com/python/mypy/issues/11193\n        stream: io.TextIOWrapper = fpath.open(mode=\"w\", encoding=\"UTF-8\")  # type: ignore[assignment]\n        old_stream = self.log_file_handler.setStream(stream)\n        if old_stream:\n            old_stream.close()\n\n    def _log_cli_enabled(self):\n        \"\"\"Return whether live logging is enabled.\"\"\"\n        enabled = self._config.getoption(\n            \"--log-cli-level\"\n        ) is not None or self._config.getini(\"log_cli\")\n        if not enabled:\n            return False\n\n        terminal_reporter = self._config.pluginmanager.get_plugin(\"terminalreporter\")\n        if terminal_reporter is None:\n            # terminal reporter is disabled e.g. by pytest-xdist.\n            return False\n\n        return True\n\n    @hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_sessionstart(self) -> Generator[None, None, None]:\n        self.log_cli_handler.set_when(\"sessionstart\")\n\n        with catching_logs(self.log_cli_handler, level=self.log_cli_level):\n            with catching_logs(self.log_file_handler, level=self.log_file_level):\n                yield\n\n    @hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_collection(self) -> Generator[None, None, None]:\n        self.log_cli_handler.set_when(\"collection\")\n\n        with catching_logs(self.log_cli_handler, level=self.log_cli_level):\n            with catching_logs(self.log_file_handler, level=self.log_file_level):\n                yield\n\n    @hookimpl(hookwrapper=True)\n    def pytest_runtestloop(self, session: Session) -> Generator[None, None, None]:\n        if session.config.option.collectonly:\n            yield\n            return\n\n        if self._log_cli_enabled() and self._config.getoption(\"verbose\") < 1:\n            # The verbose flag is needed to avoid messy test progress output.\n            self._config.option.verbose = 1\n\n        with catching_logs(self.log_cli_handler, level=self.log_cli_level):\n            with catching_logs(self.log_file_handler, level=self.log_file_level):\n                yield  # Run all the tests.\n\n    @hookimpl\n    def pytest_runtest_logstart(self) -> None:\n        self.log_cli_handler.reset()\n        self.log_cli_handler.set_when(\"start\")\n\n    @hookimpl\n    def pytest_runtest_logreport(self) -> None:\n        self.log_cli_handler.set_when(\"logreport\")\n\n    def _runtest_for(self, item: nodes.Item, when: str) -> Generator[None, None, None]:\n        \"\"\"Implement the internals of the pytest_runtest_xxx() hooks.\"\"\"\n        with catching_logs(\n            self.caplog_handler,\n            level=self.log_level,\n        ) as caplog_handler, catching_logs(\n            self.report_handler,\n            level=self.log_level,\n        ) as report_handler:\n            caplog_handler.reset()\n            report_handler.reset()\n            item.stash[caplog_records_key][when] = caplog_handler.records\n            item.stash[caplog_handler_key] = caplog_handler\n\n            yield\n\n            log = report_handler.stream.getvalue().strip()\n            item.add_report_section(when, \"log\", log)\n\n    @hookimpl(hookwrapper=True)\n    def pytest_runtest_setup(self, item: nodes.Item) -> Generator[None, None, None]:\n        self.log_cli_handler.set_when(\"setup\")\n\n        empty: Dict[str, List[logging.LogRecord]] = {}\n        item.stash[caplog_records_key] = empty\n        yield from self._runtest_for(item, \"setup\")\n\n    @hookimpl(hookwrapper=True)\n    def pytest_runtest_call(self, item: nodes.Item) -> Generator[None, None, None]:\n        self.log_cli_handler.set_when(\"call\")\n\n        yield from self._runtest_for(item, \"call\")\n\n    @hookimpl(hookwrapper=True)\n    def pytest_runtest_teardown(self, item: nodes.Item) -> Generator[None, None, None]:\n        self.log_cli_handler.set_when(\"teardown\")\n\n        yield from self._runtest_for(item, \"teardown\")\n        del item.stash[caplog_records_key]\n        del item.stash[caplog_handler_key]\n\n    @hookimpl\n    def pytest_runtest_logfinish(self) -> None:\n        self.log_cli_handler.set_when(\"finish\")\n\n    @hookimpl(hookwrapper=True, tryfirst=True)\n    def pytest_sessionfinish(self) -> Generator[None, None, None]:\n        self.log_cli_handler.set_when(\"sessionfinish\")\n\n        with catching_logs(self.log_cli_handler, level=self.log_cli_level):\n            with catching_logs(self.log_file_handler, level=self.log_file_level):\n                yield\n\n    @hookimpl\n    def pytest_unconfigure(self) -> None:\n        # Close the FileHandler explicitly.\n        # (logging.shutdown might have lost the weakref?!)\n        self.log_file_handler.close()\n\n\nclass _FileHandler(logging.FileHandler):\n    \"\"\"A logging FileHandler with pytest tweaks.\"\"\"\n\n    def handleError(self, record: logging.LogRecord) -> None:\n        # Handled by LogCaptureHandler.\n        pass\n\n\nclass _LiveLoggingStreamHandler(logging_StreamHandler):\n    \"\"\"A logging StreamHandler used by the live logging feature: it will\n    write a newline before the first log message in each test.\n\n    During live logging we must also explicitly disable stdout/stderr\n    capturing otherwise it will get captured and won't appear in the\n    terminal.\n    \"\"\"\n\n    # Officially stream needs to be a IO[str], but TerminalReporter\n    # isn't. So force it.\n    stream: TerminalReporter = None  # type: ignore\n\n    def __init__(\n        self,\n        terminal_reporter: TerminalReporter,\n        capture_manager: Optional[CaptureManager],\n    ) -> None:\n        super().__init__(stream=terminal_reporter)  # type: ignore[arg-type]\n        self.capture_manager = capture_manager\n        self.reset()\n        self.set_when(None)\n        self._test_outcome_written = False\n\n    def reset(self) -> None:\n        \"\"\"Reset the handler; should be called before the start of each test.\"\"\"\n        self._first_record_emitted = False\n\n    def set_when(self, when: Optional[str]) -> None:\n        \"\"\"Prepare for the given test phase (setup/call/teardown).\"\"\"\n        self._when = when\n        self._section_name_shown = False\n        if when == \"start\":\n            self._test_outcome_written = False\n\n    def emit(self, record: logging.LogRecord) -> None:\n        ctx_manager = (\n            self.capture_manager.global_and_fixture_disabled()\n            if self.capture_manager\n            else nullcontext()\n        )\n        with ctx_manager:\n            if not self._first_record_emitted:\n                self.stream.write(\"\\n\")\n                self._first_record_emitted = True\n            elif self._when in (\"teardown\", \"finish\"):\n                if not self._test_outcome_written:\n                    self._test_outcome_written = True\n                    self.stream.write(\"\\n\")\n            if not self._section_name_shown and self._when:\n                self.stream.section(\"live log \" + self._when, sep=\"-\", bold=True)\n                self._section_name_shown = True\n            super().emit(record)\n\n    def handleError(self, record: logging.LogRecord) -> None:\n        # Handled by LogCaptureHandler.\n        pass\n\n\nclass _LiveLoggingNullHandler(logging.NullHandler):\n    \"\"\"A logging handler used when live logging is disabled.\"\"\"\n\n    def reset(self) -> None:\n        pass\n\n    def set_when(self, when: str) -> None:\n        pass\n\n    def handleError(self, record: logging.LogRecord) -> None:\n        # Handled by LogCaptureHandler.\n        pass",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/logging.py::<module>",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                },
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/logging.py::LogCaptureFixture.clear",
+                    "class_symbol": "src/_pytest/logging.py::LogCaptureFixture",
+                    "confidence": 1.0
+                }
+            ],
+            "context_for": [
+                "src/_pytest/logging.py::LogCaptureFixture.clear"
+            ]
+        },
+        "src/_pytest/logging.py::LogCaptureFixture.clear": {
+            "obj_name": "clear",
+            "node_type": "class_function",
+            "path": "src/_pytest/logging.py",
+            "parent": "LogCaptureFixture",
+            "qualified_name": "LogCaptureFixture.clear",
+            "code_start_line": 444,
+            "code_end_line": 446,
+            "code_content": "    def clear(self) -> None:\n        \"\"\"Reset the list of log records and the captured log text.\"\"\"\n        self.handler.clear()",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/logging.py::LogCaptureFixture.clear",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ],
+            "class_context_ids": [
+                "src/_pytest/logging.py::<module>"
+            ]
+        },
+        "src/_pytest/logging.py::LogCaptureHandler": {
+            "obj_name": "LogCaptureHandler",
+            "node_type": "class",
+            "path": "src/_pytest/logging.py",
+            "parent": null,
+            "qualified_name": "LogCaptureHandler",
+            "code_start_line": 330,
+            "code_end_line": 357,
+            "code_content": "class LogCaptureHandler(logging_StreamHandler):\n    \"\"\"A logging handler that stores log records and the log text.\"\"\"\n\n    def __init__(self) -> None:\n        \"\"\"Create a new log handler.\"\"\"\n        super().__init__(StringIO())\n        self.records: List[logging.LogRecord] = []\n\n    def emit(self, record: logging.LogRecord) -> None:\n        \"\"\"Keep the log records in a list in addition to the log text.\"\"\"\n        self.records.append(record)\n        super().emit(record)\n\n    def reset(self) -> None:\n        self.records = []\n        self.stream = StringIO()\n\n    def clear(self) -> None:\n        self.records.clear()\n        self.stream = StringIO()\n\n    def handleError(self, record: logging.LogRecord) -> None:\n        if logging.raiseExceptions:\n            # Fail the test if the log message is bad (emit failed).\n            # The default behavior of logging is to print \"Logging error\"\n            # to stderr with the call stack and some extra details.\n            # pytest wants to make such mistakes visible during testing.\n            raise",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/logging.py::LogCaptureHandler",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                },
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/logging.py::LogCaptureHandler.clear",
+                    "class_symbol": "src/_pytest/logging.py::LogCaptureHandler",
+                    "confidence": 1.0
+                }
+            ],
+            "context_for": [
+                "src/_pytest/logging.py::LogCaptureHandler.clear"
+            ]
+        },
+        "src/_pytest/logging.py::LogCaptureHandler.clear": {
+            "obj_name": "clear",
+            "node_type": "class_function",
+            "path": "src/_pytest/logging.py",
+            "parent": "LogCaptureHandler",
+            "qualified_name": "LogCaptureHandler.clear",
+            "code_start_line": 347,
+            "code_end_line": 349,
+            "code_content": "    def clear(self) -> None:\n        self.records.clear()\n        self.stream = StringIO()",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/logging.py::LogCaptureHandler.clear",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ],
+            "class_context_ids": [
+                "src/_pytest/logging.py::LogCaptureHandler"
+            ]
+        }
+    },
+    "pytest-dev__pytest-10081": {
+        "src/_pytest/unittest.py::TestCaseFunction.runtest": {
+            "obj_name": "runtest",
+            "node_type": "class_function",
+            "path": "src/_pytest/unittest.py",
+            "parent": "TestCaseFunction",
+            "qualified_name": "TestCaseFunction.runtest",
+            "code_start_line": 301,
+            "code_end_line": 332,
+            "code_content": "    def runtest(self) -> None:\n        from _pytest.debugging import maybe_wrap_pytest_function_for_tracing\n\n        assert self._testcase is not None\n\n        maybe_wrap_pytest_function_for_tracing(self)\n\n        # Let the unittest framework handle async functions.\n        if is_async_function(self.obj):\n            # Type ignored because self acts as the TestResult, but is not actually one.\n            self._testcase(result=self)  # type: ignore[arg-type]\n        else:\n            # When --pdb is given, we want to postpone calling tearDown() otherwise\n            # when entering the pdb prompt, tearDown() would have probably cleaned up\n            # instance variables, which makes it difficult to debug.\n            # Arguably we could always postpone tearDown(), but this changes the moment where the\n            # TestCase instance interacts with the results object, so better to only do it\n            # when absolutely needed.\n            # We need to consider if the test itself is skipped, or the whole class.\n            assert isinstance(self.parent, UnitTestCase)\n            skipped = _is_skipped(self.obj) or _is_skipped(self.parent.obj)\n            if self.config.getoption(\"usepdb\") and not skipped:\n                self._explicit_tearDown = self._testcase.tearDown\n                setattr(self._testcase, \"tearDown\", lambda *args: None)\n\n            # We need to update the actual bound method with self.obj, because\n            # wrap_pytest_function_for_tracing replaces self.obj by a wrapper.\n            setattr(self._testcase, self.name, self.obj)\n            try:\n                self._testcase(result=self)  # type: ignore[arg-type]\n            finally:\n                delattr(self._testcase, self.name)",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/unittest.py::TestCaseFunction.runtest",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ],
+            "class_context_ids": [
+                "src/_pytest/unittest.py::TestCaseFunction"
+            ]
+        },
+        "src/_pytest/unittest.py::TestCaseFunction": {
+            "obj_name": "TestCaseFunction",
+            "node_type": "class",
+            "path": "src/_pytest/unittest.py",
+            "parent": null,
+            "qualified_name": "TestCaseFunction",
+            "code_start_line": 183,
+            "code_end_line": 342,
+            "code_content": "class TestCaseFunction(Function):\n    nofuncargs = True\n    _excinfo: Optional[List[_pytest._code.ExceptionInfo[BaseException]]] = None\n    _testcase: Optional[\"unittest.TestCase\"] = None\n\n    def _getobj(self):\n        assert self.parent is not None\n        # Unlike a regular Function in a Class, where `item.obj` returns\n        # a *bound* method (attached to an instance), TestCaseFunction's\n        # `obj` returns an *unbound* method (not attached to an instance).\n        # This inconsistency is probably not desirable, but needs some\n        # consideration before changing.\n        return getattr(self.parent.obj, self.originalname)  # type: ignore[attr-defined]\n\n    def setup(self) -> None:\n        # A bound method to be called during teardown() if set (see 'runtest()').\n        self._explicit_tearDown: Optional[Callable[[], None]] = None\n        assert self.parent is not None\n        self._testcase = self.parent.obj(self.name)  # type: ignore[attr-defined]\n        self._obj = getattr(self._testcase, self.name)\n        if hasattr(self, \"_request\"):\n            self._request._fillfixtures()\n\n    def teardown(self) -> None:\n        if self._explicit_tearDown is not None:\n            self._explicit_tearDown()\n            self._explicit_tearDown = None\n        self._testcase = None\n        self._obj = None\n\n    def startTest(self, testcase: \"unittest.TestCase\") -> None:\n        pass\n\n    def _addexcinfo(self, rawexcinfo: \"_SysExcInfoType\") -> None:\n        # Unwrap potential exception info (see twisted trial support below).\n        rawexcinfo = getattr(rawexcinfo, \"_rawexcinfo\", rawexcinfo)\n        try:\n            excinfo = _pytest._code.ExceptionInfo[BaseException].from_exc_info(rawexcinfo)  # type: ignore[arg-type]\n            # Invoke the attributes to trigger storing the traceback\n            # trial causes some issue there.\n            excinfo.value\n            excinfo.traceback\n        except TypeError:\n            try:\n                try:\n                    values = traceback.format_exception(*rawexcinfo)\n                    values.insert(\n                        0,\n                        \"NOTE: Incompatible Exception Representation, \"\n                        \"displaying natively:\\n\\n\",\n                    )\n                    fail(\"\".join(values), pytrace=False)\n                except (fail.Exception, KeyboardInterrupt):\n                    raise\n                except BaseException:\n                    fail(\n                        \"ERROR: Unknown Incompatible Exception \"\n                        \"representation:\\n%r\" % (rawexcinfo,),\n                        pytrace=False,\n                    )\n            except KeyboardInterrupt:\n                raise\n            except fail.Exception:\n                excinfo = _pytest._code.ExceptionInfo.from_current()\n        self.__dict__.setdefault(\"_excinfo\", []).append(excinfo)\n\n    def addError(\n        self, testcase: \"unittest.TestCase\", rawexcinfo: \"_SysExcInfoType\"\n    ) -> None:\n        try:\n            if isinstance(rawexcinfo[1], exit.Exception):\n                exit(rawexcinfo[1].msg)\n        except TypeError:\n            pass\n        self._addexcinfo(rawexcinfo)\n\n    def addFailure(\n        self, testcase: \"unittest.TestCase\", rawexcinfo: \"_SysExcInfoType\"\n    ) -> None:\n        self._addexcinfo(rawexcinfo)\n\n    def addSkip(self, testcase: \"unittest.TestCase\", reason: str) -> None:\n        try:\n            raise pytest.skip.Exception(reason, _use_item_location=True)\n        except skip.Exception:\n            self._addexcinfo(sys.exc_info())\n\n    def addExpectedFailure(\n        self,\n        testcase: \"unittest.TestCase\",\n        rawexcinfo: \"_SysExcInfoType\",\n        reason: str = \"\",\n    ) -> None:\n        try:\n            xfail(str(reason))\n        except xfail.Exception:\n            self._addexcinfo(sys.exc_info())\n\n    def addUnexpectedSuccess(\n        self,\n        testcase: \"unittest.TestCase\",\n        reason: Optional[\"twisted.trial.unittest.Todo\"] = None,\n    ) -> None:\n        msg = \"Unexpected success\"\n        if reason:\n            msg += f\": {reason.reason}\"\n        # Preserve unittest behaviour - fail the test. Explicitly not an XPASS.\n        try:\n            fail(msg, pytrace=False)\n        except fail.Exception:\n            self._addexcinfo(sys.exc_info())\n\n    def addSuccess(self, testcase: \"unittest.TestCase\") -> None:\n        pass\n\n    def stopTest(self, testcase: \"unittest.TestCase\") -> None:\n        pass\n\n    def runtest(self) -> None:\n        from _pytest.debugging import maybe_wrap_pytest_function_for_tracing\n\n        assert self._testcase is not None\n\n        maybe_wrap_pytest_function_for_tracing(self)\n\n        # Let the unittest framework handle async functions.\n        if is_async_function(self.obj):\n            # Type ignored because self acts as the TestResult, but is not actually one.\n            self._testcase(result=self)  # type: ignore[arg-type]\n        else:\n            # When --pdb is given, we want to postpone calling tearDown() otherwise\n            # when entering the pdb prompt, tearDown() would have probably cleaned up\n            # instance variables, which makes it difficult to debug.\n            # Arguably we could always postpone tearDown(), but this changes the moment where the\n            # TestCase instance interacts with the results object, so better to only do it\n            # when absolutely needed.\n            # We need to consider if the test itself is skipped, or the whole class.\n            assert isinstance(self.parent, UnitTestCase)\n            skipped = _is_skipped(self.obj) or _is_skipped(self.parent.obj)\n            if self.config.getoption(\"usepdb\") and not skipped:\n                self._explicit_tearDown = self._testcase.tearDown\n                setattr(self._testcase, \"tearDown\", lambda *args: None)\n\n            # We need to update the actual bound method with self.obj, because\n            # wrap_pytest_function_for_tracing replaces self.obj by a wrapper.\n            setattr(self._testcase, self.name, self.obj)\n            try:\n                self._testcase(result=self)  # type: ignore[arg-type]\n            finally:\n                delattr(self._testcase, self.name)\n\n    def _prunetraceback(\n        self, excinfo: _pytest._code.ExceptionInfo[BaseException]\n    ) -> None:\n        super()._prunetraceback(excinfo)\n        traceback = excinfo.traceback.filter(\n            lambda x: not x.frame.f_globals.get(\"__unittest\")\n        )\n        if traceback:\n            excinfo.traceback = traceback",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/unittest.py::TestCaseFunction.runtest",
+                    "class_symbol": "src/_pytest/unittest.py::TestCaseFunction",
+                    "confidence": 1.0
+                }
+            ],
+            "context_for": [
+                "src/_pytest/unittest.py::TestCaseFunction.runtest"
+            ],
+            "content_kind": "full_class"
+        }
+    },
+    "pytest-dev__pytest-10356": {
+        "src/_pytest/mark/structures.py::get_unpacked_marks": {
+            "obj_name": "get_unpacked_marks",
+            "node_type": "top-level function",
+            "path": "src/_pytest/mark/structures.py",
+            "parent": null,
+            "qualified_name": "get_unpacked_marks",
+            "code_start_line": 358,
+            "code_end_line": 386,
+            "code_content": "def get_unpacked_marks(\n    obj: Union[object, type],\n    *,\n    consider_mro: bool = True,\n) -> List[Mark]:\n    \"\"\"Obtain the unpacked marks that are stored on an object.\n\n    If obj is a class and consider_mro is true, return marks applied to\n    this class and all of its super-classes in MRO order. If consider_mro\n    is false, only return marks applied directly to this class.\n    \"\"\"\n    if isinstance(obj, type):\n        if not consider_mro:\n            mark_lists = [obj.__dict__.get(\"pytestmark\", [])]\n        else:\n            mark_lists = [x.__dict__.get(\"pytestmark\", []) for x in obj.__mro__]\n        mark_list = []\n        for item in mark_lists:\n            if isinstance(item, list):\n                mark_list.extend(item)\n            else:\n                mark_list.append(item)\n    else:\n        mark_attribute = getattr(obj, \"pytestmark\", [])\n        if isinstance(mark_attribute, list):\n            mark_list = mark_attribute\n        else:\n            mark_list = [mark_attribute]\n    return list(normalize_mark_list(mark_list))",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/mark/structures.py::get_unpacked_marks",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ]
+        },
+        "src/_pytest/mark/structures.py::store_mark": {
+            "obj_name": "store_mark",
+            "node_type": "top-level function",
+            "path": "src/_pytest/mark/structures.py",
+            "parent": null,
+            "qualified_name": "store_mark",
+            "code_start_line": 406,
+            "code_end_line": 414,
+            "code_content": "def store_mark(obj, mark: Mark) -> None:\n    \"\"\"Store a Mark on an object.\n\n    This is used to implement the Mark declarations/decorators correctly.\n    \"\"\"\n    assert isinstance(mark, Mark), mark\n    # Always reassign name to avoid updating pytestmark in a reference that\n    # was only borrowed.\n    obj.pytestmark = [*get_unpacked_marks(obj, consider_mro=False), mark]",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/mark/structures.py::store_mark",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ]
+        }
+    },
+    "pytest-dev__pytest-5262": {
+        "src/_pytest/capture.py::EncodedFile": {
+            "obj_name": "EncodedFile",
+            "node_type": "class",
+            "path": "src/_pytest/capture.py",
+            "parent": null,
+            "qualified_name": "EncodedFile",
+            "code_start_line": 425,
+            "code_end_line": 455,
+            "code_content": "class EncodedFile(object):\n    errors = \"strict\"  # possibly needed by py3 code (issue555)\n\n    def __init__(self, buffer, encoding):\n        self.buffer = buffer\n        self.encoding = encoding\n\n    def write(self, obj):\n        if isinstance(obj, six.text_type):\n            obj = obj.encode(self.encoding, \"replace\")\n        elif _PY3:\n            raise TypeError(\n                \"write() argument must be str, not {}\".format(type(obj).__name__)\n            )\n        self.buffer.write(obj)\n\n    def writelines(self, linelist):\n        data = \"\".join(linelist)\n        self.write(data)\n\n    @property\n    def name(self):\n        \"\"\"Ensure that file.name is a string.\"\"\"\n        return repr(self.buffer)\n\n    @property\n    def mode(self):\n        return self.buffer.mode.replace(\"b\", \"\")\n\n    def __getattr__(self, name):\n        return getattr(object.__getattribute__(self, \"buffer\"), name)",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/capture.py::EncodedFile",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                },
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/capture.py::EncodedFile.mode",
+                    "class_symbol": "src/_pytest/capture.py::EncodedFile",
+                    "confidence": 1.0
+                }
+            ],
+            "context_for": [
+                "src/_pytest/capture.py::EncodedFile.mode"
+            ]
+        },
+        "src/_pytest/capture.py::EncodedFile.mode": {
+            "obj_name": "mode",
+            "node_type": "class_function",
+            "path": "src/_pytest/capture.py",
+            "parent": "EncodedFile",
+            "qualified_name": "EncodedFile.mode",
+            "code_start_line": 450,
+            "code_end_line": 452,
+            "code_content": "    @property\n    def mode(self):\n        return self.buffer.mode.replace(\"b\", \"\")",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/capture.py::EncodedFile.mode",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ],
+            "class_context_ids": [
+                "src/_pytest/capture.py::EncodedFile"
+            ]
+        }
+    },
+    "pytest-dev__pytest-5631": {
+        "src/_pytest/compat.py::num_mock_patch_args": {
+            "obj_name": "num_mock_patch_args",
+            "node_type": "top-level function",
+            "path": "src/_pytest/compat.py",
+            "parent": null,
+            "qualified_name": "num_mock_patch_args",
+            "code_start_line": 62,
+            "code_end_line": 78,
+            "code_content": "def num_mock_patch_args(function):\n    \"\"\" return number of arguments used up by mock arguments (if any) \"\"\"\n    patchings = getattr(function, \"patchings\", None)\n    if not patchings:\n        return 0\n\n    mock_sentinel = getattr(sys.modules.get(\"mock\"), \"DEFAULT\", object())\n    ut_mock_sentinel = getattr(sys.modules.get(\"unittest.mock\"), \"DEFAULT\", object())\n\n    return len(\n        [\n            p\n            for p in patchings\n            if not p.attribute_name\n            and (p.new is mock_sentinel or p.new is ut_mock_sentinel)\n        ]\n    )",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/compat.py::num_mock_patch_args",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ]
+        }
+    },
+    "pytest-dev__pytest-5787": {
+        "src/_pytest/reports.py::<module>": {
+            "obj_name": "reports",
+            "node_type": "file",
+            "path": "src/_pytest/reports.py",
+            "parent": null,
+            "qualified_name": "<module>",
+            "code_start_line": 1,
+            "code_end_line": 479,
+            "code_content": "from pprint import pprint\nfrom typing import Optional\n\nimport py\n\nfrom _pytest._code.code import ExceptionChainRepr\nfrom _pytest._code.code import ExceptionInfo\nfrom _pytest._code.code import ReprEntry\nfrom _pytest._code.code import ReprEntryNative\nfrom _pytest._code.code import ReprExceptionInfo\nfrom _pytest._code.code import ReprFileLocation\nfrom _pytest._code.code import ReprFuncArgs\nfrom _pytest._code.code import ReprLocals\nfrom _pytest._code.code import ReprTraceback\nfrom _pytest._code.code import TerminalRepr\nfrom _pytest.outcomes import skip\nfrom _pytest.pathlib import Path\n\n\ndef getslaveinfoline(node):\n    try:\n        return node._slaveinfocache\n    except AttributeError:\n        d = node.slaveinfo\n        ver = \"%s.%s.%s\" % d[\"version_info\"][:3]\n        node._slaveinfocache = s = \"[{}] {} -- Python {} {}\".format(\n            d[\"id\"], d[\"sysplatform\"], ver, d[\"executable\"]\n        )\n        return s\n\n\nclass BaseReport:\n    when = None  # type: Optional[str]\n    location = None\n\n    def __init__(self, **kw):\n        self.__dict__.update(kw)\n\n    def toterminal(self, out):\n        if hasattr(self, \"node\"):\n            out.line(getslaveinfoline(self.node))\n\n        longrepr = self.longrepr\n        if longrepr is None:\n            return\n\n        if hasattr(longrepr, \"toterminal\"):\n            longrepr.toterminal(out)\n        else:\n            try:\n                out.line(longrepr)\n            except UnicodeEncodeError:\n                out.line(\"<unprintable longrepr>\")\n\n    def get_sections(self, prefix):\n        for name, content in self.sections:\n            if name.startswith(prefix):\n                yield prefix, content\n\n    @property\n    def longreprtext(self):\n        \"\"\"\n        Read-only property that returns the full string representation\n        of ``longrepr``.\n\n        .. versionadded:: 3.0\n        \"\"\"\n        tw = py.io.TerminalWriter(stringio=True)\n        tw.hasmarkup = False\n        self.toterminal(tw)\n        exc = tw.stringio.getvalue()\n        return exc.strip()\n\n    @property\n    def caplog(self):\n        \"\"\"Return captured log lines, if log capturing is enabled\n\n        .. versionadded:: 3.5\n        \"\"\"\n        return \"\\n\".join(\n            content for (prefix, content) in self.get_sections(\"Captured log\")\n        )\n\n    @property\n    def capstdout(self):\n        \"\"\"Return captured text from stdout, if capturing is enabled\n\n        .. versionadded:: 3.0\n        \"\"\"\n        return \"\".join(\n            content for (prefix, content) in self.get_sections(\"Captured stdout\")\n        )\n\n    @property\n    def capstderr(self):\n        \"\"\"Return captured text from stderr, if capturing is enabled\n\n        .. versionadded:: 3.0\n        \"\"\"\n        return \"\".join(\n            content for (prefix, content) in self.get_sections(\"Captured stderr\")\n        )\n\n    passed = property(lambda x: x.outcome == \"passed\")\n    failed = property(lambda x: x.outcome == \"failed\")\n    skipped = property(lambda x: x.outcome == \"skipped\")\n\n    @property\n    def fspath(self):\n        return self.nodeid.split(\"::\")[0]\n\n    @property\n    def count_towards_summary(self):\n        \"\"\"\n        **Experimental**\n\n        Returns True if this report should be counted towards the totals shown at the end of the\n        test session: \"1 passed, 1 failure, etc\".\n\n        .. note::\n\n            This function is considered **experimental**, so beware that it is subject to changes\n            even in patch releases.\n        \"\"\"\n        return True\n\n    @property\n    def head_line(self):\n        \"\"\"\n        **Experimental**\n\n        Returns the head line shown with longrepr output for this report, more commonly during\n        traceback representation during failures::\n\n            ________ Test.foo ________\n\n\n        In the example above, the head_line is \"Test.foo\".\n\n        .. note::\n\n            This function is considered **experimental**, so beware that it is subject to changes\n            even in patch releases.\n        \"\"\"\n        if self.location is not None:\n            fspath, lineno, domain = self.location\n            return domain\n\n    def _get_verbose_word(self, config):\n        _category, _short, verbose = config.hook.pytest_report_teststatus(\n            report=self, config=config\n        )\n        return verbose\n\n    def _to_json(self):\n        \"\"\"\n        This was originally the serialize_report() function from xdist (ca03269).\n\n        Returns the contents of this report as a dict of builtin entries, suitable for\n        serialization.\n\n        Experimental method.\n        \"\"\"\n        return _report_to_json(self)\n\n    @classmethod\n    def _from_json(cls, reportdict):\n        \"\"\"\n        This was originally the serialize_report() function from xdist (ca03269).\n\n        Factory method that returns either a TestReport or CollectReport, depending on the calling\n        class. It's the callers responsibility to know which class to pass here.\n\n        Experimental method.\n        \"\"\"\n        kwargs = _report_kwargs_from_json(reportdict)\n        return cls(**kwargs)\n\n\ndef _report_unserialization_failure(type_name, report_class, reportdict):\n    url = \"https://github.com/pytest-dev/pytest/issues\"\n    stream = py.io.TextIO()\n    pprint(\"-\" * 100, stream=stream)\n    pprint(\"INTERNALERROR: Unknown entry type returned: %s\" % type_name, stream=stream)\n    pprint(\"report_name: %s\" % report_class, stream=stream)\n    pprint(reportdict, stream=stream)\n    pprint(\"Please report this bug at %s\" % url, stream=stream)\n    pprint(\"-\" * 100, stream=stream)\n    raise RuntimeError(stream.getvalue())\n\n\nclass TestReport(BaseReport):\n    \"\"\" Basic test report object (also used for setup and teardown calls if\n    they fail).\n    \"\"\"\n\n    __test__ = False\n\n    def __init__(\n        self,\n        nodeid,\n        location,\n        keywords,\n        outcome,\n        longrepr,\n        when,\n        sections=(),\n        duration=0,\n        user_properties=None,\n        **extra\n    ):\n        #: normalized collection node id\n        self.nodeid = nodeid\n\n        #: a (filesystempath, lineno, domaininfo) tuple indicating the\n        #: actual location of a test item - it might be different from the\n        #: collected one e.g. if a method is inherited from a different module.\n        self.location = location\n\n        #: a name -> value dictionary containing all keywords and\n        #: markers associated with a test invocation.\n        self.keywords = keywords\n\n        #: test outcome, always one of \"passed\", \"failed\", \"skipped\".\n        self.outcome = outcome\n\n        #: None or a failure representation.\n        self.longrepr = longrepr\n\n        #: one of 'setup', 'call', 'teardown' to indicate runtest phase.\n        self.when = when\n\n        #: user properties is a list of tuples (name, value) that holds user\n        #: defined properties of the test\n        self.user_properties = list(user_properties or [])\n\n        #: list of pairs ``(str, str)`` of extra information which needs to\n        #: marshallable. Used by pytest to add captured text\n        #: from ``stdout`` and ``stderr``, but may be used by other plugins\n        #: to add arbitrary information to reports.\n        self.sections = list(sections)\n\n        #: time it took to run just the test\n        self.duration = duration\n\n        self.__dict__.update(extra)\n\n    def __repr__(self):\n        return \"<{} {!r} when={!r} outcome={!r}>\".format(\n            self.__class__.__name__, self.nodeid, self.when, self.outcome\n        )\n\n    @classmethod\n    def from_item_and_call(cls, item, call):\n        \"\"\"\n        Factory method to create and fill a TestReport with standard item and call info.\n        \"\"\"\n        when = call.when\n        duration = call.stop - call.start\n        keywords = {x: 1 for x in item.keywords}\n        excinfo = call.excinfo\n        sections = []\n        if not call.excinfo:\n            outcome = \"passed\"\n            longrepr = None\n        else:\n            if not isinstance(excinfo, ExceptionInfo):\n                outcome = \"failed\"\n                longrepr = excinfo\n            elif excinfo.errisinstance(skip.Exception):\n                outcome = \"skipped\"\n                r = excinfo._getreprcrash()\n                longrepr = (str(r.path), r.lineno, r.message)\n            else:\n                outcome = \"failed\"\n                if call.when == \"call\":\n                    longrepr = item.repr_failure(excinfo)\n                else:  # exception in setup or teardown\n                    longrepr = item._repr_failure_py(\n                        excinfo, style=item.config.getoption(\"tbstyle\", \"auto\")\n                    )\n        for rwhen, key, content in item._report_sections:\n            sections.append((\"Captured {} {}\".format(key, rwhen), content))\n        return cls(\n            item.nodeid,\n            item.location,\n            keywords,\n            outcome,\n            longrepr,\n            when,\n            sections,\n            duration,\n            user_properties=item.user_properties,\n        )\n\n\nclass CollectReport(BaseReport):\n    when = \"collect\"\n\n    def __init__(self, nodeid, outcome, longrepr, result, sections=(), **extra):\n        self.nodeid = nodeid\n        self.outcome = outcome\n        self.longrepr = longrepr\n        self.result = result or []\n        self.sections = list(sections)\n        self.__dict__.update(extra)\n\n    @property\n    def location(self):\n        return (self.fspath, None, self.fspath)\n\n    def __repr__(self):\n        return \"<CollectReport {!r} lenresult={} outcome={!r}>\".format(\n            self.nodeid, len(self.result), self.outcome\n        )\n\n\nclass CollectErrorRepr(TerminalRepr):\n    def __init__(self, msg):\n        self.longrepr = msg\n\n    def toterminal(self, out):\n        out.line(self.longrepr, red=True)\n\n\ndef pytest_report_to_serializable(report):\n    if isinstance(report, (TestReport, CollectReport)):\n        data = report._to_json()\n        data[\"_report_type\"] = report.__class__.__name__\n        return data\n\n\ndef pytest_report_from_serializable(data):\n    if \"_report_type\" in data:\n        if data[\"_report_type\"] == \"TestReport\":\n            return TestReport._from_json(data)\n        elif data[\"_report_type\"] == \"CollectReport\":\n            return CollectReport._from_json(data)\n        assert False, \"Unknown report_type unserialize data: {}\".format(\n            data[\"_report_type\"]\n        )\n\n\ndef _report_to_json(report):\n    \"\"\"\n    This was originally the serialize_report() function from xdist (ca03269).\n\n    Returns the contents of this report as a dict of builtin entries, suitable for\n    serialization.\n    \"\"\"\n\n    def serialize_repr_entry(entry):\n        entry_data = {\"type\": type(entry).__name__, \"data\": entry.__dict__.copy()}\n        for key, value in entry_data[\"data\"].items():\n            if hasattr(value, \"__dict__\"):\n                entry_data[\"data\"][key] = value.__dict__.copy()\n        return entry_data\n\n    def serialize_repr_traceback(reprtraceback):\n        result = reprtraceback.__dict__.copy()\n        result[\"reprentries\"] = [\n            serialize_repr_entry(x) for x in reprtraceback.reprentries\n        ]\n        return result\n\n    def serialize_repr_crash(reprcrash):\n        return reprcrash.__dict__.copy()\n\n    def serialize_longrepr(rep):\n        result = {\n            \"reprcrash\": serialize_repr_crash(rep.longrepr.reprcrash),\n            \"reprtraceback\": serialize_repr_traceback(rep.longrepr.reprtraceback),\n            \"sections\": rep.longrepr.sections,\n        }\n        if isinstance(rep.longrepr, ExceptionChainRepr):\n            result[\"chain\"] = []\n            for repr_traceback, repr_crash, description in rep.longrepr.chain:\n                result[\"chain\"].append(\n                    (\n                        serialize_repr_traceback(repr_traceback),\n                        serialize_repr_crash(repr_crash),\n                        description,\n                    )\n                )\n        else:\n            result[\"chain\"] = None\n        return result\n\n    d = report.__dict__.copy()\n    if hasattr(report.longrepr, \"toterminal\"):\n        if hasattr(report.longrepr, \"reprtraceback\") and hasattr(\n            report.longrepr, \"reprcrash\"\n        ):\n            d[\"longrepr\"] = serialize_longrepr(report)\n        else:\n            d[\"longrepr\"] = str(report.longrepr)\n    else:\n        d[\"longrepr\"] = report.longrepr\n    for name in d:\n        if isinstance(d[name], (py.path.local, Path)):\n            d[name] = str(d[name])\n        elif name == \"result\":\n            d[name] = None  # for now\n    return d\n\n\ndef _report_kwargs_from_json(reportdict):\n    \"\"\"\n    This was originally the serialize_report() function from xdist (ca03269).\n\n    Returns **kwargs that can be used to construct a TestReport or CollectReport instance.\n    \"\"\"\n\n    def deserialize_repr_entry(entry_data):\n        data = entry_data[\"data\"]\n        entry_type = entry_data[\"type\"]\n        if entry_type == \"ReprEntry\":\n            reprfuncargs = None\n            reprfileloc = None\n            reprlocals = None\n            if data[\"reprfuncargs\"]:\n                reprfuncargs = ReprFuncArgs(**data[\"reprfuncargs\"])\n            if data[\"reprfileloc\"]:\n                reprfileloc = ReprFileLocation(**data[\"reprfileloc\"])\n            if data[\"reprlocals\"]:\n                reprlocals = ReprLocals(data[\"reprlocals\"][\"lines\"])\n\n            reprentry = ReprEntry(\n                lines=data[\"lines\"],\n                reprfuncargs=reprfuncargs,\n                reprlocals=reprlocals,\n                filelocrepr=reprfileloc,\n                style=data[\"style\"],\n            )\n        elif entry_type == \"ReprEntryNative\":\n            reprentry = ReprEntryNative(data[\"lines\"])\n        else:\n            _report_unserialization_failure(entry_type, TestReport, reportdict)\n        return reprentry\n\n    def deserialize_repr_traceback(repr_traceback_dict):\n        repr_traceback_dict[\"reprentries\"] = [\n            deserialize_repr_entry(x) for x in repr_traceback_dict[\"reprentries\"]\n        ]\n        return ReprTraceback(**repr_traceback_dict)\n\n    def deserialize_repr_crash(repr_crash_dict):\n        return ReprFileLocation(**repr_crash_dict)\n\n    if (\n        reportdict[\"longrepr\"]\n        and \"reprcrash\" in reportdict[\"longrepr\"]\n        and \"reprtraceback\" in reportdict[\"longrepr\"]\n    ):\n\n        reprtraceback = deserialize_repr_traceback(\n            reportdict[\"longrepr\"][\"reprtraceback\"]\n        )\n        reprcrash = deserialize_repr_crash(reportdict[\"longrepr\"][\"reprcrash\"])\n        if reportdict[\"longrepr\"][\"chain\"]:\n            chain = []\n            for repr_traceback_data, repr_crash_data, description in reportdict[\n                \"longrepr\"\n            ][\"chain\"]:\n                chain.append(\n                    (\n                        deserialize_repr_traceback(repr_traceback_data),\n                        deserialize_repr_crash(repr_crash_data),\n                        description,\n                    )\n                )\n            exception_info = ExceptionChainRepr(chain)\n        else:\n            exception_info = ReprExceptionInfo(reprtraceback, reprcrash)\n\n        for section in reportdict[\"longrepr\"][\"sections\"]:\n            exception_info.addsection(*section)\n        reportdict[\"longrepr\"] = exception_info\n",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/reports.py::<module>",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                },
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/reports.py::BaseReport._from_json",
+                    "class_symbol": "src/_pytest/reports.py::BaseReport",
+                    "confidence": 1.0
+                },
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/reports.py::BaseReport._to_json",
+                    "class_symbol": "src/_pytest/reports.py::BaseReport",
+                    "confidence": 1.0
+                }
+            ],
+            "context_for": [
+                "src/_pytest/reports.py::BaseReport._from_json",
+                "src/_pytest/reports.py::BaseReport._to_json"
+            ]
+        },
+        "src/_pytest/reports.py::BaseReport._from_json": {
+            "obj_name": "_from_json",
+            "node_type": "class_function",
+            "path": "src/_pytest/reports.py",
+            "parent": "BaseReport",
+            "qualified_name": "BaseReport._from_json",
+            "code_start_line": 166,
+            "code_end_line": 177,
+            "code_content": "    @classmethod\n    def _from_json(cls, reportdict):\n        \"\"\"\n        This was originally the serialize_report() function from xdist (ca03269).\n\n        Factory method that returns either a TestReport or CollectReport, depending on the calling\n        class. It's the callers responsibility to know which class to pass here.\n\n        Experimental method.\n        \"\"\"\n        kwargs = _report_kwargs_from_json(reportdict)\n        return cls(**kwargs)",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/reports.py::BaseReport._from_json",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ],
+            "class_context_ids": [
+                "src/_pytest/reports.py::<module>"
+            ]
+        },
+        "src/_pytest/reports.py::BaseReport._to_json": {
+            "obj_name": "_to_json",
+            "node_type": "class_function",
+            "path": "src/_pytest/reports.py",
+            "parent": "BaseReport",
+            "qualified_name": "BaseReport._to_json",
+            "code_start_line": 155,
+            "code_end_line": 164,
+            "code_content": "    def _to_json(self):\n        \"\"\"\n        This was originally the serialize_report() function from xdist (ca03269).\n\n        Returns the contents of this report as a dict of builtin entries, suitable for\n        serialization.\n\n        Experimental method.\n        \"\"\"\n        return _report_to_json(self)",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/reports.py::BaseReport._to_json",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ],
+            "class_context_ids": [
+                "src/_pytest/reports.py::<module>"
+            ]
+        },
+        "src/_pytest/reports.py::_report_kwargs_from_json": {
+            "obj_name": "_report_kwargs_from_json",
+            "node_type": "top-level function",
+            "path": "src/_pytest/reports.py",
+            "parent": null,
+            "qualified_name": "_report_kwargs_from_json",
+            "code_start_line": 407,
+            "code_end_line": 478,
+            "code_content": "def _report_kwargs_from_json(reportdict):\n    \"\"\"\n    This was originally the serialize_report() function from xdist (ca03269).\n\n    Returns **kwargs that can be used to construct a TestReport or CollectReport instance.\n    \"\"\"\n\n    def deserialize_repr_entry(entry_data):\n        data = entry_data[\"data\"]\n        entry_type = entry_data[\"type\"]\n        if entry_type == \"ReprEntry\":\n            reprfuncargs = None\n            reprfileloc = None\n            reprlocals = None\n            if data[\"reprfuncargs\"]:\n                reprfuncargs = ReprFuncArgs(**data[\"reprfuncargs\"])\n            if data[\"reprfileloc\"]:\n                reprfileloc = ReprFileLocation(**data[\"reprfileloc\"])\n            if data[\"reprlocals\"]:\n                reprlocals = ReprLocals(data[\"reprlocals\"][\"lines\"])\n\n            reprentry = ReprEntry(\n                lines=data[\"lines\"],\n                reprfuncargs=reprfuncargs,\n                reprlocals=reprlocals,\n                filelocrepr=reprfileloc,\n                style=data[\"style\"],\n            )\n        elif entry_type == \"ReprEntryNative\":\n            reprentry = ReprEntryNative(data[\"lines\"])\n        else:\n            _report_unserialization_failure(entry_type, TestReport, reportdict)\n        return reprentry\n\n    def deserialize_repr_traceback(repr_traceback_dict):\n        repr_traceback_dict[\"reprentries\"] = [\n            deserialize_repr_entry(x) for x in repr_traceback_dict[\"reprentries\"]\n        ]\n        return ReprTraceback(**repr_traceback_dict)\n\n    def deserialize_repr_crash(repr_crash_dict):\n        return ReprFileLocation(**repr_crash_dict)\n\n    if (\n        reportdict[\"longrepr\"]\n        and \"reprcrash\" in reportdict[\"longrepr\"]\n        and \"reprtraceback\" in reportdict[\"longrepr\"]\n    ):\n\n        reprtraceback = deserialize_repr_traceback(\n            reportdict[\"longrepr\"][\"reprtraceback\"]\n        )\n        reprcrash = deserialize_repr_crash(reportdict[\"longrepr\"][\"reprcrash\"])\n        if reportdict[\"longrepr\"][\"chain\"]:\n            chain = []\n            for repr_traceback_data, repr_crash_data, description in reportdict[\n                \"longrepr\"\n            ][\"chain\"]:\n                chain.append(\n                    (\n                        deserialize_repr_traceback(repr_traceback_data),\n                        deserialize_repr_crash(repr_crash_data),\n                        description,\n                    )\n                )\n            exception_info = ExceptionChainRepr(chain)\n        else:\n            exception_info = ReprExceptionInfo(reprtraceback, reprcrash)\n\n        for section in reportdict[\"longrepr\"][\"sections\"]:\n            exception_info.addsection(*section)\n        reportdict[\"longrepr\"] = exception_info",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/reports.py::_report_kwargs_from_json",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ]
+        },
+        "src/_pytest/reports.py::_report_kwargs_from_json.deserialize_repr_crash": {
+            "obj_name": "_report_kwargs_from_json.deserialize_repr_crash",
+            "node_type": "function",
+            "path": "src/_pytest/reports.py",
+            "parent": "_report_kwargs_from_json",
+            "qualified_name": "_report_kwargs_from_json.deserialize_repr_crash",
+            "code_start_line": 447,
+            "code_end_line": 448,
+            "code_content": "    def deserialize_repr_crash(repr_crash_dict):\n        return ReprFileLocation(**repr_crash_dict)",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/reports.py::_report_kwargs_from_json.deserialize_repr_crash",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ]
+        },
+        "src/_pytest/reports.py::_report_kwargs_from_json.deserialize_repr_entry": {
+            "obj_name": "_report_kwargs_from_json.deserialize_repr_entry",
+            "node_type": "function",
+            "path": "src/_pytest/reports.py",
+            "parent": "_report_kwargs_from_json",
+            "qualified_name": "_report_kwargs_from_json.deserialize_repr_entry",
+            "code_start_line": 414,
+            "code_end_line": 439,
+            "code_content": "    def deserialize_repr_entry(entry_data):\n        data = entry_data[\"data\"]\n        entry_type = entry_data[\"type\"]\n        if entry_type == \"ReprEntry\":\n            reprfuncargs = None\n            reprfileloc = None\n            reprlocals = None\n            if data[\"reprfuncargs\"]:\n                reprfuncargs = ReprFuncArgs(**data[\"reprfuncargs\"])\n            if data[\"reprfileloc\"]:\n                reprfileloc = ReprFileLocation(**data[\"reprfileloc\"])\n            if data[\"reprlocals\"]:\n                reprlocals = ReprLocals(data[\"reprlocals\"][\"lines\"])\n\n            reprentry = ReprEntry(\n                lines=data[\"lines\"],\n                reprfuncargs=reprfuncargs,\n                reprlocals=reprlocals,\n                filelocrepr=reprfileloc,\n                style=data[\"style\"],\n            )\n        elif entry_type == \"ReprEntryNative\":\n            reprentry = ReprEntryNative(data[\"lines\"])\n        else:\n            _report_unserialization_failure(entry_type, TestReport, reportdict)\n        return reprentry",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/reports.py::_report_kwargs_from_json.deserialize_repr_entry",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ]
+        },
+        "src/_pytest/reports.py::_report_kwargs_from_json.deserialize_repr_traceback": {
+            "obj_name": "_report_kwargs_from_json.deserialize_repr_traceback",
+            "node_type": "function",
+            "path": "src/_pytest/reports.py",
+            "parent": "_report_kwargs_from_json",
+            "qualified_name": "_report_kwargs_from_json.deserialize_repr_traceback",
+            "code_start_line": 441,
+            "code_end_line": 445,
+            "code_content": "    def deserialize_repr_traceback(repr_traceback_dict):\n        repr_traceback_dict[\"reprentries\"] = [\n            deserialize_repr_entry(x) for x in repr_traceback_dict[\"reprentries\"]\n        ]\n        return ReprTraceback(**repr_traceback_dict)",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/reports.py::_report_kwargs_from_json.deserialize_repr_traceback",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ]
+        },
+        "src/_pytest/reports.py::_report_to_json": {
+            "obj_name": "_report_to_json",
+            "node_type": "top-level function",
+            "path": "src/_pytest/reports.py",
+            "parent": null,
+            "qualified_name": "_report_to_json",
+            "code_start_line": 344,
+            "code_end_line": 404,
+            "code_content": "def _report_to_json(report):\n    \"\"\"\n    This was originally the serialize_report() function from xdist (ca03269).\n\n    Returns the contents of this report as a dict of builtin entries, suitable for\n    serialization.\n    \"\"\"\n\n    def serialize_repr_entry(entry):\n        entry_data = {\"type\": type(entry).__name__, \"data\": entry.__dict__.copy()}\n        for key, value in entry_data[\"data\"].items():\n            if hasattr(value, \"__dict__\"):\n                entry_data[\"data\"][key] = value.__dict__.copy()\n        return entry_data\n\n    def serialize_repr_traceback(reprtraceback):\n        result = reprtraceback.__dict__.copy()\n        result[\"reprentries\"] = [\n            serialize_repr_entry(x) for x in reprtraceback.reprentries\n        ]\n        return result\n\n    def serialize_repr_crash(reprcrash):\n        return reprcrash.__dict__.copy()\n\n    def serialize_longrepr(rep):\n        result = {\n            \"reprcrash\": serialize_repr_crash(rep.longrepr.reprcrash),\n            \"reprtraceback\": serialize_repr_traceback(rep.longrepr.reprtraceback),\n            \"sections\": rep.longrepr.sections,\n        }\n        if isinstance(rep.longrepr, ExceptionChainRepr):\n            result[\"chain\"] = []\n            for repr_traceback, repr_crash, description in rep.longrepr.chain:\n                result[\"chain\"].append(\n                    (\n                        serialize_repr_traceback(repr_traceback),\n                        serialize_repr_crash(repr_crash),\n                        description,\n                    )\n                )\n        else:\n            result[\"chain\"] = None\n        return result\n\n    d = report.__dict__.copy()\n    if hasattr(report.longrepr, \"toterminal\"):\n        if hasattr(report.longrepr, \"reprtraceback\") and hasattr(\n            report.longrepr, \"reprcrash\"\n        ):\n            d[\"longrepr\"] = serialize_longrepr(report)\n        else:\n            d[\"longrepr\"] = str(report.longrepr)\n    else:\n        d[\"longrepr\"] = report.longrepr\n    for name in d:\n        if isinstance(d[name], (py.path.local, Path)):\n            d[name] = str(d[name])\n        elif name == \"result\":\n            d[name] = None  # for now\n    return d",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/reports.py::_report_to_json",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ]
+        },
+        "src/_pytest/reports.py::_report_to_json.serialize_longrepr": {
+            "obj_name": "_report_to_json.serialize_longrepr",
+            "node_type": "function",
+            "path": "src/_pytest/reports.py",
+            "parent": "_report_to_json",
+            "qualified_name": "_report_to_json.serialize_longrepr",
+            "code_start_line": 369,
+            "code_end_line": 387,
+            "code_content": "    def serialize_longrepr(rep):\n        result = {\n            \"reprcrash\": serialize_repr_crash(rep.longrepr.reprcrash),\n            \"reprtraceback\": serialize_repr_traceback(rep.longrepr.reprtraceback),\n            \"sections\": rep.longrepr.sections,\n        }\n        if isinstance(rep.longrepr, ExceptionChainRepr):\n            result[\"chain\"] = []\n            for repr_traceback, repr_crash, description in rep.longrepr.chain:\n                result[\"chain\"].append(\n                    (\n                        serialize_repr_traceback(repr_traceback),\n                        serialize_repr_crash(repr_crash),\n                        description,\n                    )\n                )\n        else:\n            result[\"chain\"] = None\n        return result",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/reports.py::_report_to_json.serialize_longrepr",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ]
+        },
+        "src/_pytest/reports.py::_report_to_json.serialize_repr_crash": {
+            "obj_name": "_report_to_json.serialize_repr_crash",
+            "node_type": "function",
+            "path": "src/_pytest/reports.py",
+            "parent": "_report_to_json",
+            "qualified_name": "_report_to_json.serialize_repr_crash",
+            "code_start_line": 366,
+            "code_end_line": 367,
+            "code_content": "    def serialize_repr_crash(reprcrash):\n        return reprcrash.__dict__.copy()",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/reports.py::_report_to_json.serialize_repr_crash",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ]
+        },
+        "src/_pytest/reports.py::_report_to_json.serialize_repr_entry": {
+            "obj_name": "_report_to_json.serialize_repr_entry",
+            "node_type": "function",
+            "path": "src/_pytest/reports.py",
+            "parent": "_report_to_json",
+            "qualified_name": "_report_to_json.serialize_repr_entry",
+            "code_start_line": 352,
+            "code_end_line": 357,
+            "code_content": "    def serialize_repr_entry(entry):\n        entry_data = {\"type\": type(entry).__name__, \"data\": entry.__dict__.copy()}\n        for key, value in entry_data[\"data\"].items():\n            if hasattr(value, \"__dict__\"):\n                entry_data[\"data\"][key] = value.__dict__.copy()\n        return entry_data",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/reports.py::_report_to_json.serialize_repr_entry",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ]
+        },
+        "src/_pytest/reports.py::_report_to_json.serialize_repr_traceback": {
+            "obj_name": "_report_to_json.serialize_repr_traceback",
+            "node_type": "function",
+            "path": "src/_pytest/reports.py",
+            "parent": "_report_to_json",
+            "qualified_name": "_report_to_json.serialize_repr_traceback",
+            "code_start_line": 359,
+            "code_end_line": 364,
+            "code_content": "    def serialize_repr_traceback(reprtraceback):\n        result = reprtraceback.__dict__.copy()\n        result[\"reprentries\"] = [\n            serialize_repr_entry(x) for x in reprtraceback.reprentries\n        ]\n        return result",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/reports.py::_report_to_json.serialize_repr_traceback",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ]
+        }
+    },
+    "pytest-dev__pytest-5809": {
+        "src/_pytest/pastebin.py::create_new_paste": {
+            "obj_name": "create_new_paste",
+            "node_type": "top-level function",
+            "path": "src/_pytest/pastebin.py",
+            "parent": null,
+            "qualified_name": "create_new_paste",
+            "code_start_line": 65,
+            "code_end_line": 87,
+            "code_content": "def create_new_paste(contents):\n    \"\"\"\n    Creates a new paste using bpaste.net service.\n\n    :contents: paste contents as utf-8 encoded bytes\n    :returns: url to the pasted contents\n    \"\"\"\n    import re\n\n    if sys.version_info < (3, 0):\n        from urllib import urlopen, urlencode\n    else:\n        from urllib.request import urlopen\n        from urllib.parse import urlencode\n\n    params = {\"code\": contents, \"lexer\": \"text\", \"expiry\": \"1week\"}\n    url = \"https://bpaste.net\"\n    response = urlopen(url, data=urlencode(params).encode(\"ascii\")).read()\n    m = re.search(r'href=\"/raw/(\\w+)\"', response.decode(\"utf-8\"))\n    if m:\n        return \"%s/show/%s\" % (url, m.group(1))\n    else:\n        return \"bad response: \" + response",
+            "revision": "patched",
+            "selection_evidence": [
+                {
+                    "changed_symbol": "src/_pytest/pastebin.py::create_new_paste",
+                    "reason": "changed_lines",
+                    "confidence": 1.0
+                }
+            ]
+        }
+    }
+}

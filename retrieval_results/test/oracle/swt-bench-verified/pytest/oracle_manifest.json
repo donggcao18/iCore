@@ -1,0 +1,388 @@
+{
+    "pytest-dev__pytest-10051": [
+        {
+            "file": "testing/logging/test_fixture.py",
+            "name": "test_clear_for_call_stage",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pytest-dev__pytest-10081": [
+        {
+            "file": "testing/test_unittest.py",
+            "name": "test_pdb_teardown_skipped_for_classes",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        },
+        {
+            "file": "testing/test_unittest.py",
+            "name": "test_pdb_teardown_skipped_for_functions",
+            "kind": "new",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": false
+        }
+    ],
+    "pytest-dev__pytest-10356": [
+        {
+            "file": "testing/test_mark.py",
+            "name": "test_mark_mro",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pytest-dev__pytest-5262": [
+        {
+            "file": "testing/test_capture.py",
+            "name": "TestFDCapture.test_capfd_sys_stdout_mode",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pytest-dev__pytest-5631": [
+        {
+            "file": "testing/python/integration.py",
+            "name": "TestMockDecoration.test_mock_sentinel_check_against_numpy_like",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pytest-dev__pytest-5787": [
+        {
+            "file": "testing/test_reports.py",
+            "name": "TestReportSerialization.test_chained_exceptions",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        },
+        {
+            "file": "testing/code/test_code.py",
+            "name": "TestReprFuncArgs.test_not_raise_exception_with_mixed_encoding",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/code/test_excinfo.py",
+            "name": "TestFormattedExcinfo.test_repr_tracebackentry_lines2",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/code/test_excinfo.py",
+            "name": "TestFormattedExcinfo.test_repr_tracebackentry_lines_var_kw_args",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/code/test_excinfo.py",
+            "name": "TestFormattedExcinfo.test_repr_excinfo_addouterr",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/code/test_excinfo.py",
+            "name": "TestFormattedExcinfo.test_toterminal_long",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/code/test_excinfo.py",
+            "name": "TestFormattedExcinfo.test_toterminal_long_missing_source",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/code/test_excinfo.py",
+            "name": "TestFormattedExcinfo.test_toterminal_long_incomplete_source",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/code/test_excinfo.py",
+            "name": "TestFormattedExcinfo.test_toterminal_long_filenames",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/code/test_excinfo.py",
+            "name": "TestFormattedExcinfo.test_traceback_repr_style",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/code/test_excinfo.py",
+            "name": "TestFormattedExcinfo.test_exc_chain_repr",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/code/test_excinfo.py",
+            "name": "TestFormattedExcinfo.test_exc_repr_chain_suppression",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/code/test_excinfo.py",
+            "name": "TestFormattedExcinfo.test_exc_chain_repr_cycle",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/test_reports.py",
+            "name": "TestReportSerialization.test_deserialization_failure",
+            "kind": "new",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": false
+        }
+    ],
+    "pytest-dev__pytest-5809": [
+        {
+            "file": "testing/test_pastebin.py",
+            "name": "TestPaste.test_create_new_paste",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": true
+        }
+    ],
+    "pytest-dev__pytest-5840": [
+        {
+            "file": "testing/test_conftest.py",
+            "name": "test_setinitial_conftest_subdirs",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/test_conftest.py",
+            "name": "test_conftestcutdir",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/test_conftest.py",
+            "name": "test_conftestcutdir_inplace_considered",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/test_conftest.py",
+            "name": "test_conftest_badcase",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": true
+        },
+        {
+            "file": "testing/test_conftest.py",
+            "name": "test_conftest_uppercase",
+            "kind": "new",
+            "evidence": [
+                "changed_lines"
+            ],
+            "fail_to_pass": false,
+            "available_at_base": false
+        }
+    ],
+    "pytest-dev__pytest-6197": [
+        {
+            "file": "testing/test_collection.py",
+            "name": "test_does_not_eagerly_collect_packages",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        },
+        {
+            "file": "testing/test_collection.py",
+            "name": "test_does_not_put_src_on_path",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pytest-dev__pytest-6202": [
+        {
+            "file": "testing/test_collection.py",
+            "name": "Test_genitems.test_example_items1",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": true
+        }
+    ],
+    "pytest-dev__pytest-7236": [
+        {
+            "file": "testing/test_unittest.py",
+            "name": "test_pdb_teardown_skipped",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pytest-dev__pytest-7324": [
+        {
+            "file": "testing/test_mark_expression.py",
+            "name": "test_valid_idents",
+            "kind": "modified",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": true
+        }
+    ],
+    "pytest-dev__pytest-7432": [
+        {
+            "file": "testing/test_skipping.py",
+            "name": "TestXFail.test_xfail_run_with_skip_mark",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pytest-dev__pytest-7521": [
+        {
+            "file": "testing/test_capture.py",
+            "name": "TestCaptureFixture.test_cafd_preserves_newlines",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ],
+    "pytest-dev__pytest-7982": [
+        {
+            "file": "testing/test_collection.py",
+            "name": "test_collect_symlink_dir",
+            "kind": "new",
+            "evidence": [
+                "changed_lines",
+                "fail_to_pass_label"
+            ],
+            "fail_to_pass": true,
+            "available_at_base": false
+        }
+    ]
+}

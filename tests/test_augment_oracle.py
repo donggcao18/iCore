@@ -159,6 +159,30 @@ class DependencyTests(unittest.TestCase):
 
 
 class ChangedSymbolsTests(unittest.TestCase):
+    def test_plain_unified_diff_supports_multiple_files_additions_and_deletions(self):
+        patch_text = ("--- a/core.py\n+++ b/core.py\n@@ -1,2 +1,2 @@\n def work():\n-    return 1\n+    return 2\n"
+                      "--- /dev/null\n+++ b/new.py\n@@ -0,0 +1,2 @@\n+def added():\n+    pass\n"
+                      "--- a/old.py\n+++ /dev/null\n@@ -1,2 +0,0 @@\n-def removed():\n-    pass\n")
+        changes = production_changes(patch_text)
+        self.assertEqual([c.path for c in changes], ["core.py", "new.py", "old.py"])
+        self.assertEqual(changes[0].old_lines, {2})
+        self.assertEqual(changes[0].new_lines, {2})
+        self.assertTrue(changes[1].new_file)
+        self.assertTrue(changes[2].deleted_file)
+
+    def test_header_like_changed_lines_are_not_mistaken_for_file_headers(self):
+        patch_text = "--- a/core.txt\n+++ b/core.txt\n@@ -1,2 +1,2 @@\n--- a/example\n+++ b/example\n context\n"
+        changes = production_changes(patch_text)
+        self.assertEqual(len(changes), 1)
+        self.assertEqual(changes[0].old_lines, {1})
+        self.assertEqual(changes[0].new_lines, {1})
+
+    def test_plain_unified_diff_rejects_unsafe_and_mismatched_paths(self):
+        for text in ("--- a/../outside.py\n+++ b/core.py\n",
+                     "diff --git a/core.py b/core.py\n--- a/other.py\n+++ b/core.py\n"):
+            with self.assertRaises(ValueError):
+                production_changes(text)
+
     def test_atomic_save_retries_transient_windows_file_lock(self):
         with tempfile.TemporaryDirectory() as directory:
             destination = Path(directory) / "output.json"

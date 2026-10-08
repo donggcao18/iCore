@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 from datasets import load_dataset
+from scripts.utils.benchmark_data import load_selected_csv
 import glob
 import os
 import pandas as pd
@@ -129,23 +130,27 @@ if __name__ == '__main__':
     parser.add_argument("--swt", action='store_true', default=False)
     parser.add_argument("--tdd", action='store_true', default=False)
     parser.add_argument("--p1", type=float, default=0.1)
+    parser.add_argument("--dataset_csv", help="Read a local benchmark CSV, filtered by SWT_IDS_FILE.")
     args = parser.parse_args()
 
     gen_test_dir = args.gen_test_dir
     output_dir = args.output_dir
     injection_path = args.injection_path
     filter_proj = args.proj
-    with open(os.environ.get('SWT_IDS_FILE', 'swt.txt'), 'r') as f:
-        swt = f.read().strip().split('\n')
-    with open('tdd.txt', 'r') as f:
-        tdd = f.read().strip().split('\n')
-
-    if args.tdd:
+    if args.dataset_csv:
+        swe_bench = load_selected_csv(args.dataset_csv)
+    elif args.tdd:
+        with open('tdd.txt', 'r') as f:
+            tdd = f.read().strip().split('\n')
         swe_bench = load_dataset("princeton-nlp/SWE-bench_Verified")["test"]
         swe_bench = [bug_report for bug_report in swe_bench if bug_report["instance_id"] in tdd]
     elif args.swt:
+        with open(os.environ.get('SWT_IDS_FILE', 'swt.txt'), 'r') as f:
+            swt = f.read().strip().split('\n')
         swe_bench = load_dataset("SWE-bench/SWE-bench_Lite")["test"]
         swe_bench = [bug_report for bug_report in swe_bench if bug_report["instance_id"] in swt]
+    else:
+        parser.error('Select --dataset_csv, --swt, or --tdd')
     flag = False
     results = []
     for bug_report in swe_bench:

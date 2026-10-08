@@ -1,0 +1,202 @@
+{
+    "pytest-dev__pytest-10051": [
+        {
+            "name": "test_clear_for_call_stage",
+            "file": "testing/logging/test_fixture.py",
+            "code_content": "def test_clear_for_call_stage(caplog, logging_during_setup_and_teardown):\n    logger.info(\"a_call_log\")\n    assert [x.message for x in caplog.get_records(\"call\")] == [\"a_call_log\"]\n    assert [x.message for x in caplog.get_records(\"setup\")] == [\"a_setup_log\"]\n    assert set(caplog._item.stash[caplog_records_key]) == {\"setup\", \"call\"}\n\n    caplog.clear()\n\n    assert caplog.get_records(\"call\") == []\n    assert [x.message for x in caplog.get_records(\"setup\")] == [\"a_setup_log\"]\n    assert set(caplog._item.stash[caplog_records_key]) == {\"setup\", \"call\"}\n\n    logging.info(\"a_call_log_after_clear\")\n    assert [x.message for x in caplog.get_records(\"call\")] == [\"a_call_log_after_clear\"]\n    assert [x.message for x in caplog.get_records(\"setup\")] == [\"a_setup_log\"]\n    assert set(caplog._item.stash[caplog_records_key]) == {\"setup\", \"call\"}"
+        }
+    ],
+    "pytest-dev__pytest-10081": [
+        {
+            "name": "test_pdb_teardown_skipped_for_classes",
+            "file": "testing/test_unittest.py",
+            "code_content": "@pytest.mark.parametrize(\"mark\", [\"@unittest.skip\", \"@pytest.mark.skip\"])\ndef test_pdb_teardown_skipped_for_classes(\n    pytester: Pytester, monkeypatch: MonkeyPatch, mark: str\n) -> None:\n    \"\"\"\n    With --pdb, setUp and tearDown should not be called for tests skipped\n    via a decorator on the class (#10060).\n    \"\"\"\n    tracked: List[str] = []\n    monkeypatch.setattr(pytest, \"track_pdb_teardown_skipped\", tracked, raising=False)\n\n    pytester.makepyfile(\n        \"\"\"\n        import unittest\n        import pytest\n\n        {mark}(\"skipped for reasons\")\n        class MyTestCase(unittest.TestCase):\n\n            def setUp(self):\n                pytest.track_pdb_teardown_skipped.append(\"setUp:\" + self.id())\n\n            def tearDown(self):\n                pytest.track_pdb_teardown_skipped.append(\"tearDown:\" + self.id())\n\n            def test_1(self):\n                pass\n\n    \"\"\".format(\n            mark=mark\n        )\n    )\n    result = pytester.runpytest_inprocess(\"--pdb\")\n    result.stdout.fnmatch_lines(\"* 1 skipped in *\")\n    assert tracked == []"
+        },
+        {
+            "name": "test_pdb_teardown_skipped_for_functions",
+            "file": "testing/test_unittest.py",
+            "code_content": "@pytest.mark.parametrize(\"mark\", [\"@unittest.skip\", \"@pytest.mark.skip\"])\ndef test_pdb_teardown_skipped_for_functions(\n    pytester: Pytester, monkeypatch: MonkeyPatch, mark: str\n) -> None:\n    \"\"\"\n    With --pdb, setUp and tearDown should not be called for tests skipped\n    via a decorator (#7215).\n    \"\"\"\n    tracked: List[str] = []\n    monkeypatch.setattr(pytest, \"track_pdb_teardown_skipped\", tracked, raising=False)\n\n    pytester.makepyfile(\n        \"\"\"\n        import unittest\n        import pytest\n\n        class MyTestCase(unittest.TestCase):\n\n            def setUp(self):\n                pytest.track_pdb_teardown_skipped.append(\"setUp:\" + self.id())\n\n            def tearDown(self):\n                pytest.track_pdb_teardown_skipped.append(\"tearDown:\" + self.id())\n\n            {mark}(\"skipped for reasons\")\n            def test_1(self):\n                pass\n\n    \"\"\".format(\n            mark=mark\n        )\n    )\n    result = pytester.runpytest_inprocess(\"--pdb\")\n    result.stdout.fnmatch_lines(\"* 1 skipped in *\")\n    assert tracked == []"
+        }
+    ],
+    "pytest-dev__pytest-10356": [
+        {
+            "name": "test_mark_mro",
+            "file": "testing/test_mark.py",
+            "code_content": "def test_mark_mro() -> None:\n    xfail = pytest.mark.xfail\n\n    @xfail(\"a\")\n    class A:\n        pass\n\n    @xfail(\"b\")\n    class B:\n        pass\n\n    @xfail(\"c\")\n    class C(A, B):\n        pass\n\n    from _pytest.mark.structures import get_unpacked_marks\n\n    all_marks = get_unpacked_marks(C)\n\n    assert all_marks == [xfail(\"c\").mark, xfail(\"a\").mark, xfail(\"b\").mark]\n\n    assert get_unpacked_marks(C, consider_mro=False) == [xfail(\"c\").mark]"
+        }
+    ],
+    "pytest-dev__pytest-5262": [
+        {
+            "name": "TestFDCapture.test_capfd_sys_stdout_mode",
+            "file": "testing/test_capture.py",
+            "code_content": "class TestFDCapture(object):\n    def test_capfd_sys_stdout_mode(self, capfd):\n        assert \"b\" not in sys.stdout.mode"
+        }
+    ],
+    "pytest-dev__pytest-5631": [
+        {
+            "name": "TestMockDecoration.test_mock_sentinel_check_against_numpy_like",
+            "file": "testing/python/integration.py",
+            "code_content": "class TestMockDecoration:\n    def test_mock_sentinel_check_against_numpy_like(self, testdir):\n        \"\"\"Ensure our function that detects mock arguments compares against sentinels using\n        identity to circumvent objects which can't be compared with equality against others\n        in a truth context, like with numpy arrays (#5606).\n        \"\"\"\n        testdir.makepyfile(\n            dummy=\"\"\"\n            class NumpyLike:\n                def __init__(self, value):\n                    self.value = value\n                def __eq__(self, other):\n                    raise ValueError(\"like numpy, cannot compare against others for truth\")\n            FOO = NumpyLike(10)\n        \"\"\"\n        )\n        testdir.makepyfile(\n            \"\"\"\n            from unittest.mock import patch\n            import dummy\n            class Test(object):\n                @patch(\"dummy.FOO\", new=dummy.NumpyLike(50))\n                def test_hello(self):\n                    assert dummy.FOO.value == 50\n        \"\"\"\n        )\n        reprec = testdir.inline_run()\n        reprec.assertoutcome(passed=1)"
+        }
+    ],
+    "pytest-dev__pytest-5787": [
+        {
+            "name": "TestReportSerialization.test_chained_exceptions",
+            "file": "testing/test_reports.py",
+            "code_content": "class TestReportSerialization:\n    @pytest.mark.parametrize(\"report_class\", [TestReport, CollectReport])\n    def test_chained_exceptions(self, testdir, tw_mock, report_class):\n        \"\"\"Check serialization/deserialization of report objects containing chained exceptions (#5786)\"\"\"\n        testdir.makepyfile(\n            \"\"\"\n            def foo():\n                raise ValueError('value error')\n            def test_a():\n                try:\n                    foo()\n                except ValueError as e:\n                    raise RuntimeError('runtime error') from e\n            if {error_during_import}:\n                test_a()\n        \"\"\".format(\n                error_during_import=report_class is CollectReport\n            )\n        )\n\n        reprec = testdir.inline_run()\n        if report_class is TestReport:\n            reports = reprec.getreports(\"pytest_runtest_logreport\")\n            # we have 3 reports: setup/call/teardown\n            assert len(reports) == 3\n            # get the call report\n            report = reports[1]\n        else:\n            assert report_class is CollectReport\n            # two collection reports: session and test file\n            reports = reprec.getreports(\"pytest_collectreport\")\n            assert len(reports) == 2\n            report = reports[1]\n\n        def check_longrepr(longrepr):\n            \"\"\"Check the attributes of the given longrepr object according to the test file.\n\n            We can get away with testing both CollectReport and TestReport with this function because\n            the longrepr objects are very similar.\n            \"\"\"\n            assert isinstance(longrepr, ExceptionChainRepr)\n            assert longrepr.sections == [(\"title\", \"contents\", \"=\")]\n            assert len(longrepr.chain) == 2\n            entry1, entry2 = longrepr.chain\n            tb1, fileloc1, desc1 = entry1\n            tb2, fileloc2, desc2 = entry2\n\n            assert \"ValueError('value error')\" in str(tb1)\n            assert \"RuntimeError('runtime error')\" in str(tb2)\n\n            assert (\n                desc1\n                == \"The above exception was the direct cause of the following exception:\"\n            )\n            assert desc2 is None\n\n        assert report.failed\n        assert len(report.sections) == 0\n        report.longrepr.addsection(\"title\", \"contents\", \"=\")\n        check_longrepr(report.longrepr)\n\n        data = report._to_json()\n        loaded_report = report_class._from_json(data)\n        check_longrepr(loaded_report.longrepr)\n\n        # make sure we don't blow up on ``toterminal`` call; we don't test the actual output because it is very\n        # brittle and hard to maintain, but we can assume it is correct because ``toterminal`` is already tested\n        # elsewhere and we do check the contents of the longrepr object after loading it.\n        loaded_report.longrepr.toterminal(tw_mock)"
+        },
+        {
+            "name": "TestReprFuncArgs.test_not_raise_exception_with_mixed_encoding",
+            "file": "testing/code/test_code.py",
+            "code_content": "class TestReprFuncArgs:\n    def test_not_raise_exception_with_mixed_encoding(self, tw_mock):\n        from _pytest._code.code import ReprFuncArgs\n\n        args = [(\"unicode_string\", \"São Paulo\"), (\"utf8_string\", b\"S\\xc3\\xa3o Paulo\")]\n\n        r = ReprFuncArgs(args)\n        r.toterminal(tw_mock)\n\n        assert (\n            tw_mock.lines[0]\n            == r\"unicode_string = São Paulo, utf8_string = b'S\\xc3\\xa3o Paulo'\"\n        )"
+        },
+        {
+            "name": "TestFormattedExcinfo.test_repr_tracebackentry_lines2",
+            "file": "testing/code/test_excinfo.py",
+            "code_content": "class TestFormattedExcinfo:\n    def test_repr_tracebackentry_lines2(self, importasmod, tw_mock):\n        mod = importasmod(\n            \"\"\"\n            def func1(m, x, y, z):\n                raise ValueError(\"hello\\\\nworld\")\n        \"\"\"\n        )\n        excinfo = pytest.raises(ValueError, mod.func1, \"m\" * 90, 5, 13, \"z\" * 120)\n        excinfo.traceback = excinfo.traceback.filter()\n        entry = excinfo.traceback[-1]\n        p = FormattedExcinfo(funcargs=True)\n        reprfuncargs = p.repr_args(entry)\n        assert reprfuncargs.args[0] == (\"m\", repr(\"m\" * 90))\n        assert reprfuncargs.args[1] == (\"x\", \"5\")\n        assert reprfuncargs.args[2] == (\"y\", \"13\")\n        assert reprfuncargs.args[3] == (\"z\", repr(\"z\" * 120))\n\n        p = FormattedExcinfo(funcargs=True)\n        repr_entry = p.repr_traceback_entry(entry)\n        assert repr_entry.reprfuncargs.args == reprfuncargs.args\n        repr_entry.toterminal(tw_mock)\n        assert tw_mock.lines[0] == \"m = \" + repr(\"m\" * 90)\n        assert tw_mock.lines[1] == \"x = 5, y = 13\"\n        assert tw_mock.lines[2] == \"z = \" + repr(\"z\" * 120)"
+        },
+        {
+            "name": "TestFormattedExcinfo.test_repr_tracebackentry_lines_var_kw_args",
+            "file": "testing/code/test_excinfo.py",
+            "code_content": "class TestFormattedExcinfo:\n    def test_repr_tracebackentry_lines_var_kw_args(self, importasmod, tw_mock):\n        mod = importasmod(\n            \"\"\"\n            def func1(x, *y, **z):\n                raise ValueError(\"hello\\\\nworld\")\n        \"\"\"\n        )\n        excinfo = pytest.raises(ValueError, mod.func1, \"a\", \"b\", c=\"d\")\n        excinfo.traceback = excinfo.traceback.filter()\n        entry = excinfo.traceback[-1]\n        p = FormattedExcinfo(funcargs=True)\n        reprfuncargs = p.repr_args(entry)\n        assert reprfuncargs.args[0] == (\"x\", repr(\"a\"))\n        assert reprfuncargs.args[1] == (\"y\", repr((\"b\",)))\n        assert reprfuncargs.args[2] == (\"z\", repr({\"c\": \"d\"}))\n\n        p = FormattedExcinfo(funcargs=True)\n        repr_entry = p.repr_traceback_entry(entry)\n        assert repr_entry.reprfuncargs.args == reprfuncargs.args\n        repr_entry.toterminal(tw_mock)\n        assert tw_mock.lines[0] == \"x = 'a', y = ('b',), z = {'c': 'd'}\""
+        },
+        {
+            "name": "TestFormattedExcinfo.test_repr_excinfo_addouterr",
+            "file": "testing/code/test_excinfo.py",
+            "code_content": "class TestFormattedExcinfo:\n    def test_repr_excinfo_addouterr(self, importasmod, tw_mock):\n        mod = importasmod(\n            \"\"\"\n            def entry():\n                raise ValueError()\n        \"\"\"\n        )\n        excinfo = pytest.raises(ValueError, mod.entry)\n        repr = excinfo.getrepr()\n        repr.addsection(\"title\", \"content\")\n        repr.toterminal(tw_mock)\n        assert tw_mock.lines[-1] == \"content\"\n        assert tw_mock.lines[-2] == (\"-\", \"title\")"
+        },
+        {
+            "name": "TestFormattedExcinfo.test_toterminal_long",
+            "file": "testing/code/test_excinfo.py",
+            "code_content": "class TestFormattedExcinfo:\n    def test_toterminal_long(self, importasmod, tw_mock):\n        mod = importasmod(\n            \"\"\"\n            def g(x):\n                raise ValueError(x)\n            def f():\n                g(3)\n        \"\"\"\n        )\n        excinfo = pytest.raises(ValueError, mod.f)\n        excinfo.traceback = excinfo.traceback.filter()\n        repr = excinfo.getrepr()\n        repr.toterminal(tw_mock)\n        assert tw_mock.lines[0] == \"\"\n        tw_mock.lines.pop(0)\n        assert tw_mock.lines[0] == \"    def f():\"\n        assert tw_mock.lines[1] == \">       g(3)\"\n        assert tw_mock.lines[2] == \"\"\n        line = tw_mock.get_write_msg(3)\n        assert line.endswith(\"mod.py\")\n        assert tw_mock.lines[4] == (\":5: \")\n        assert tw_mock.lines[5] == (\"_ \", None)\n        assert tw_mock.lines[6] == \"\"\n        assert tw_mock.lines[7] == \"    def g(x):\"\n        assert tw_mock.lines[8] == \">       raise ValueError(x)\"\n        assert tw_mock.lines[9] == \"E       ValueError: 3\"\n        assert tw_mock.lines[10] == \"\"\n        line = tw_mock.get_write_msg(11)\n        assert line.endswith(\"mod.py\")\n        assert tw_mock.lines[12] == \":3: ValueError\""
+        },
+        {
+            "name": "TestFormattedExcinfo.test_toterminal_long_missing_source",
+            "file": "testing/code/test_excinfo.py",
+            "code_content": "class TestFormattedExcinfo:\n    def test_toterminal_long_missing_source(self, importasmod, tmpdir, tw_mock):\n        mod = importasmod(\n            \"\"\"\n            def g(x):\n                raise ValueError(x)\n            def f():\n                g(3)\n        \"\"\"\n        )\n        excinfo = pytest.raises(ValueError, mod.f)\n        tmpdir.join(\"mod.py\").remove()\n        excinfo.traceback = excinfo.traceback.filter()\n        repr = excinfo.getrepr()\n        repr.toterminal(tw_mock)\n        assert tw_mock.lines[0] == \"\"\n        tw_mock.lines.pop(0)\n        assert tw_mock.lines[0] == \">   ???\"\n        assert tw_mock.lines[1] == \"\"\n        line = tw_mock.get_write_msg(2)\n        assert line.endswith(\"mod.py\")\n        assert tw_mock.lines[3] == \":5: \"\n        assert tw_mock.lines[4] == (\"_ \", None)\n        assert tw_mock.lines[5] == \"\"\n        assert tw_mock.lines[6] == \">   ???\"\n        assert tw_mock.lines[7] == \"E   ValueError: 3\"\n        assert tw_mock.lines[8] == \"\"\n        line = tw_mock.get_write_msg(9)\n        assert line.endswith(\"mod.py\")\n        assert tw_mock.lines[10] == \":3: ValueError\""
+        },
+        {
+            "name": "TestFormattedExcinfo.test_toterminal_long_incomplete_source",
+            "file": "testing/code/test_excinfo.py",
+            "code_content": "class TestFormattedExcinfo:\n    def test_toterminal_long_incomplete_source(self, importasmod, tmpdir, tw_mock):\n        mod = importasmod(\n            \"\"\"\n            def g(x):\n                raise ValueError(x)\n            def f():\n                g(3)\n        \"\"\"\n        )\n        excinfo = pytest.raises(ValueError, mod.f)\n        tmpdir.join(\"mod.py\").write(\"asdf\")\n        excinfo.traceback = excinfo.traceback.filter()\n        repr = excinfo.getrepr()\n        repr.toterminal(tw_mock)\n        assert tw_mock.lines[0] == \"\"\n        tw_mock.lines.pop(0)\n        assert tw_mock.lines[0] == \">   ???\"\n        assert tw_mock.lines[1] == \"\"\n        line = tw_mock.get_write_msg(2)\n        assert line.endswith(\"mod.py\")\n        assert tw_mock.lines[3] == \":5: \"\n        assert tw_mock.lines[4] == (\"_ \", None)\n        assert tw_mock.lines[5] == \"\"\n        assert tw_mock.lines[6] == \">   ???\"\n        assert tw_mock.lines[7] == \"E   ValueError: 3\"\n        assert tw_mock.lines[8] == \"\"\n        line = tw_mock.get_write_msg(9)\n        assert line.endswith(\"mod.py\")\n        assert tw_mock.lines[10] == \":3: ValueError\""
+        },
+        {
+            "name": "TestFormattedExcinfo.test_toterminal_long_filenames",
+            "file": "testing/code/test_excinfo.py",
+            "code_content": "class TestFormattedExcinfo:\n    def test_toterminal_long_filenames(self, importasmod, tw_mock):\n        mod = importasmod(\n            \"\"\"\n            def f():\n                raise ValueError()\n        \"\"\"\n        )\n        excinfo = pytest.raises(ValueError, mod.f)\n        path = py.path.local(mod.__file__)\n        old = path.dirpath().chdir()\n        try:\n            repr = excinfo.getrepr(abspath=False)\n            repr.toterminal(tw_mock)\n            x = py.path.local().bestrelpath(path)\n            if len(x) < len(str(path)):\n                msg = tw_mock.get_write_msg(-2)\n                assert msg == \"mod.py\"\n                assert tw_mock.lines[-1] == \":3: ValueError\"\n\n            repr = excinfo.getrepr(abspath=True)\n            repr.toterminal(tw_mock)\n            msg = tw_mock.get_write_msg(-2)\n            assert msg == path\n            line = tw_mock.lines[-1]\n            assert line == \":3: ValueError\"\n        finally:\n            old.chdir()"
+        },
+        {
+            "name": "TestFormattedExcinfo.test_traceback_repr_style",
+            "file": "testing/code/test_excinfo.py",
+            "code_content": "class TestFormattedExcinfo:\n    def test_traceback_repr_style(self, importasmod, tw_mock):\n        mod = importasmod(\n            \"\"\"\n            def f():\n                g()\n            def g():\n                h()\n            def h():\n                i()\n            def i():\n                raise ValueError()\n        \"\"\"\n        )\n        excinfo = pytest.raises(ValueError, mod.f)\n        excinfo.traceback = excinfo.traceback.filter()\n        excinfo.traceback[1].set_repr_style(\"short\")\n        excinfo.traceback[2].set_repr_style(\"short\")\n        r = excinfo.getrepr(style=\"long\")\n        r.toterminal(tw_mock)\n        for line in tw_mock.lines:\n            print(line)\n        assert tw_mock.lines[0] == \"\"\n        assert tw_mock.lines[1] == \"    def f():\"\n        assert tw_mock.lines[2] == \">       g()\"\n        assert tw_mock.lines[3] == \"\"\n        msg = tw_mock.get_write_msg(4)\n        assert msg.endswith(\"mod.py\")\n        assert tw_mock.lines[5] == \":3: \"\n        assert tw_mock.lines[6] == (\"_ \", None)\n        tw_mock.get_write_msg(7)\n        assert tw_mock.lines[8].endswith(\"in g\")\n        assert tw_mock.lines[9] == \"    h()\"\n        tw_mock.get_write_msg(10)\n        assert tw_mock.lines[11].endswith(\"in h\")\n        assert tw_mock.lines[12] == \"    i()\"\n        assert tw_mock.lines[13] == (\"_ \", None)\n        assert tw_mock.lines[14] == \"\"\n        assert tw_mock.lines[15] == \"    def i():\"\n        assert tw_mock.lines[16] == \">       raise ValueError()\"\n        assert tw_mock.lines[17] == \"E       ValueError\"\n        assert tw_mock.lines[18] == \"\"\n        msg = tw_mock.get_write_msg(19)\n        msg.endswith(\"mod.py\")\n        assert tw_mock.lines[20] == \":9: ValueError\""
+        },
+        {
+            "name": "TestFormattedExcinfo.test_exc_chain_repr",
+            "file": "testing/code/test_excinfo.py",
+            "code_content": "class TestFormattedExcinfo:\n    def test_exc_chain_repr(self, importasmod, tw_mock):\n        mod = importasmod(\n            \"\"\"\n            class Err(Exception):\n                pass\n            def f():\n                try:\n                    g()\n                except Exception as e:\n                    raise Err() from e\n                finally:\n                    h()\n            def g():\n                raise ValueError()\n\n            def h():\n                raise AttributeError()\n        \"\"\"\n        )\n        excinfo = pytest.raises(AttributeError, mod.f)\n        r = excinfo.getrepr(style=\"long\")\n        r.toterminal(tw_mock)\n        for line in tw_mock.lines:\n            print(line)\n        assert tw_mock.lines[0] == \"\"\n        assert tw_mock.lines[1] == \"    def f():\"\n        assert tw_mock.lines[2] == \"        try:\"\n        assert tw_mock.lines[3] == \">           g()\"\n        assert tw_mock.lines[4] == \"\"\n        line = tw_mock.get_write_msg(5)\n        assert line.endswith(\"mod.py\")\n        assert tw_mock.lines[6] == \":6: \"\n        assert tw_mock.lines[7] == (\"_ \", None)\n        assert tw_mock.lines[8] == \"\"\n        assert tw_mock.lines[9] == \"    def g():\"\n        assert tw_mock.lines[10] == \">       raise ValueError()\"\n        assert tw_mock.lines[11] == \"E       ValueError\"\n        assert tw_mock.lines[12] == \"\"\n        line = tw_mock.get_write_msg(13)\n        assert line.endswith(\"mod.py\")\n        assert tw_mock.lines[14] == \":12: ValueError\"\n        assert tw_mock.lines[15] == \"\"\n        assert (\n            tw_mock.lines[16]\n            == \"The above exception was the direct cause of the following exception:\"\n        )\n        assert tw_mock.lines[17] == \"\"\n        assert tw_mock.lines[18] == \"    def f():\"\n        assert tw_mock.lines[19] == \"        try:\"\n        assert tw_mock.lines[20] == \"            g()\"\n        assert tw_mock.lines[21] == \"        except Exception as e:\"\n        assert tw_mock.lines[22] == \">           raise Err() from e\"\n        assert tw_mock.lines[23] == \"E           test_exc_chain_repr0.mod.Err\"\n        assert tw_mock.lines[24] == \"\"\n        line = tw_mock.get_write_msg(25)\n        assert line.endswith(\"mod.py\")\n        assert tw_mock.lines[26] == \":8: Err\"\n        assert tw_mock.lines[27] == \"\"\n        assert (\n            tw_mock.lines[28]\n            == \"During handling of the above exception, another exception occurred:\"\n        )\n        assert tw_mock.lines[29] == \"\"\n        assert tw_mock.lines[30] == \"    def f():\"\n        assert tw_mock.lines[31] == \"        try:\"\n        assert tw_mock.lines[32] == \"            g()\"\n        assert tw_mock.lines[33] == \"        except Exception as e:\"\n        assert tw_mock.lines[34] == \"            raise Err() from e\"\n        assert tw_mock.lines[35] == \"        finally:\"\n        assert tw_mock.lines[36] == \">           h()\"\n        assert tw_mock.lines[37] == \"\"\n        line = tw_mock.get_write_msg(38)\n        assert line.endswith(\"mod.py\")\n        assert tw_mock.lines[39] == \":10: \"\n        assert tw_mock.lines[40] == (\"_ \", None)\n        assert tw_mock.lines[41] == \"\"\n        assert tw_mock.lines[42] == \"    def h():\"\n        assert tw_mock.lines[43] == \">       raise AttributeError()\"\n        assert tw_mock.lines[44] == \"E       AttributeError\"\n        assert tw_mock.lines[45] == \"\"\n        line = tw_mock.get_write_msg(46)\n        assert line.endswith(\"mod.py\")\n        assert tw_mock.lines[47] == \":15: AttributeError\""
+        },
+        {
+            "name": "TestFormattedExcinfo.test_exc_repr_chain_suppression",
+            "file": "testing/code/test_excinfo.py",
+            "code_content": "class TestFormattedExcinfo:\n    @pytest.mark.parametrize(\"mode\", [\"from_none\", \"explicit_suppress\"])\n    def test_exc_repr_chain_suppression(self, importasmod, mode, tw_mock):\n        \"\"\"Check that exc repr does not show chained exceptions in Python 3.\n        - When the exception is raised with \"from None\"\n        - Explicitly suppressed with \"chain=False\" to ExceptionInfo.getrepr().\n        \"\"\"\n        raise_suffix = \" from None\" if mode == \"from_none\" else \"\"\n        mod = importasmod(\n            \"\"\"\n            def f():\n                try:\n                    g()\n                except Exception:\n                    raise AttributeError(){raise_suffix}\n            def g():\n                raise ValueError()\n        \"\"\".format(\n                raise_suffix=raise_suffix\n            )\n        )\n        excinfo = pytest.raises(AttributeError, mod.f)\n        r = excinfo.getrepr(style=\"long\", chain=mode != \"explicit_suppress\")\n        r.toterminal(tw_mock)\n        for line in tw_mock.lines:\n            print(line)\n        assert tw_mock.lines[0] == \"\"\n        assert tw_mock.lines[1] == \"    def f():\"\n        assert tw_mock.lines[2] == \"        try:\"\n        assert tw_mock.lines[3] == \"            g()\"\n        assert tw_mock.lines[4] == \"        except Exception:\"\n        assert tw_mock.lines[5] == \">           raise AttributeError(){}\".format(\n            raise_suffix\n        )\n        assert tw_mock.lines[6] == \"E           AttributeError\"\n        assert tw_mock.lines[7] == \"\"\n        line = tw_mock.get_write_msg(8)\n        assert line.endswith(\"mod.py\")\n        assert tw_mock.lines[9] == \":6: AttributeError\"\n        assert len(tw_mock.lines) == 10"
+        },
+        {
+            "name": "TestFormattedExcinfo.test_exc_chain_repr_cycle",
+            "file": "testing/code/test_excinfo.py",
+            "code_content": "class TestFormattedExcinfo:\n    def test_exc_chain_repr_cycle(self, importasmod, tw_mock):\n        mod = importasmod(\n            \"\"\"\n            class Err(Exception):\n                pass\n            def fail():\n                return 0 / 0\n            def reraise():\n                try:\n                    fail()\n                except ZeroDivisionError as e:\n                    raise Err() from e\n            def unreraise():\n                try:\n                    reraise()\n                except Err as e:\n                    raise e.__cause__\n        \"\"\"\n        )\n        excinfo = pytest.raises(ZeroDivisionError, mod.unreraise)\n        r = excinfo.getrepr(style=\"short\")\n        r.toterminal(tw_mock)\n        out = \"\\n\".join(line for line in tw_mock.lines if isinstance(line, str))\n        expected_out = textwrap.dedent(\n            \"\"\"\\\n            :13: in unreraise\n                reraise()\n            :10: in reraise\n                raise Err() from e\n            E   test_exc_chain_repr_cycle0.mod.Err\n\n            During handling of the above exception, another exception occurred:\n            :15: in unreraise\n                raise e.__cause__\n            :8: in reraise\n                fail()\n            :5: in fail\n                return 0 / 0\n            E   ZeroDivisionError: division by zero\"\"\"\n        )\n        assert out == expected_out"
+        },
+        {
+            "name": "TestReportSerialization.test_deserialization_failure",
+            "file": "testing/test_reports.py",
+            "code_content": "class TestReportSerialization:\n    def test_deserialization_failure(self, testdir):\n        \"\"\"Check handling of failure during deserialization of report types.\"\"\"\n        testdir.makepyfile(\n            \"\"\"\n            def test_a():\n                assert False\n        \"\"\"\n        )\n        reprec = testdir.inline_run()\n        reports = reprec.getreports(\"pytest_runtest_logreport\")\n        assert len(reports) == 3\n        test_a_call = reports[1]\n        data = test_a_call._to_json()\n        entry = data[\"longrepr\"][\"reprtraceback\"][\"reprentries\"][0]\n        assert entry[\"type\"] == \"ReprEntry\"\n\n        entry[\"type\"] = \"Unknown\"\n        with pytest.raises(\n            RuntimeError, match=\"INTERNALERROR: Unknown entry type returned: Unknown\"\n        ):\n            TestReport._from_json(data)"
+        }
+    ],
+    "pytest-dev__pytest-5809": [
+        {
+            "name": "TestPaste.test_create_new_paste",
+            "file": "testing/test_pastebin.py",
+            "code_content": "class TestPaste(object):\n    def test_create_new_paste(self, pastebin, mocked_urlopen):\n        result = pastebin.create_new_paste(b\"full-paste-contents\")\n        assert result == \"https://bpaste.net/show/3c0c6750bd\"\n        assert len(mocked_urlopen) == 1\n        url, data = mocked_urlopen[0]\n        assert type(data) is bytes\n        lexer = \"text\"\n        assert url == \"https://bpaste.net\"\n        assert \"lexer=%s\" % lexer in data.decode()\n        assert \"code=full-paste-contents\" in data.decode()\n        assert \"expiry=1week\" in data.decode()"
+        }
+    ],
+    "pytest-dev__pytest-5840": [
+        {
+            "name": "test_setinitial_conftest_subdirs",
+            "file": "testing/test_conftest.py",
+            "code_content": "@pytest.mark.parametrize(\"name\", \"test tests whatever .dotdir\".split())\ndef test_setinitial_conftest_subdirs(testdir, name):\n    sub = testdir.mkdir(name)\n    subconftest = sub.ensure(\"conftest.py\")\n    conftest = PytestPluginManager()\n    conftest_setinitial(conftest, [sub.dirpath()], confcutdir=testdir.tmpdir)\n    key = Path(str(subconftest)).resolve()\n    if name not in (\"whatever\", \".dotdir\"):\n        assert key in conftest._conftestpath2mod\n        assert len(conftest._conftestpath2mod) == 1\n    else:\n        assert key not in conftest._conftestpath2mod\n        assert len(conftest._conftestpath2mod) == 0"
+        },
+        {
+            "name": "test_conftestcutdir",
+            "file": "testing/test_conftest.py",
+            "code_content": "def test_conftestcutdir(testdir):\n    conf = testdir.makeconftest(\"\")\n    p = testdir.mkdir(\"x\")\n    conftest = PytestPluginManager()\n    conftest_setinitial(conftest, [testdir.tmpdir], confcutdir=p)\n    values = conftest._getconftestmodules(p)\n    assert len(values) == 0\n    values = conftest._getconftestmodules(conf.dirpath())\n    assert len(values) == 0\n    assert conf not in conftest._conftestpath2mod\n    # but we can still import a conftest directly\n    conftest._importconftest(conf)\n    values = conftest._getconftestmodules(conf.dirpath())\n    assert values[0].__file__.startswith(str(conf))\n    # and all sub paths get updated properly\n    values = conftest._getconftestmodules(p)\n    assert len(values) == 1\n    assert values[0].__file__.startswith(str(conf))"
+        },
+        {
+            "name": "test_conftestcutdir_inplace_considered",
+            "file": "testing/test_conftest.py",
+            "code_content": "def test_conftestcutdir_inplace_considered(testdir):\n    conf = testdir.makeconftest(\"\")\n    conftest = PytestPluginManager()\n    conftest_setinitial(conftest, [conf.dirpath()], confcutdir=conf.dirpath())\n    values = conftest._getconftestmodules(conf.dirpath())\n    assert len(values) == 1\n    assert values[0].__file__.startswith(str(conf))"
+        },
+        {
+            "name": "test_conftest_badcase",
+            "file": "testing/test_conftest.py",
+            "code_content": "@pytest.mark.skipif(\n    os.path.normcase(\"x\") != os.path.normcase(\"X\"),\n    reason=\"only relevant for case insensitive file systems\",\n)\ndef test_conftest_badcase(testdir):\n    \"\"\"Check conftest.py loading when directory casing is wrong (#5792).\"\"\"\n    testdir.tmpdir.mkdir(\"JenkinsRoot\").mkdir(\"test\")\n    source = {\"setup.py\": \"\", \"test/__init__.py\": \"\", \"test/conftest.py\": \"\"}\n    testdir.makepyfile(**{\"JenkinsRoot/%s\" % k: v for k, v in source.items()})\n\n    testdir.tmpdir.join(\"jenkinsroot/test\").chdir()\n    result = testdir.runpytest()\n    assert result.ret == ExitCode.NO_TESTS_COLLECTED"
+        },
+        {
+            "name": "test_conftest_uppercase",
+            "file": "testing/test_conftest.py",
+            "code_content": "def test_conftest_uppercase(testdir):\n    \"\"\"Check conftest.py whose qualified name contains uppercase characters (#5819)\"\"\"\n    source = {\"__init__.py\": \"\", \"Foo/conftest.py\": \"\", \"Foo/__init__.py\": \"\"}\n    testdir.makepyfile(**source)\n\n    testdir.tmpdir.chdir()\n    result = testdir.runpytest()\n    assert result.ret == ExitCode.NO_TESTS_COLLECTED"
+        }
+    ],
+    "pytest-dev__pytest-6197": [
+        {
+            "name": "test_does_not_eagerly_collect_packages",
+            "file": "testing/test_collection.py",
+            "code_content": "def test_does_not_eagerly_collect_packages(testdir):\n    testdir.makepyfile(\"def test(): pass\")\n    pydir = testdir.mkpydir(\"foopkg\")\n    pydir.join(\"__init__.py\").write(\"assert False\")\n    result = testdir.runpytest()\n    assert result.ret == ExitCode.OK"
+        },
+        {
+            "name": "test_does_not_put_src_on_path",
+            "file": "testing/test_collection.py",
+            "code_content": "def test_does_not_put_src_on_path(testdir):\n    # `src` is not on sys.path so it should not be importable\n    testdir.tmpdir.join(\"src/nope/__init__.py\").ensure()\n    testdir.makepyfile(\n        \"import pytest\\n\"\n        \"def test():\\n\"\n        \"    with pytest.raises(ImportError):\\n\"\n        \"        import nope\\n\"\n    )\n    result = testdir.runpytest()\n    assert result.ret == ExitCode.OK"
+        }
+    ],
+    "pytest-dev__pytest-6202": [
+        {
+            "name": "Test_genitems.test_example_items1",
+            "file": "testing/test_collection.py",
+            "code_content": "class Test_genitems:\n    def test_example_items1(self, testdir):\n        p = testdir.makepyfile(\n            \"\"\"\n            import pytest\n\n            def testone():\n                pass\n\n            class TestX(object):\n                def testmethod_one(self):\n                    pass\n\n            class TestY(TestX):\n                @pytest.mark.parametrize(\"arg0\", [\".[\"])\n                def testmethod_two(self, arg0):\n                    pass\n        \"\"\"\n        )\n        items, reprec = testdir.inline_genitems(p)\n        assert len(items) == 4\n        assert items[0].name == \"testone\"\n        assert items[1].name == \"testmethod_one\"\n        assert items[2].name == \"testmethod_one\"\n        assert items[3].name == \"testmethod_two[.[]\"\n\n        # let's also test getmodpath here\n        assert items[0].getmodpath() == \"testone\"\n        assert items[1].getmodpath() == \"TestX.testmethod_one\"\n        assert items[2].getmodpath() == \"TestY.testmethod_one\"\n        # PR #6202: Fix incorrect result of getmodpath method. (Resolves issue #6189)\n        assert items[3].getmodpath() == \"TestY.testmethod_two[.[]\"\n\n        s = items[0].getmodpath(stopatmodule=False)\n        assert s.endswith(\"test_example_items1.testone\")\n        print(s)"
+        }
+    ],
+    "pytest-dev__pytest-7236": [
+        {
+            "name": "test_pdb_teardown_skipped",
+            "file": "testing/test_unittest.py",
+            "code_content": "@pytest.mark.parametrize(\"mark\", [\"@unittest.skip\", \"@pytest.mark.skip\"])\ndef test_pdb_teardown_skipped(testdir, monkeypatch, mark):\n    \"\"\"\n    With --pdb, setUp and tearDown should not be called for skipped tests.\n    \"\"\"\n    tracked = []\n    monkeypatch.setattr(pytest, \"test_pdb_teardown_skipped\", tracked, raising=False)\n\n    testdir.makepyfile(\n        \"\"\"\n        import unittest\n        import pytest\n\n        class MyTestCase(unittest.TestCase):\n\n            def setUp(self):\n                pytest.test_pdb_teardown_skipped.append(\"setUp:\" + self.id())\n\n            def tearDown(self):\n                pytest.test_pdb_teardown_skipped.append(\"tearDown:\" + self.id())\n\n            {mark}(\"skipped for reasons\")\n            def test_1(self):\n                pass\n\n    \"\"\".format(\n            mark=mark\n        )\n    )\n    result = testdir.runpytest_inprocess(\"--pdb\")\n    result.stdout.fnmatch_lines(\"* 1 skipped in *\")\n    assert tracked == []"
+        }
+    ],
+    "pytest-dev__pytest-7324": [
+        {
+            "name": "test_valid_idents",
+            "file": "testing/test_mark_expression.py",
+            "code_content": "@pytest.mark.parametrize(\n    \"ident\",\n    (\n        \".\",\n        \"...\",\n        \":::\",\n        \"a:::c\",\n        \"a+-b\",\n        \"אבגד\",\n        \"aaאבגדcc\",\n        \"a[bcd]\",\n        \"1234\",\n        \"1234abcd\",\n        \"1234and\",\n        \"notandor\",\n        \"not_and_or\",\n        \"not[and]or\",\n        \"1234+5678\",\n        \"123.232\",\n        \"True\",\n        \"False\",\n        \"None\",\n        \"if\",\n        \"else\",\n        \"while\",\n    ),\n)\ndef test_valid_idents(ident: str) -> None:\n    assert evaluate(ident, {ident: True}.__getitem__)"
+        }
+    ],
+    "pytest-dev__pytest-7432": [
+        {
+            "name": "TestXFail.test_xfail_run_with_skip_mark",
+            "file": "testing/test_skipping.py",
+            "code_content": "class TestXFail:\n    @pytest.mark.parametrize(\n        \"test_input,expected\",\n        [\n            (\n                [\"-rs\"],\n                [\"SKIPPED [1] test_sample.py:2: unconditional skip\", \"*1 skipped*\"],\n            ),\n            (\n                [\"-rs\", \"--runxfail\"],\n                [\"SKIPPED [1] test_sample.py:2: unconditional skip\", \"*1 skipped*\"],\n            ),\n        ],\n    )\n    def test_xfail_run_with_skip_mark(self, testdir, test_input, expected):\n        testdir.makepyfile(\n            test_sample=\"\"\"\n            import pytest\n            @pytest.mark.skip\n            def test_skip_location() -> None:\n                assert 0\n        \"\"\"\n        )\n        result = testdir.runpytest(*test_input)\n        result.stdout.fnmatch_lines(expected)"
+        }
+    ],
+    "pytest-dev__pytest-7521": [
+        {
+            "name": "TestCaptureFixture.test_cafd_preserves_newlines",
+            "file": "testing/test_capture.py",
+            "code_content": "class TestCaptureFixture:\n    @pytest.mark.parametrize(\"nl\", (\"\\n\", \"\\r\\n\", \"\\r\"))\n    def test_cafd_preserves_newlines(self, capfd, nl):\n        print(\"test\", end=nl)\n        out, err = capfd.readouterr()\n        assert out.endswith(nl)"
+        }
+    ],
+    "pytest-dev__pytest-7982": [
+        {
+            "name": "test_collect_symlink_dir",
+            "file": "testing/test_collection.py",
+            "code_content": "def test_collect_symlink_dir(pytester: Pytester) -> None:\n    \"\"\"A symlinked directory is collected.\"\"\"\n    dir = pytester.mkdir(\"dir\")\n    dir.joinpath(\"test_it.py\").write_text(\"def test_it(): pass\", \"utf-8\")\n    pytester.path.joinpath(\"symlink_dir\").symlink_to(dir)\n    result = pytester.runpytest()\n    result.assert_outcomes(passed=2)"
+        }
+    ]
+}

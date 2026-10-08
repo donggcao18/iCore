@@ -12,6 +12,11 @@ python -m scripts.code_retrieval.extract_oracle --dataset lite --repo pytest-dev
 
 For normalized SWT Verified rows, use `--dataset swt-verified` after running
 `python -m scripts.export_swt_verified`.
+Both Git-style and plain unified production diffs are supported, including
+Verified diffs that omit their final newline. Patch source/context whitespace
+is preserved when applying them to temporary historical snapshots. Git's
+`--recount` handles Verified diffs whose hunk counts include trimmed trailing
+context lines; no added or deleted code is changed.
 
 Outputs are stored in `retrieval_results/code/oracle/<dataset>/<repo>/`, where
 dataset is `lite` or `swt-bench-verified` and repo is the short name:

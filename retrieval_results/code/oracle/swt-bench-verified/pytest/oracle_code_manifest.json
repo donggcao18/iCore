@@ -1,0 +1,886 @@
+{
+    "pytest-dev__pytest-10051": {
+        "base_commit": "aa55975c7d3f6c9f6d7f68accc41bb7cadf0eb9a",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/logging.py::<module>",
+                "file": "src/_pytest/logging.py",
+                "name": "<module>",
+                "kind": "module",
+                "change": "modified",
+                "old_span": [
+                    1,
+                    826
+                ],
+                "new_span": [
+                    1,
+                    829
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/logging.py::<module>",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/logging.py::<module>"
+                ],
+                "selected_patched": [
+                    "src/_pytest/logging.py::<module>"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            },
+            {
+                "id": "src/_pytest/logging.py::LogCaptureFixture.clear",
+                "file": "src/_pytest/logging.py",
+                "name": "LogCaptureFixture.clear",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    441,
+                    443
+                ],
+                "new_span": [
+                    444,
+                    446
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/logging.py::LogCaptureFixture.clear",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/logging.py::LogCaptureFixture.clear"
+                ],
+                "selected_patched": [
+                    "src/_pytest/logging.py::LogCaptureFixture.clear"
+                ],
+                "supporting_base": [
+                    "src/_pytest/logging.py::<module>"
+                ],
+                "supporting_patched": [
+                    "src/_pytest/logging.py::<module>"
+                ]
+            },
+            {
+                "id": "src/_pytest/logging.py::LogCaptureHandler",
+                "file": "src/_pytest/logging.py",
+                "name": "LogCaptureHandler",
+                "kind": "class",
+                "change": "modified",
+                "old_span": [
+                    331,
+                    354
+                ],
+                "new_span": [
+                    330,
+                    357
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/logging.py::LogCaptureHandler",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/logging.py::LogCaptureHandler"
+                ],
+                "selected_patched": [
+                    "src/_pytest/logging.py::LogCaptureHandler"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            },
+            {
+                "id": "src/_pytest/logging.py::LogCaptureHandler.clear",
+                "file": "src/_pytest/logging.py",
+                "name": "LogCaptureHandler.clear",
+                "kind": "function",
+                "change": "added",
+                "old_span": null,
+                "new_span": [
+                    347,
+                    349
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/logging.py::LogCaptureHandler",
+                        "reason": "class_fallback",
+                        "confidence": 0.35
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/logging.py::LogCaptureHandler"
+                ],
+                "selected_patched": [
+                    "src/_pytest/logging.py::LogCaptureHandler.clear"
+                ],
+                "supporting_base": [],
+                "supporting_patched": [
+                    "src/_pytest/logging.py::LogCaptureHandler"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 4,
+            "base_objects": 3,
+            "patched_objects": 4
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [
+                {
+                    "class_symbol": "src/_pytest/logging.py::LogCaptureFixture",
+                    "document": "src/_pytest/logging.py::<module>",
+                    "context_for": [
+                        "src/_pytest/logging.py::LogCaptureFixture.clear"
+                    ],
+                    "content_kind": "file"
+                }
+            ],
+            "patched": [
+                {
+                    "class_symbol": "src/_pytest/logging.py::LogCaptureHandler",
+                    "document": "src/_pytest/logging.py::LogCaptureHandler",
+                    "context_for": [
+                        "src/_pytest/logging.py::LogCaptureHandler.clear"
+                    ],
+                    "content_kind": "full_class"
+                },
+                {
+                    "class_symbol": "src/_pytest/logging.py::LogCaptureFixture",
+                    "document": "src/_pytest/logging.py::<module>",
+                    "context_for": [
+                        "src/_pytest/logging.py::LogCaptureFixture.clear"
+                    ],
+                    "content_kind": "file"
+                }
+            ]
+        },
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-10081": {
+        "base_commit": "da9a2b584eb7a6c7e924b2621ed0ddaeca0a7bea",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/unittest.py::TestCaseFunction.runtest",
+                "file": "src/_pytest/unittest.py",
+                "name": "TestCaseFunction.runtest",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    301,
+                    329
+                ],
+                "new_span": [
+                    301,
+                    332
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/unittest.py::TestCaseFunction.runtest",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/unittest.py::TestCaseFunction.runtest"
+                ],
+                "selected_patched": [
+                    "src/_pytest/unittest.py::TestCaseFunction.runtest"
+                ],
+                "supporting_base": [
+                    "src/_pytest/unittest.py::TestCaseFunction"
+                ],
+                "supporting_patched": [
+                    "src/_pytest/unittest.py::TestCaseFunction"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 2,
+            "patched_objects": 2
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [
+                {
+                    "class_symbol": "src/_pytest/unittest.py::TestCaseFunction",
+                    "document": "src/_pytest/unittest.py::TestCaseFunction",
+                    "context_for": [
+                        "src/_pytest/unittest.py::TestCaseFunction.runtest"
+                    ],
+                    "content_kind": "full_class"
+                }
+            ],
+            "patched": [
+                {
+                    "class_symbol": "src/_pytest/unittest.py::TestCaseFunction",
+                    "document": "src/_pytest/unittest.py::TestCaseFunction",
+                    "context_for": [
+                        "src/_pytest/unittest.py::TestCaseFunction.runtest"
+                    ],
+                    "content_kind": "full_class"
+                }
+            ]
+        },
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-10356": {
+        "base_commit": "3c1534944cbd34e8a41bc9e76818018fadefc9a1",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/mark/structures.py::get_unpacked_marks",
+                "file": "src/_pytest/mark/structures.py",
+                "name": "get_unpacked_marks",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    358,
+                    363
+                ],
+                "new_span": [
+                    358,
+                    386
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/mark/structures.py::get_unpacked_marks",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/mark/structures.py::get_unpacked_marks"
+                ],
+                "selected_patched": [
+                    "src/_pytest/mark/structures.py::get_unpacked_marks"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            },
+            {
+                "id": "src/_pytest/mark/structures.py::store_mark",
+                "file": "src/_pytest/mark/structures.py",
+                "name": "store_mark",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    383,
+                    391
+                ],
+                "new_span": [
+                    406,
+                    414
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/mark/structures.py::store_mark",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/mark/structures.py::store_mark"
+                ],
+                "selected_patched": [
+                    "src/_pytest/mark/structures.py::store_mark"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            }
+        ],
+        "counts": {
+            "changed_symbols": 2,
+            "base_objects": 2,
+            "patched_objects": 2
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-5262": {
+        "base_commit": "58e6a09db49f34886ff13f3b7520dd0bcd7063cd",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/capture.py::EncodedFile",
+                "file": "src/_pytest/capture.py",
+                "name": "EncodedFile",
+                "kind": "class",
+                "change": "modified",
+                "old_span": [
+                    425,
+                    451
+                ],
+                "new_span": [
+                    425,
+                    455
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/capture.py::EncodedFile",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/capture.py::EncodedFile"
+                ],
+                "selected_patched": [
+                    "src/_pytest/capture.py::EncodedFile"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            },
+            {
+                "id": "src/_pytest/capture.py::EncodedFile.mode",
+                "file": "src/_pytest/capture.py",
+                "name": "EncodedFile.mode",
+                "kind": "function",
+                "change": "added",
+                "old_span": null,
+                "new_span": [
+                    450,
+                    452
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/capture.py::EncodedFile",
+                        "reason": "class_fallback",
+                        "confidence": 0.35
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/capture.py::EncodedFile"
+                ],
+                "selected_patched": [
+                    "src/_pytest/capture.py::EncodedFile.mode"
+                ],
+                "supporting_base": [],
+                "supporting_patched": [
+                    "src/_pytest/capture.py::EncodedFile"
+                ]
+            }
+        ],
+        "counts": {
+            "changed_symbols": 2,
+            "base_objects": 1,
+            "patched_objects": 2
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": [
+                {
+                    "class_symbol": "src/_pytest/capture.py::EncodedFile",
+                    "document": "src/_pytest/capture.py::EncodedFile",
+                    "context_for": [
+                        "src/_pytest/capture.py::EncodedFile.mode"
+                    ],
+                    "content_kind": "full_class"
+                }
+            ]
+        },
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-5631": {
+        "base_commit": "cb828ebe70b4fa35cd5f9a7ee024272237eab351",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/compat.py::num_mock_patch_args",
+                "file": "src/_pytest/compat.py",
+                "name": "num_mock_patch_args",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    62,
+                    73
+                ],
+                "new_span": [
+                    62,
+                    78
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/compat.py::num_mock_patch_args",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/compat.py::num_mock_patch_args"
+                ],
+                "selected_patched": [
+                    "src/_pytest/compat.py::num_mock_patch_args"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-5787": {
+        "base_commit": "955e54221008aba577ecbaefa15679f6777d3bf8",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/reports.py::<module>",
+                "file": "src/_pytest/reports.py",
+                "name": "<module>",
+                "kind": "module",
+                "change": "modified",
+                "old_span": [
+                    1,
+                    426
+                ],
+                "new_span": [
+                    1,
+                    479
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/reports.py::<module>",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/reports.py::<module>"
+                ],
+                "selected_patched": [
+                    "src/_pytest/reports.py::<module>"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            },
+            {
+                "id": "src/_pytest/reports.py::BaseReport._from_json",
+                "file": "src/_pytest/reports.py",
+                "name": "BaseReport._from_json",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    204,
+                    262
+                ],
+                "new_span": [
+                    166,
+                    177
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/reports.py::BaseReport._from_json",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/reports.py::BaseReport._from_json"
+                ],
+                "selected_patched": [
+                    "src/_pytest/reports.py::BaseReport._from_json"
+                ],
+                "supporting_base": [
+                    "src/_pytest/reports.py::<module>"
+                ],
+                "supporting_patched": [
+                    "src/_pytest/reports.py::<module>"
+                ]
+            },
+            {
+                "id": "src/_pytest/reports.py::BaseReport._to_json",
+                "file": "src/_pytest/reports.py",
+                "name": "BaseReport._to_json",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    154,
+                    202
+                ],
+                "new_span": [
+                    155,
+                    164
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/reports.py::BaseReport._to_json",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/reports.py::BaseReport._to_json"
+                ],
+                "selected_patched": [
+                    "src/_pytest/reports.py::BaseReport._to_json"
+                ],
+                "supporting_base": [
+                    "src/_pytest/reports.py::<module>"
+                ],
+                "supporting_patched": [
+                    "src/_pytest/reports.py::<module>"
+                ]
+            },
+            {
+                "id": "src/_pytest/reports.py::BaseReport._to_json.disassembled_report",
+                "file": "src/_pytest/reports.py",
+                "name": "BaseReport._to_json.disassembled_report",
+                "kind": "function",
+                "change": "deleted",
+                "old_span": [
+                    164,
+                    185
+                ],
+                "new_span": null,
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/reports.py::BaseReport._to_json.disassembled_report",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/reports.py::BaseReport._to_json.disassembled_report"
+                ],
+                "selected_patched": [],
+                "supporting_base": [],
+                "supporting_patched": []
+            },
+            {
+                "id": "src/_pytest/reports.py::_report_kwargs_from_json",
+                "file": "src/_pytest/reports.py",
+                "name": "_report_kwargs_from_json",
+                "kind": "function",
+                "change": "added",
+                "old_span": null,
+                "new_span": [
+                    407,
+                    478
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/reports.py::BaseReport._from_json",
+                        "reason": "existing_caller",
+                        "confidence": 0.8
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/reports.py::BaseReport._from_json"
+                ],
+                "selected_patched": [
+                    "src/_pytest/reports.py::_report_kwargs_from_json"
+                ],
+                "supporting_base": [
+                    "src/_pytest/reports.py::<module>"
+                ],
+                "supporting_patched": []
+            },
+            {
+                "id": "src/_pytest/reports.py::_report_kwargs_from_json.deserialize_repr_crash",
+                "file": "src/_pytest/reports.py",
+                "name": "_report_kwargs_from_json.deserialize_repr_crash",
+                "kind": "function",
+                "change": "added",
+                "old_span": null,
+                "new_span": [
+                    447,
+                    448
+                ],
+                "base_targets": [],
+                "unresolved_reason": "No corresponding base symbol or existing caller",
+                "selected_base": [],
+                "selected_patched": [
+                    "src/_pytest/reports.py::_report_kwargs_from_json.deserialize_repr_crash"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            },
+            {
+                "id": "src/_pytest/reports.py::_report_kwargs_from_json.deserialize_repr_entry",
+                "file": "src/_pytest/reports.py",
+                "name": "_report_kwargs_from_json.deserialize_repr_entry",
+                "kind": "function",
+                "change": "added",
+                "old_span": null,
+                "new_span": [
+                    414,
+                    439
+                ],
+                "base_targets": [],
+                "unresolved_reason": "No corresponding base symbol or existing caller",
+                "selected_base": [],
+                "selected_patched": [
+                    "src/_pytest/reports.py::_report_kwargs_from_json.deserialize_repr_entry"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            },
+            {
+                "id": "src/_pytest/reports.py::_report_kwargs_from_json.deserialize_repr_traceback",
+                "file": "src/_pytest/reports.py",
+                "name": "_report_kwargs_from_json.deserialize_repr_traceback",
+                "kind": "function",
+                "change": "added",
+                "old_span": null,
+                "new_span": [
+                    441,
+                    445
+                ],
+                "base_targets": [],
+                "unresolved_reason": "No corresponding base symbol or existing caller",
+                "selected_base": [],
+                "selected_patched": [
+                    "src/_pytest/reports.py::_report_kwargs_from_json.deserialize_repr_traceback"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            },
+            {
+                "id": "src/_pytest/reports.py::_report_to_json",
+                "file": "src/_pytest/reports.py",
+                "name": "_report_to_json",
+                "kind": "function",
+                "change": "added",
+                "old_span": null,
+                "new_span": [
+                    344,
+                    404
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/reports.py::BaseReport._to_json",
+                        "reason": "existing_caller",
+                        "confidence": 0.8
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/reports.py::BaseReport._to_json"
+                ],
+                "selected_patched": [
+                    "src/_pytest/reports.py::_report_to_json"
+                ],
+                "supporting_base": [
+                    "src/_pytest/reports.py::<module>"
+                ],
+                "supporting_patched": []
+            },
+            {
+                "id": "src/_pytest/reports.py::_report_to_json.serialize_longrepr",
+                "file": "src/_pytest/reports.py",
+                "name": "_report_to_json.serialize_longrepr",
+                "kind": "function",
+                "change": "added",
+                "old_span": null,
+                "new_span": [
+                    369,
+                    387
+                ],
+                "base_targets": [],
+                "unresolved_reason": "No corresponding base symbol or existing caller",
+                "selected_base": [],
+                "selected_patched": [
+                    "src/_pytest/reports.py::_report_to_json.serialize_longrepr"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            },
+            {
+                "id": "src/_pytest/reports.py::_report_to_json.serialize_repr_crash",
+                "file": "src/_pytest/reports.py",
+                "name": "_report_to_json.serialize_repr_crash",
+                "kind": "function",
+                "change": "added",
+                "old_span": null,
+                "new_span": [
+                    366,
+                    367
+                ],
+                "base_targets": [],
+                "unresolved_reason": "No corresponding base symbol or existing caller",
+                "selected_base": [],
+                "selected_patched": [
+                    "src/_pytest/reports.py::_report_to_json.serialize_repr_crash"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            },
+            {
+                "id": "src/_pytest/reports.py::_report_to_json.serialize_repr_entry",
+                "file": "src/_pytest/reports.py",
+                "name": "_report_to_json.serialize_repr_entry",
+                "kind": "function",
+                "change": "added",
+                "old_span": null,
+                "new_span": [
+                    352,
+                    357
+                ],
+                "base_targets": [],
+                "unresolved_reason": "No corresponding base symbol or existing caller",
+                "selected_base": [],
+                "selected_patched": [
+                    "src/_pytest/reports.py::_report_to_json.serialize_repr_entry"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            },
+            {
+                "id": "src/_pytest/reports.py::_report_to_json.serialize_repr_traceback",
+                "file": "src/_pytest/reports.py",
+                "name": "_report_to_json.serialize_repr_traceback",
+                "kind": "function",
+                "change": "added",
+                "old_span": null,
+                "new_span": [
+                    359,
+                    364
+                ],
+                "base_targets": [],
+                "unresolved_reason": "No corresponding base symbol or existing caller",
+                "selected_base": [],
+                "selected_patched": [
+                    "src/_pytest/reports.py::_report_to_json.serialize_repr_traceback"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            }
+        ],
+        "counts": {
+            "changed_symbols": 13,
+            "base_objects": 4,
+            "patched_objects": 12
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [
+                {
+                    "class_symbol": "src/_pytest/reports.py::BaseReport",
+                    "document": "src/_pytest/reports.py::<module>",
+                    "context_for": [
+                        "src/_pytest/reports.py::BaseReport._from_json",
+                        "src/_pytest/reports.py::BaseReport._to_json"
+                    ],
+                    "content_kind": "file"
+                }
+            ],
+            "patched": [
+                {
+                    "class_symbol": "src/_pytest/reports.py::BaseReport",
+                    "document": "src/_pytest/reports.py::<module>",
+                    "context_for": [
+                        "src/_pytest/reports.py::BaseReport._from_json",
+                        "src/_pytest/reports.py::BaseReport._to_json"
+                    ],
+                    "content_kind": "file"
+                }
+            ]
+        },
+        "non_python_files": []
+    },
+    "pytest-dev__pytest-5809": {
+        "base_commit": "8aba863a634f40560e25055d179220f0eefabe9a",
+        "selection_uses_gold_patch": true,
+        "base_contains_developer_fix": false,
+        "patched_contains_developer_fix": true,
+        "changed_symbols": [
+            {
+                "id": "src/_pytest/pastebin.py::create_new_paste",
+                "file": "src/_pytest/pastebin.py",
+                "name": "create_new_paste",
+                "kind": "function",
+                "change": "modified",
+                "old_span": [
+                    65,
+                    91
+                ],
+                "new_span": [
+                    65,
+                    87
+                ],
+                "base_targets": [
+                    {
+                        "id": "src/_pytest/pastebin.py::create_new_paste",
+                        "reason": "existing_symbol",
+                        "confidence": 1.0
+                    }
+                ],
+                "selected_base": [
+                    "src/_pytest/pastebin.py::create_new_paste"
+                ],
+                "selected_patched": [
+                    "src/_pytest/pastebin.py::create_new_paste"
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
+            }
+        ],
+        "counts": {
+            "changed_symbols": 1,
+            "base_objects": 1,
+            "patched_objects": 1
+        },
+        "base_parse_errors": [],
+        "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
+        "non_python_files": []
+    }
+}
