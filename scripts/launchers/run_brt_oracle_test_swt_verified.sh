@@ -4,10 +4,10 @@ cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."
 
 # Edit these selections for the oracle-test-only experiment.
 MODEL="${MODEL:-deepseek/deepseek-r1-0528}"
-REPO="${REPO:-pylint-dev/pylint}"
-ORACLE="${ORACLE:-./retrieval_results/test/oracle/swt-bench-verified/pylint/related_tests_oracle_base_augmented.json}"
+REPO="${REPO:-pytest-dev/pytest}"
+ORACLE="${ORACLE:-./retrieval_results/test/oracle/swt-bench-verified/${REPO##*/}/related_tests_oracle_base_augmented.json}"
 DATASET_CSV="${DATASET_CSV:-./data/swt-bench-verified/oracle_input_pylint_pytest.csv}"
-EXCLUDE_INSTANCE="${EXCLUDE_INSTANCE-pylint-dev__pylint-7277}"
+EXCLUDE_INSTANCE="${EXCLUDE_INSTANCE-}"
 SAMPLES="${SAMPLES:-1}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-./retrieval_results}"
 export ICORE_LLM_TIMEOUT="${ICORE_LLM_TIMEOUT:-500}"
