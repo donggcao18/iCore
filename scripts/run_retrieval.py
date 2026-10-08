@@ -183,15 +183,25 @@ def prepare_selection(root, rows):
 
 def check_json(path, rows, kind):
     values = json.loads(Path(path).read_text(encoding='utf-8'))
+    if not isinstance(values, dict):
+        raise RuntimeError(f'Missing or invalid {kind} in {path}: expected an instance-ID mapping')
     missing = []
+    no_code_matches = []
     for row in rows:
         key = row['instance_id']
         value = values.get(key)
         if kind == 'keywords':
             valid = isinstance(value, list) and bool(value) and all(isinstance(x, str) for x in value)
         elif kind == 'code':
-            valid = isinstance(value, dict) and any(
-                isinstance(node, dict) and node.get('code_content') for node in value.values())
+            # Null keyword matches are valid retrieval misses. Preserve the
+            # instance for evaluation; generators already omit these snippets.
+            valid = isinstance(value, dict) and all(
+                node is None or (isinstance(node, dict)
+                                 and isinstance(node.get('code_content'), str)
+                                 and bool(node['code_content'].strip()))
+                for node in value.values())
+            if valid and not any(node is not None for node in value.values()):
+                no_code_matches.append(key)
         else:
             # Empty selections are valid model results, but missing IDs are not.
             valid = key in values and isinstance(value, list)
@@ -199,6 +209,11 @@ def check_json(path, rows, kind):
             missing.append(key)
     if missing:
         raise RuntimeError(f'Missing or invalid {kind} in {path}: ' + ', '.join(missing))
+    if no_code_matches:
+        print(f'Warning: no production-code matches for {len(no_code_matches)}/{len(rows)} instances '
+              f'in {path}: ' + ', '.join(no_code_matches)
+              + '. Keeping these instances; draft generation will use the issue and retrieved tests '
+              'without production-code snippets.', flush=True)
 
 
 def check_files(root, rows, suffix):

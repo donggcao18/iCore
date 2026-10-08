@@ -1,7 +1,8 @@
 import ast
 import copy
 import csv
-from contextlib import nullcontext
+from contextlib import nullcontext, redirect_stdout
+import io
 import json
 import os
 from pathlib import Path
@@ -13,6 +14,7 @@ from unittest.mock import patch
 
 from scripts import run_retrieval as pipeline
 from scripts.utils.benchmark_data import load_selected_csv
+from scripts.generator.make_prompt_util import get_retrieval_docs
 
 TEST_MODEL = 'vendor/model-a'
 TEST_REPOS = ('pylint-dev/pylint', 'pytest-dev/pytest')
@@ -132,6 +134,65 @@ class RetrievalPipelineTests(unittest.TestCase):
                 pipeline.code_retrieval(pipeline.artifact_paths(self.root, 'swt-verified', TEST_MODEL, TEST_REPOS[0]),
                                         self.rows[:1], self.csv, {}, 1, TEST_MODEL)
         self.assertEqual(run.call_count, 1)
+
+    def test_zero_code_matches_are_valid_and_generate_empty_code_context(self):
+        ident = self.rows[0]['instance_id']
+        path = self.root / 'retrieval_results.json'
+        for matches in ({'min-similarity-lines': None, 'R0801': None}, {}):
+            with self.subTest(matches=matches):
+                path.write_text(json.dumps({ident: matches}))
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    pipeline.check_json(path, self.rows[:1], 'code')
+                self.assertIn('no production-code matches for 1/1', output.getvalue())
+                self.assertIn(ident, output.getvalue())
+                self.assertEqual(get_retrieval_docs(ident, path), '')
+                self.assertEqual(json.loads(path.read_text())[ident], matches)
+
+    def test_partial_code_matches_keep_valid_snippets(self):
+        ident = self.rows[0]['instance_id']
+        path = self.root / 'retrieval_results.json'
+        path.write_text(json.dumps({ident: {'R0801': None, 'work': {
+            'code_content': 'def work(): pass', 'obj_name': 'work'}}}))
+        output = io.StringIO()
+        with redirect_stdout(output):
+            pipeline.check_json(path, self.rows[:1], 'code')
+        self.assertEqual(output.getvalue(), '')
+        self.assertIn('def work(): pass', get_retrieval_docs(ident, path))
+
+    def test_missing_and_malformed_artifacts_still_fail_validation(self):
+        ident = self.rows[0]['instance_id']
+        path = self.root / 'invalid.json'
+        for values in ([], {}, {ident: None}, {ident: []}, {ident: {'key': 123}},
+                       {ident: {'key': {}}}, {ident: {'key': {'code_content': ' '}}},
+                       {ident: {'key': {'code_content': 123}}}):
+            with self.subTest(values=values):
+                path.write_text(json.dumps(values))
+                with self.assertRaisesRegex(RuntimeError, 'Missing or invalid code'):
+                    pipeline.check_json(path, self.rows[:1], 'code')
+        path.write_text(json.dumps({ident: None}))
+        with self.assertRaisesRegex(RuntimeError, 'Missing or invalid keywords'):
+            pipeline.check_json(path, self.rows[:1], 'keywords')
+
+    def test_no_code_hit_instance_reaches_test_refinement_without_being_dropped(self):
+        self.commands = []
+        ident = self.rows[0]['instance_id']
+        misses = {'min-similarity-lines': None, 'R0801': None}
+        def stage(module, *args, env=None):
+            self.fake_stage(module, *args, env=env)
+            if module.endswith('code_retrieval.retrieval'):
+                path = Path(args[args.index('--save_path') + 1])
+                path.write_text(json.dumps({ident: misses}))
+        output = self.root / 'outputs'
+        with patch.object(pipeline, 'ROOT', self.root), patch.object(pipeline, 'preflight'), \
+             patch.object(pipeline, 'run_module', side_effect=stage), redirect_stdout(io.StringIO()):
+            pipeline.main(['--model', TEST_MODEL, '--repo', TEST_REPOS[0],
+                           '--dataset-csv', str(self.csv), '--output-root', str(output),
+                           '--iterations', '1'])
+        paths = pipeline.artifact_paths(output, 'swt-verified', TEST_MODEL, TEST_REPOS[0])
+        self.assertEqual(json.loads(paths.code.read_text())[ident], misses)
+        self.assertIn(ident, json.loads((paths.tests / 'related_tests_2.json').read_text()))
+        self.assertTrue(any(module.endswith('llm_query') for module, _, _ in self.commands))
 
     def test_preflight_only_does_not_run_any_stage_or_write_outputs(self):
         output = self.root / 'outputs'

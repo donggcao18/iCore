@@ -157,6 +157,15 @@ Run code retrieval with the same model, provider, token limit, and output root
 before test retrieval. The test stage requires the matching `keywords.json` and
 `retrieval_results.json`; it does not run code retrieval itself.
 
+An extracted keyword can have a `null` match in `retrieval_results.json` when
+the graph contains no matching symbol. An instance whose matches are all `null`
+is retained as a zero-code-hit retrieval result. The runner reports a warning
+and continues test retrieval; draft prompts then use the issue and selected
+tests without production-code snippets. Keep these misses when reporting
+retrieval coverage and benchmark results. Missing instance records, malformed
+snippets, and `null` keyword-extraction entries in `keywords.json` still stop
+the pipeline. Existing no-hit records can be reused without another LLM call.
+
 To use two rounds or a longer timeout, append the options:
 
 ```bash
