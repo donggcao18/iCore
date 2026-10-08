@@ -126,7 +126,7 @@ where they are; these launchers do not move or rewrite them.
 
 The `code_retrieval_swt_verified.sh`, `test_retrieval_swt_verified.sh`, and
 `run_retrieval_swt_verified.sh` entry points pass SWT Verified,
-`deepseek/deepseek-v4-flash-0731`, and both `pylint-dev/pylint` and
+`mistralai/mistral-small-3.2-24b-instruct`, and both `pylint-dev/pylint` and
 `pytest-dev/pytest` directly to the Python runner. Prepare the selected Conda
 environments once, then run code retrieval followed by test retrieval:
 
@@ -135,6 +135,36 @@ bash scripts/launchers/setup_swt_verified.sh
 bash scripts/launchers/code_retrieval_swt_verified.sh
 bash scripts/launchers/test_retrieval_swt_verified.sh
 ```
+
+The test launcher uses these parameters:
+
+| Parameter | Value | Meaning |
+| --- | --- | --- |
+| `--stage` | `test` | Build test call trees, retrieve initial tests, generate drafts, compare them, and rerank. |
+| `--benchmark` | `swt-verified` | Select `data/swt-bench-verified/test.csv`. |
+| `--model` | `mistralai/mistral-small-3.2-24b-instruct` | Model used for initial retrieval, draft generation, and reranking. |
+| `--repo` | `pylint-dev/pylint`, `pytest-dev/pytest` | Process all selected instances for these two repositories. |
+| `--max-workers` | `1`, or `MAX_WORKERS` | Parallel workers for local graph/call-tree work; it does not set LLM request concurrency. |
+| `--iterations` | `3`, or `ITERATIONS` | Draft/similarity/reranking rounds; three rounds produce `related_tests_4.json`. |
+| `--timeout` | `180` | Deadline in seconds for each LLM request on the Linux main thread. |
+| `--output-root` | `retrieval_results` | Base output folder; benchmark/model/category/repository folders are appended. |
+| `--provider` | omitted | Use normal provider routing; optionally supply an OpenRouter endpoint slug. |
+| `--max-tokens` | omitted | Leave the generation token limit to the existing model/stage defaults. |
+| `--preflight-only` | omitted | Append this flag to validate environment/inputs without running retrieval or calling the model. |
+
+The model uses `QWEN_API_KEY` and `QWEN_BASE_URL` (OpenRouter by default).
+Run code retrieval with the same model, provider, token limit, and output root
+before test retrieval. The test stage requires the matching `keywords.json` and
+`retrieval_results.json`; it does not run code retrieval itself.
+
+To use two rounds or a longer timeout, append the options:
+
+```bash
+bash scripts/launchers/test_retrieval_swt_verified.sh --iterations 2 --timeout 300
+```
+
+For these presets the test selections are saved under
+`retrieval_results/swt-bench-verified/mistralai%2Fmistral-small-3.2-24b-instruct/test/<owner>/<repo>/`.
 
 To change experiments, edit the `--model`, `--repo`, and `--benchmark` lines
 in these shell scripts. Keep the selections the same for code and test retrieval.

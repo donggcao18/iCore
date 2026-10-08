@@ -30,7 +30,7 @@ write to `retrieval_results/swe-bench-lite/<escaped-model-id>/`.
 The [launcher guide](scripts/launchers/README.md) covers preflight checks,
 repository selection, iterations, output paths, and running both stages together.
 
-For SWT Verified with `deepseek/deepseek-v4-flash-0731` on both Pylint and pytest,
+For SWT Verified with `mistralai/mistral-small-3.2-24b-instruct` on both Pylint and pytest,
 the dedicated launchers provide those defaults:
 
 ```bash
