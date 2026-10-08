@@ -6,7 +6,7 @@ from scripts.config import API_KEY, BASE_URL
 from scripts.utils.llm_api import create_chat_completion
 from scripts.test_retrieval.function_calls import FunctionCalls, get_tools
 from scripts.test_retrieval.utils import get_related_test
-from scripts.test_retrieval.response_parser import parse_test_selection
+from scripts.test_retrieval.response_parser import parse_test_selection, ensure_test_selection
 from scripts.utils.benchmark_data import load_selected_csv
 from scripts.utils.git_utils import *
 import json
@@ -38,11 +38,11 @@ Your output must follow this structure:
 ```python
 [
     ["path/to/test_file_x.py", "test_function_m"],
-    ...
-    ["path/to/test_file_y.py', "test_function_n"]
+    ["path/to/test_file_y.py", "test_function_n"]
 ]
 ```
 This list should contain **at most five** entries, ranked from most to least relevant.
+Return only the list, with no explanations or ellipses. Use [] only when no relevant tests exist.
 """
 
 def extract_function_call(chunks):
@@ -98,6 +98,30 @@ def extract_function_call(chunks):
 
     return tool_calls, response_message
 
+
+def finalize_test_selection(messages, client, model_name, messages_path, bug_id, topk=5):
+    def save(history):
+        with open(messages_path, 'w') as f:
+            json.dump(history, f, indent=4)
+
+    def request(history):
+        # Reuse exploration evidence, but do not start another round of tool calls.
+        response = create_chat_completion(
+            client, model=model_name, messages=history, stream=True,
+            timeout=60, temperature=0.0,
+        )
+        chunks = [json.loads(chunk.model_dump_json()) for chunk in response]
+        _, assistant = extract_function_call(chunks)
+        return assistant
+
+    try:
+        return ensure_test_selection(messages, request, save, topk=topk)
+    except ValueError as error:
+        raise ValueError(f'{bug_id}: {error} Saved response: {messages_path}') from error
+    finally:
+        client.close()
+
+
 def chat_with_llm(instance, model_name, messages_path, restart=False):
     bug_id = instance['instance_id']
     bug_report = instance['problem_statement']
@@ -110,7 +134,8 @@ def chat_with_llm(instance, model_name, messages_path, restart=False):
     if os.path.exists(messages_path) and not restart:
         with open(messages_path, 'r') as f:
             messages = json.load(f)
-        if messages[-1]['role'] == 'assistant':
+        if messages[-1]['role'] == 'assistant' and not messages[-1].get('tool_calls'):
+            finalize_test_selection(messages, client, model_name, messages_path, bug_id)
             return
         first_time = False
     else:
@@ -158,8 +183,7 @@ def chat_with_llm(instance, model_name, messages_path, restart=False):
         tool_calls, response_message = extract_function_call(chunks)
         messages.append(response_message)
         if not tool_calls:
-            with open(messages_path, 'w') as f:
-                json.dump(messages, f, indent=4)
+            finalize_test_selection(messages, client, model_name, messages_path, bug_id)
             break
         # if len(tool_calls) > 5:
         #     raise Exception('Too many tool calls!')

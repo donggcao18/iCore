@@ -119,6 +119,15 @@ Existing stages resume cached outputs. Use a fresh `--output-root` for a new
 experiment; resume checks reject changed model, provider, or token limit.
 Transport timeouts can change when resuming the same experiment.
 
+Initial test retrieval and reranking validate saved final answers before reusing
+them. If a reply lacks a valid list of `[file_path, test_name]` pairs, the stage
+asks the same model to format its selection using the existing conversation,
+without further tool calls. It makes at most two formatting retries per invocation
+and keeps the original reply and retries in the messages JSON. If they still
+fail, the stage stops and reports the instance and saved response path; it does
+not silently record an empty selection. After syncing a fix, rerun the same
+test launcher to retry that instance while retaining completed selections.
+
 For example, `--output-root experiments/run2` produces
 `experiments/run2/<benchmark>/<escaped-model-id>/...`. Pass the base directory,
 without adding the benchmark or model yourself. Existing legacy outputs stay

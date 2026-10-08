@@ -6,7 +6,7 @@ from openai import OpenAI
 from scripts.config import API_KEY, BASE_URL
 from scripts.utils.llm_api import create_chat_completion
 from scripts.test_retrieval.function_calls import FunctionCalls, get_tools
-from scripts.test_retrieval.initial_retrieval import extract_function_call
+from scripts.test_retrieval.initial_retrieval import extract_function_call, finalize_test_selection
 from scripts.test_retrieval.utils import get_related_test
 from scripts.test_retrieval.response_parser import parse_test_selection
 from scripts.utils.benchmark_data import load_selected_csv
@@ -39,10 +39,10 @@ Your output must follow this structure and be enclosed within triple backticks (
 [
     ["path/to/test_file1.py", "test_function1"],
     ["path/to/test_file2.py", "test_function2"],
-    ...
 ]
 ```
 This list should contain at most **{topk}** entries, ranked from most to least relevant.
+Return only the list, with no explanations or ellipses. Use [] only when no relevant tests exist.
 """
 
 def check_not_in(ret, file_path, test_name):
@@ -108,8 +108,6 @@ def chat_with_llm(instance, model_name, messages_path, test_similarity_dir, last
     if os.path.exists(messages_path) and not restart:
         with open(messages_path, 'r') as f:
             messages = json.load(f)
-        if messages[-1]['role'] == 'assistant':
-            return
     else:
         candidates = list_candidates(proj, bug_id, test_similarity_dir, last_related_tests_path, wo_functioncall, topk)
         candidate_tests = "\n".join(candidates)
@@ -129,6 +127,9 @@ def chat_with_llm(instance, model_name, messages_path, test_similarity_dir, last
     base_url = BASE_URL[model_name]
     client = OpenAI(api_key=api_key, base_url=base_url)
 
+    if messages[-1]['role'] == 'assistant' and not messages[-1].get('tool_calls'):
+        finalize_test_selection(messages, client, model_name, messages_path, bug_id, topk=topk)
+        return
     
     while True:
         response = create_chat_completion(
@@ -149,8 +150,7 @@ def chat_with_llm(instance, model_name, messages_path, test_similarity_dir, last
         tool_calls, response_message = extract_function_call(chunks)
         messages.append(response_message)
         if not tool_calls:
-            with open(messages_path, 'w') as f:
-                json.dump(messages, f, indent=4)
+            finalize_test_selection(messages, client, model_name, messages_path, bug_id, topk=topk)
             break
         # if len(tool_calls) > 5:
         #     raise Exception('Too many tool calls!')

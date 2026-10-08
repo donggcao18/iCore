@@ -2,6 +2,7 @@
 
 import ast
 import io
+import logging
 import re
 import tokenize
 
@@ -47,3 +48,43 @@ def parse_test_selection(content):
     if len(selections) > 1:
         raise ValueError('Multiple different test-selection lists found; inspect the saved response.')
     return selections[0]
+
+
+def ensure_test_selection(messages, request, save, topk=5, max_repairs=2):
+    """Validate a terminal reply, retaining history during bounded format repairs.
+
+    request(messages) returns an assistant message with tools disabled. save
+    checkpoints the conversation before validation and after each repair reply.
+    Invalid output must never be silently interpreted as an empty selection.
+    """
+    save(messages)
+    for attempt in range(max_repairs + 1):
+        final = messages[-1]
+        if final.get('role') != 'assistant' or final.get('tool_calls'):
+            raise ValueError('Expected a final assistant answer without tool calls.')
+        try:
+            return parse_test_selection(final.get('content'))
+        except ValueError as error:
+            if attempt == max_repairs:
+                raise ValueError(
+                    f'Invalid test selection after {max_repairs} formatting retries: {error}'
+                ) from error
+            logging.warning('Invalid test selection (%s); formatting retry %s/%s.',
+                            error, attempt + 1, max_repairs)
+            messages.append({
+                'role': 'user',
+                'content': (
+                    f'Your final answer could not be parsed: {error}\n'
+                    'Using the bug report and test evidence already in this conversation, '
+                    'return your selected tests as ONLY a JSON array of '
+                    '[file_path, test_name] pairs. Both values must be nonempty strings. '
+                    f'Include at most {topk} pairs, ranked by relevance. Example: '
+                    '[["tests/test_example.py", "TestExample.test_case"]]. '
+                    'Use actual paths and names from the evidence, not the example. '
+                    'Do not add explanations, ellipses, or tool calls. Do not invent tests. '
+                    'Return [] only if you determined that no relevant tests exist; '
+                    'a formatting failure does not mean no relevant tests exist.'
+                ),
+            })
+            messages.append(request(messages))
+            save(messages)
