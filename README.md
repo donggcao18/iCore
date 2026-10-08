@@ -7,6 +7,40 @@ For a source-linked explanation of both retrieval pipelines, their scoring formu
 
 # How to Run
 
+All shell launchers now live in [`scripts/launchers`](scripts/launchers/README.md).
+The generic retrieval launchers accept **any configured model**, explicit
+repository selections, and either SWT Verified or SWE-bench Lite. For example,
+with `QWEN_API_KEY` set to your OpenRouter key:
+
+```bash
+bash scripts/launchers/retrieve_code.sh \
+    --benchmark swt-verified \
+    --model deepseek/deepseek-v4-flash-0731 \
+    --repo pylint-dev/pylint --repo pytest-dev/pytest
+bash scripts/launchers/retrieve_tests.sh \
+    --benchmark swt-verified \
+    --model deepseek/deepseek-v4-flash-0731 \
+    --repo pylint-dev/pylint --repo pytest-dev/pytest
+```
+
+Outputs default to `retrieval_results/swt-bench-verified/<escaped-model-id>/`,
+with the existing `code/`, `test/`, `graphs/`, and `swe_test_cgs/` categories
+and repository folders underneath. Use `--benchmark lite` to select Lite and
+write to `retrieval_results/swe-bench-lite/<escaped-model-id>/`.
+The [launcher guide](scripts/launchers/README.md) covers preflight checks,
+repository selection, iterations, output paths, and running both stages together.
+
+For SWT Verified with `deepseek/deepseek-v4-flash-0731` on both Pylint and pytest,
+the dedicated launchers provide those defaults:
+
+```bash
+bash scripts/launchers/code_retrieval_swt_verified.sh
+bash scripts/launchers/test_retrieval_swt_verified.sh
+```
+
+Change experiments by editing the `--model` and `--repo` lines inside those
+shell scripts. The Python runner remains generic.
+
 1. Install Dependencies
 Clone the repository and install the required Python packages:
 ```sh
@@ -44,11 +78,11 @@ python -m scripts.env_setup.env_setup
 First, retrieve the relevant production code:
 
 ```sh
-bash code_retrieval.sh
+bash scripts/launchers/code_retrieval.sh
 ```
 
 For `SWE-bench/SWE-bench_Lite`, run
-`REPO=pylint-dev/pylint bash code_retrieval_lite.sh`. The launcher selects
+`REPO=pylint-dev/pylint bash scripts/launchers/code_retrieval_lite.sh`. The launcher selects
 all Lite instances for that repository and saves their IDs to
 `retrieval_results/code/lite_selected_pylint-dev__pylint.txt`. It does not
 require you to copy IDs into `swt.txt`. Set `REPO=owner/name` for the next
@@ -108,14 +142,14 @@ use `--top-k 0` for all candidates or `--no-fallback` to disable module proximit
 `--code-output-dir` overrides code output separately from `--output-dir` for tests.
 
 After preparing those environments, continue with
-`REPO=pylint-dev/pylint DATASET=lite ITERATIONS=3 bash test_retrieval_flask.sh`, then
-`REPO=pylint-dev/pylint DATASET=lite ITERATIONS=3 bash run_brt_flask.sh`. Both launchers use Verified
+`REPO=pylint-dev/pylint DATASET=lite ITERATIONS=3 bash scripts/launchers/test_retrieval_flask.sh`, then
+`REPO=pylint-dev/pylint DATASET=lite ITERATIONS=3 bash scripts/launchers/run_brt_flask.sh`. Both launchers use Verified
 by default and keep Lite retrieval, drafts, and BRT results in separate paths.
 
 Next, retrieve the relevant test code:
 
 ```sh
-bash test_retrieval.sh
+bash scripts/launchers/test_retrieval.sh
 ```
 
 4. Generate Bug Reproduction Tests
@@ -145,8 +179,7 @@ The repository is organized as follows:
 │   ├── test_retrieval/    # Retrieval for relevant test code.
 │   ├── generator/         # The basic BRT generator.
 │   ├── libro/             # A Python adaptation of the LIBRO framework.
+│   ├── launchers/         # Shell launchers for retrieval and BRT runs.
 │   └── env_setup/         # Environment configuration scripts for SWT-bench/TDD-bench.
-├── code_retrieval.sh      # Shell script to trigger production code retrieval
-├── test_retrieval.sh      # Shell script to trigger test code retrieval
 └── requirements.txt       # Python dependencies
 ```

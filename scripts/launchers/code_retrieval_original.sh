@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."
+
 # 1. Build the repository structure tree
 python -m scripts.code_retrieval.repo_graph.graph --keywords_path ./retrieval_results/code/keywords_gpt-4o.json --swt
 

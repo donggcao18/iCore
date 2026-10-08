@@ -9,6 +9,22 @@ The two retrieval pipelines supply context for generating a **bug reproduction t
 
 Retrieval does not establish that a generated test reproduces the bug. The later BRT evaluator runs a candidate on the buggy and fixed versions to establish that.
 
+The generic [launchers](scripts/launchers/README.md) use
+[`scripts/run_retrieval.py`](scripts/run_retrieval.py) to select SWT Verified
+(`--benchmark swt-verified`, the default) or SWE-bench Lite (`--benchmark lite`),
+plus a required `--model` and one or more `--repo owner/name` arguments.
+Both stages share the root `retrieval_results/<benchmark-folder>/<escaped-model-id>/`.
+The original artifact categories remain beneath that root: `code/`, `test/`,
+`graphs/`, and `swe_test_cgs/`, each followed by `<owner>/<repo>/`.
+Selections and drafts use the same repository grouping. `--output-root` changes
+only the base retrieval directory. Legacy launchers keep their existing paths.
+
+These generic runs pass a local CSV and selection IDs to every stage. Their
+`--benchmark` option determines the dataset; the internal `--swt` stage flag
+selects the supplied IDs and does not switch a CSV run to another benchmark.
+The dataset flag conventions below also describe the original launchers that
+load records directly from Hugging Face.
+
 ## 1. The complete data flow
 
 ```mermaid
@@ -82,7 +98,7 @@ Each stage independently selects matching dataset records. Processing order foll
 
 The pipeline is **stage by stage across the selected instances**: initial retrieval for the selected batch finishes before draft generation for the batch begins. It is not one shell loop that completes every stage for the first ID before moving to the next.
 
-Source: the `__main__` blocks in [extract_keywords.py](scripts/code_retrieval/extract_keywords.py), [retrieval.py](scripts/code_retrieval/retrieval.py), [initial_retrieval.py](scripts/test_retrieval/initial_retrieval.py), and [test_retrieval_flask.sh](test_retrieval_flask.sh).
+Source: the `__main__` blocks in [extract_keywords.py](scripts/code_retrieval/extract_keywords.py), [retrieval.py](scripts/code_retrieval/retrieval.py), [initial_retrieval.py](scripts/test_retrieval/initial_retrieval.py), and [test_retrieval_flask.sh](scripts/launchers/test_retrieval_flask.sh).
 
 ### 2.2 Paths and environments
 
@@ -503,7 +519,7 @@ There is no automatic convergence check or stop when two selections become ident
 
 ## 5. What one, two, or three iterations mean
 
-Source: [test_retrieval_flask.sh](test_retrieval_flask.sh).
+Source: [test_retrieval_flask.sh](scripts/launchers/test_retrieval_flask.sh).
 
 Initial retrieval creates `related_tests_1.json`. Each refinement round adds one more selection file:
 
@@ -518,12 +534,12 @@ Round 3: references 3 -> draft 3 -> similarity 3 -> references 4
 The current script defaults to **two** rounds via `ITERATIONS="${ITERATIONS:-2}"`, regardless of the nearby comment describing a one-round trial. To request three:
 
 ```bash
-ITERATIONS=3 bash test_retrieval_flask.sh
+ITERATIONS=3 bash scripts/launchers/test_retrieval_flask.sh
 ```
 
 Three rounds mean three retrieval drafts per selected instance and a final `related_tests_4.json`. This differs from `--query_time`, which controls the number of generated samples within a generator invocation. Retrieval currently reads only `_n1.txt`.
 
-The last retrieval draft uses `related_tests_3.json`; final BRT generation must consume `related_tests_4.json` to use the final refinement. [run_brt_flask.sh](run_brt_flask.sh) is the separate downstream launcher.
+The last retrieval draft uses `related_tests_3.json`; final BRT generation must consume `related_tests_4.json` to use the final refinement. [run_brt_flask.sh](scripts/launchers/run_brt_flask.sh) is the separate downstream launcher.
 
 ## 6. Current launchers and consistent commands
 
@@ -531,11 +547,11 @@ The last retrieval draft uses `related_tests_3.json`; final BRT generation must 
 
 | Launcher | Current behavior |
 | --- | --- |
-| [code_retrieval_flask.sh](code_retrieval_flask.sh) | Enforces exactly `pallets__flask-5014`; writes `flask_keywords.json` and `flask_retrieval_results.json`; one graph worker |
-| [code_retrieval_lite.sh](code_retrieval_lite.sh) | Defaults to `REPO=pylint-dev/pylint`; selects all that repo's Lite IDs directly from the dataset, clones its base repository through `env_setup.clone_repo()` if missing, checks commits, and writes `nemo_*_lite.json` outputs |
-| [test_retrieval_flask.sh](test_retrieval_flask.sh) | Defaults to Verified with `tdd.txt`, `nemo_keywords.json`, and `nemo_retrieval_results.json`; `DATASET=lite REPO=owner/name` reads that repo's saved Lite ID list and the `nemo_*_lite.json` artifacts; one call-tree worker; configurable rounds |
-| [code_retrieval.sh](code_retrieval.sh) | Older launcher: passes `--keywords_path` to the graph builder and `--graph_path` to keyword extraction, neither of which accepts that flag |
-| [test_retrieval.sh](test_retrieval.sh) | Older launcher: call-tree command inherits the `django` project default; similarity repeatedly reads round-one drafts; `${i+1}` is not arithmetic addition in Bash; rerank messages share a directory |
+| [code_retrieval_flask.sh](scripts/launchers/code_retrieval_flask.sh) | Enforces exactly `pallets__flask-5014`; writes `flask_keywords.json` and `flask_retrieval_results.json`; one graph worker |
+| [code_retrieval_lite.sh](scripts/launchers/code_retrieval_lite.sh) | Defaults to `REPO=pylint-dev/pylint`; selects all that repo's Lite IDs directly from the dataset, clones its base repository through `env_setup.clone_repo()` if missing, checks commits, and writes `nemo_*_lite.json` outputs |
+| [test_retrieval_flask.sh](scripts/launchers/test_retrieval_flask.sh) | Defaults to Verified with `tdd.txt`, `nemo_keywords.json`, and `nemo_retrieval_results.json`; `DATASET=lite REPO=owner/name` reads that repo's saved Lite ID list and the `nemo_*_lite.json` artifacts; one call-tree worker; configurable rounds |
+| [code_retrieval.sh](scripts/launchers/code_retrieval.sh) | Older launcher: passes `--keywords_path` to the graph builder and `--graph_path` to keyword extraction, neither of which accepts that flag |
+| [test_retrieval.sh](scripts/launchers/test_retrieval.sh) | Older launcher: call-tree command inherits the `django` project default; similarity repeatedly reads round-one drafts; `${i+1}` is not arithmetic addition in Bash; rerank messages share a directory |
 
 Thus, the Flask code launcher and current multi-instance test launcher do not connect automatically without consistent artifact paths. File prefixes such as `flask` and `nemo` do not filter the Python stages; selection files and project flags do. The explicit single-Flask guard in the code launcher does impose that restriction.
 
@@ -562,7 +578,7 @@ python -m scripts.code_retrieval.retrieval \
   --graph_dir ./retrieval_results/graphs \
   --save_path ./retrieval_results/code/nemo_retrieval_results.json
 
-ITERATIONS=3 bash test_retrieval_flask.sh
+ITERATIONS=3 bash scripts/launchers/test_retrieval_flask.sh
 ```
 
 Before the final code-retrieval command, check that selected keyword values are nonempty lists rather than `null`; that command expects iterable keywords. It does not perform the Flask launcher's explicit keyword validation.
@@ -688,6 +704,6 @@ These establish that retrieval produced context. Only the downstream buggy/fixed
 | How are draft prompts and files produced? | [llm_query.py](scripts/generator/llm_query.py): `make_messages_from_dataset`, `query_times` |
 | How are API failures handled? | [llm_api.py](scripts/utils/llm_api.py): `create_chat_completion`, `validate_completion`, `query_chat_llm` |
 | Where are paths, environment names, and source resets defined? | [config.py](scripts/config.py), [swe_util.py](scripts/utils/swe_util.py), [git_utils.py](scripts/utils/git_utils.py) |
-| Which file connects the multi-instance rounds? | [test_retrieval_flask.sh](test_retrieval_flask.sh) |
+| Which file connects the multi-instance rounds? | [test_retrieval_flask.sh](scripts/launchers/test_retrieval_flask.sh) |
 
 The explanations above describe the active launcher paths. Utility functions present in a folder, such as the alternate graph/reference builder or older helpers in [code_retrieval/utils.py](scripts/code_retrieval/utils.py), should not be assumed to execute unless an active entry point calls them.

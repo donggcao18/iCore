@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."
 
 # Select every Lite instance for one repository; default to Pylint first.
 REPO="${REPO:-pylint-dev/pylint}"

@@ -1,0 +1,2 @@
+# Bash launchers must remain runnable after a Windows checkout.
+*.sh text eol=lf

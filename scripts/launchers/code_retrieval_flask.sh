@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."
 
 # Run from the icore Conda environment, with QWEN_* credentials exported.
 MODEL='nvidia/nemotron-3-super-120b-a12b:free'

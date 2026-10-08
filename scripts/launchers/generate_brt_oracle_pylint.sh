@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."
 
 # Stage 3: generate BRT candidates from oracle production code and the
 # Pylint tests as they existed at each instance's buggy base commit.

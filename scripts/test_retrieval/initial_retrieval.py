@@ -49,11 +49,16 @@ def extract_function_call(chunks):
     tool_call_map = {}  # index -> tool_call dict
     role = "assistant"
     content_parts = []
+    reasoning_parts = []
+    reasoning_details = []
     
     for chunk in chunks:
         choices = chunk.get("choices", [])
         for choice in choices:
             delta = choice.get("delta", {})
+            if delta.get('reasoning'):
+                reasoning_parts.append(delta['reasoning'])
+            reasoning_details.extend(copy.deepcopy(delta.get('reasoning_details') or []))
             if 'content' in delta and delta['content'] is not None:
                 content_parts.append(delta['content'])
             tool_calls = delta.get("tool_calls", [])
@@ -84,6 +89,10 @@ def extract_function_call(chunks):
         "content": ''.join(content_parts) if content_parts else None,
     }
     tool_calls = list(tool_call_map.values())
+    if reasoning_parts:
+        response_message['reasoning'] = ''.join(reasoning_parts)
+    if reasoning_details:
+        response_message['reasoning_details'] = reasoning_details
     if tool_calls:
         response_message["tool_calls"] = copy.deepcopy(tool_calls)
 
@@ -127,7 +136,7 @@ def chat_with_llm(instance, model_name, messages_path, restart=False):
                 stream=True,
                 timeout=60,
                 temperature=0.0,
-                tool_choice={"type": "function", "function": {"name": "list_root", "arguments": {}}}
+                tool_choice={"type": "function", "function": {"name": "list_root"}}
             )
             first_time = False
         else:

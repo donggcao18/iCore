@@ -1,6 +1,7 @@
 import time
 import logging
 import json
+import os
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
@@ -59,6 +60,18 @@ def validate_completion(response, model):
 
 def create_chat_completion(client, **kwargs):
     """Retry transient API errors; buffer streams so failed chunks never escape."""
+    provider = os.getenv('ICORE_LLM_PROVIDER')
+    if provider:
+        body = dict(kwargs.get('extra_body') or {})
+        body.setdefault('provider', {
+            'only': [provider], 'allow_fallbacks': False,
+            'require_parameters': True,
+        })
+        kwargs['extra_body'] = body
+    if os.getenv('ICORE_LLM_MAX_TOKENS'):
+        kwargs.setdefault('max_tokens', int(os.environ['ICORE_LLM_MAX_TOKENS']))
+    if os.getenv('ICORE_LLM_TIMEOUT'):
+        kwargs['timeout'] = float(os.environ['ICORE_LLM_TIMEOUT'])
     client = client.with_options(max_retries=0)
     for attempt in range(5):
         try:

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."
 
 MODEL="${MODEL:-nvidia/nemotron-3-super-120b-a12b:free}"
 DATASET="${DATASET:-verified}"
@@ -21,7 +21,7 @@ case "$DATASET" in
         fi
         IDS="./retrieval_results/code/lite_selected_${REPO//\//__}.txt"
         if [[ ! -s "$IDS" ]]; then
-            printf 'Missing %s. Run REPO=%s bash code_retrieval_lite.sh first.\n' "$IDS" "$REPO" >&2
+            printf 'Missing %s. Run REPO=%s bash scripts/launchers/code_retrieval_lite.sh first.\n' "$IDS" "$REPO" >&2
             exit 1
         fi
         export SWT_IDS_FILE="$IDS"

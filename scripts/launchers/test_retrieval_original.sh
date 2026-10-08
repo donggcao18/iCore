@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."
+
 # 1. Generate test call trees
 python -m scripts.test_retrieval.similarities.get_all_cg_parallel \
     --output_dir ./retrieval_results/swe_test_cgs/ \
