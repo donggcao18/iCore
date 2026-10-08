@@ -135,7 +135,8 @@ def preflight(rows, model):
                                 capture_output=True, text=True, check=True)
         if result.stdout.strip():
             errors.append(f'Benchmark checkout has local changes: {clone}. '
-                          'Use a clean disposable checkout; retrieval resets base commits.')
+                          f'Inspect with git -C {shlex.quote(str(clone))} status --short and '
+                          'preserve changes before retrying; retrieval resets base commits.')
         for row in rows:
             if row['repo'] != repo:
                 continue
@@ -147,11 +148,18 @@ def preflight(rows, model):
                 errors.append(f"Missing base commit for {row['instance_id']} in {clone}")
     # Jedi needs the benchmark interpreter even for static retrieval.
     from scripts.utils.swe_util import get_conda_python, get_env_name
+    missing_environments = False
     for name in sorted({get_env_name(row) for row in rows}):
         try:
             get_conda_python(name)
         except (OSError, RuntimeError) as exc:
+            missing_environments = True
             errors.append(f'Missing benchmark environment {name}: {exc}')
+    if missing_environments:
+        errors.append('Prepare the selected environments with python -m scripts.env_setup.env_setup '
+                      '--dataset-csv <retrieval CSV> --repo <owner/name> (repeat --repo as needed). '
+                      'For the SWT Verified Pylint/pytest launchers, run '
+                      'bash scripts/launchers/setup_swt_verified.sh.')
     if errors:
         raise RuntimeError('Preflight failed:\n- ' + '\n- '.join(errors))
 

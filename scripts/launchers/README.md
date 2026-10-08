@@ -126,10 +126,11 @@ where they are; these launchers do not move or rewrite them.
 The `code_retrieval_swt_verified.sh`, `test_retrieval_swt_verified.sh`, and
 `run_retrieval_swt_verified.sh` entry points pass SWT Verified,
 `deepseek/deepseek-v4-flash-0731`, and both `pylint-dev/pylint` and
-`pytest-dev/pytest` directly to the Python runner. To run this experiment, run code retrieval first,
-then test retrieval:
+`pytest-dev/pytest` directly to the Python runner. Prepare the selected Conda
+environments once, then run code retrieval followed by test retrieval:
 
 ```bash
+bash scripts/launchers/setup_swt_verified.sh
 bash scripts/launchers/code_retrieval_swt_verified.sh
 bash scripts/launchers/test_retrieval_swt_verified.sh
 ```
@@ -143,6 +144,30 @@ stages.
 
 The generic `retrieve_code.sh`, `retrieve_tests.sh`, and `run_retrieval_all.sh`
 launchers still require explicit model and repository arguments.
+
+The setup launcher uses the same SWT Verified CSV and repository selections.
+It creates each repository/version environment once, reuses existing Python
+environments, and clones missing repositories. It does not reset or clean
+existing checkouts and does not call the LLM. Conda is located through
+`CONDA_EXE` or `conda` on your PATH. Setup logs are saved under
+`retrieval_results/env_setup/<environment-name>/setup.log`; a failed installation
+stops the command and is not recorded as complete. The legacy no-argument
+`python -m scripts.env_setup.env_setup` command still selects Flask/Verified.
+For another CSV or repository selection, edit the setup launcher's arguments
+or pass them directly to that Python module.
+
+If retrieval reports local changes in a benchmark checkout, inspect and preserve
+them before retrying. For example, on the research server:
+
+```bash
+git -C /research/cbim/vast/qt60/any-ssr/utils/iCore/repos/pytest status --short
+git -C /research/cbim/vast/qt60/any-ssr/utils/iCore/repos/pytest \
+    stash push --include-untracked -m 'before SWT Verified retrieval'
+bash scripts/launchers/code_retrieval_swt_verified.sh --preflight-only
+```
+
+The stash keeps tracked and untracked changes for later recovery. Retrieval
+requires a clean checkout because its stages switch buggy commits.
 
 Retrieval and draft generation do **not** evaluate whether a draft reproduces a
 bug. Use the separate BRT generation/evaluation workflow for that experiment.

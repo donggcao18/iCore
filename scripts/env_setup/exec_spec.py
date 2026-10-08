@@ -220,7 +220,7 @@ class ExecSpec:
 
             # Install dependencies
             reqs = get_requirements_by_commit(self.repo, self.environment_setup_commit)
-            path_to_reqs = "$HOME/requirements.txt"
+            path_to_reqs = "requirements.txt"
             reqs_commands.append(
                 f"cat <<'{HEREDOC_DELIMITER}' > {path_to_reqs}\n{reqs}\n{HEREDOC_DELIMITER}"
             )
@@ -268,7 +268,7 @@ class ExecSpec:
         install = self.install
         env_name = self.env_name
         reqs_commands = [
-            "source /research/cbim/vast/qt60/miniconda3/bin/activate",
+            'source "$("${CONDA_EXE:-conda}" info --base)/etc/profile.d/conda.sh"',
         ]
         # Create conda environment according to install instructinos
         reqs_commands += self.req_install_commands

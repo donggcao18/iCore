@@ -34,12 +34,16 @@ For SWT Verified with `deepseek/deepseek-v4-flash-0731` on both Pylint and pytes
 the dedicated launchers provide those defaults:
 
 ```bash
+bash scripts/launchers/setup_swt_verified.sh
 bash scripts/launchers/code_retrieval_swt_verified.sh
 bash scripts/launchers/test_retrieval_swt_verified.sh
 ```
 
 Change experiments by editing the `--model` and `--repo` lines inside those
 shell scripts. The Python runner remains generic.
+The setup launcher creates the required benchmark Conda environments from the
+same CSV; it preserves existing repository changes. Retrieval requires clean
+benchmark checkouts.
 
 1. Install Dependencies
 Clone the repository and install the required Python packages:
