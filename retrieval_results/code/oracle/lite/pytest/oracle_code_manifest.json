@@ -31,16 +31,46 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/assertion/rewrite.py::AssertionRewriter.run"
+                ],
+                "supporting_base": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter"
+                ],
+                "supporting_patched": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter"
                 ]
             }
         ],
         "counts": {
             "changed_symbols": 1,
-            "base_objects": 1,
-            "patched_objects": 1
+            "base_objects": 2,
+            "patched_objects": 2
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [
+                {
+                    "class_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                    "document": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                    "context_for": [
+                        "src/_pytest/assertion/rewrite.py::AssertionRewriter.run"
+                    ],
+                    "content_kind": "class_outline"
+                }
+            ],
+            "patched": [
+                {
+                    "class_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                    "document": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                    "context_for": [
+                        "src/_pytest/assertion/rewrite.py::AssertionRewriter.run"
+                    ],
+                    "content_kind": "class_outline"
+                }
+            ]
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-11148": {
@@ -75,7 +105,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/pathlib.py::import_path"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -85,6 +117,12 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-5103": {
@@ -119,7 +157,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/assertion/rewrite.py::AssertionRewriter"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             },
             {
                 "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter._visit_all",
@@ -150,6 +190,12 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/assertion/rewrite.py::AssertionRewriter._visit_all"
+                ],
+                "supporting_base": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter"
+                ],
+                "supporting_patched": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter"
                 ]
             },
             {
@@ -178,6 +224,12 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35"
+                ],
+                "supporting_base": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter"
+                ],
+                "supporting_patched": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter"
                 ]
             },
             {
@@ -206,6 +258,12 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy"
+                ],
+                "supporting_base": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter"
+                ],
+                "supporting_patched": [
+                    "src/_pytest/assertion/rewrite.py::AssertionRewriter"
                 ]
             }
         ],
@@ -216,6 +274,33 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [
+                {
+                    "class_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                    "document": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                    "context_for": [
+                        "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
+                        "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy"
+                    ],
+                    "content_kind": "full_class"
+                }
+            ],
+            "patched": [
+                {
+                    "class_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                    "document": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                    "context_for": [
+                        "src/_pytest/assertion/rewrite.py::AssertionRewriter._visit_all",
+                        "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
+                        "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy"
+                    ],
+                    "content_kind": "full_class"
+                }
+            ]
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-5221": {
@@ -250,7 +335,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/python.py::_showfixtures_main"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -260,6 +347,12 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-5227": {
@@ -294,7 +387,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/logging.py::DEFAULT_LOG_FORMAT"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -304,6 +399,12 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-5413": {
@@ -338,7 +439,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/_code/code.py::ExceptionInfo"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             },
             {
                 "id": "src/_pytest/_code/code.py::ExceptionInfo.__str__",
@@ -361,7 +464,11 @@
                 "selected_base": [
                     "src/_pytest/_code/code.py::ExceptionInfo.__str__"
                 ],
-                "selected_patched": []
+                "selected_patched": [],
+                "supporting_base": [
+                    "src/_pytest/_code/code.py::ExceptionInfo"
+                ],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -371,6 +478,21 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [
+                {
+                    "class_symbol": "src/_pytest/_code/code.py::ExceptionInfo",
+                    "document": "src/_pytest/_code/code.py::ExceptionInfo",
+                    "context_for": [
+                        "src/_pytest/_code/code.py::ExceptionInfo.__str__"
+                    ],
+                    "content_kind": "full_class"
+                }
+            ],
+            "patched": []
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-5495": {
@@ -405,7 +527,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/assertion/util.py::_compare_eq_sequence"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -415,6 +539,12 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-5692": {
@@ -449,7 +579,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/junitxml.py::<module>"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             },
             {
                 "id": "src/_pytest/junitxml.py::LogXML.pytest_sessionfinish",
@@ -477,6 +609,12 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/junitxml.py::LogXML.pytest_sessionfinish"
+                ],
+                "supporting_base": [
+                    "src/_pytest/junitxml.py::<module>"
+                ],
+                "supporting_patched": [
+                    "src/_pytest/junitxml.py::<module>"
                 ]
             }
         ],
@@ -487,6 +625,30 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [
+                {
+                    "class_symbol": "src/_pytest/junitxml.py::LogXML",
+                    "document": "src/_pytest/junitxml.py::<module>",
+                    "context_for": [
+                        "src/_pytest/junitxml.py::LogXML.pytest_sessionfinish"
+                    ],
+                    "content_kind": "file"
+                }
+            ],
+            "patched": [
+                {
+                    "class_symbol": "src/_pytest/junitxml.py::LogXML",
+                    "document": "src/_pytest/junitxml.py::<module>",
+                    "context_for": [
+                        "src/_pytest/junitxml.py::LogXML.pytest_sessionfinish"
+                    ],
+                    "content_kind": "file"
+                }
+            ]
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-6116": {
@@ -521,7 +683,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/main.py::pytest_addoption"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -531,6 +695,12 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-7168": {
@@ -565,7 +735,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/_io/saferepr.py::_format_repr_exception"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -575,6 +747,12 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-7220": {
@@ -609,7 +787,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/nodes.py::<module>"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             },
             {
                 "id": "src/_pytest/nodes.py::Node._repr_failure_py",
@@ -637,6 +817,12 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/nodes.py::Node._repr_failure_py"
+                ],
+                "supporting_base": [
+                    "src/_pytest/nodes.py::<module>"
+                ],
+                "supporting_patched": [
+                    "src/_pytest/nodes.py::<module>"
                 ]
             }
         ],
@@ -647,6 +833,30 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [
+                {
+                    "class_symbol": "src/_pytest/nodes.py::Node",
+                    "document": "src/_pytest/nodes.py::<module>",
+                    "context_for": [
+                        "src/_pytest/nodes.py::Node._repr_failure_py"
+                    ],
+                    "content_kind": "file"
+                }
+            ],
+            "patched": [
+                {
+                    "class_symbol": "src/_pytest/nodes.py::Node",
+                    "document": "src/_pytest/nodes.py::<module>",
+                    "context_for": [
+                        "src/_pytest/nodes.py::Node._repr_failure_py"
+                    ],
+                    "content_kind": "file"
+                }
+            ]
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-7373": {
@@ -681,7 +891,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/mark/evaluate.py::<module>"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             },
             {
                 "id": "src/_pytest/mark/evaluate.py::MarkEvaluator._istrue",
@@ -709,6 +921,12 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/mark/evaluate.py::MarkEvaluator._istrue"
+                ],
+                "supporting_base": [
+                    "src/_pytest/mark/evaluate.py::<module>"
+                ],
+                "supporting_patched": [
+                    "src/_pytest/mark/evaluate.py::<module>"
                 ]
             },
             {
@@ -732,7 +950,9 @@
                 "selected_base": [
                     "src/_pytest/mark/evaluate.py::cached_eval"
                 ],
-                "selected_patched": []
+                "selected_patched": [],
+                "supporting_base": [],
+                "supporting_patched": []
             },
             {
                 "id": "src/_pytest/mark/evaluate.py::compiled_eval",
@@ -757,7 +977,11 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/mark/evaluate.py::compiled_eval"
-                ]
+                ],
+                "supporting_base": [
+                    "src/_pytest/mark/evaluate.py::<module>"
+                ],
+                "supporting_patched": []
             },
             {
                 "id": "src/_pytest/mark/evaluate.py::evalcache_key",
@@ -780,7 +1004,9 @@
                 "selected_base": [
                     "src/_pytest/mark/evaluate.py::evalcache_key"
                 ],
-                "selected_patched": []
+                "selected_patched": [],
+                "supporting_base": [],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -790,6 +1016,30 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [
+                {
+                    "class_symbol": "src/_pytest/mark/evaluate.py::MarkEvaluator",
+                    "document": "src/_pytest/mark/evaluate.py::<module>",
+                    "context_for": [
+                        "src/_pytest/mark/evaluate.py::MarkEvaluator._istrue"
+                    ],
+                    "content_kind": "file"
+                }
+            ],
+            "patched": [
+                {
+                    "class_symbol": "src/_pytest/mark/evaluate.py::MarkEvaluator",
+                    "document": "src/_pytest/mark/evaluate.py::<module>",
+                    "context_for": [
+                        "src/_pytest/mark/evaluate.py::MarkEvaluator._istrue"
+                    ],
+                    "content_kind": "file"
+                }
+            ]
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-7432": {
@@ -824,7 +1074,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/skipping.py::pytest_runtest_makereport"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -834,6 +1086,12 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-7490": {
@@ -868,7 +1126,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/skipping.py::<module>"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             },
             {
                 "id": "src/_pytest/skipping.py::pytest_runtest_call",
@@ -896,7 +1156,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/skipping.py::pytest_runtest_call"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             },
             {
                 "id": "src/_pytest/skipping.py::pytest_runtest_setup",
@@ -924,7 +1186,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/skipping.py::pytest_runtest_setup"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -934,6 +1198,12 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-8365": {
@@ -968,16 +1238,46 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/tmpdir.py::TempPathFactory.getbasetemp"
+                ],
+                "supporting_base": [
+                    "src/_pytest/tmpdir.py::TempPathFactory"
+                ],
+                "supporting_patched": [
+                    "src/_pytest/tmpdir.py::TempPathFactory"
                 ]
             }
         ],
         "counts": {
             "changed_symbols": 1,
-            "base_objects": 1,
-            "patched_objects": 1
+            "base_objects": 2,
+            "patched_objects": 2
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [
+                {
+                    "class_symbol": "src/_pytest/tmpdir.py::TempPathFactory",
+                    "document": "src/_pytest/tmpdir.py::TempPathFactory",
+                    "context_for": [
+                        "src/_pytest/tmpdir.py::TempPathFactory.getbasetemp"
+                    ],
+                    "content_kind": "full_class"
+                }
+            ],
+            "patched": [
+                {
+                    "class_symbol": "src/_pytest/tmpdir.py::TempPathFactory",
+                    "document": "src/_pytest/tmpdir.py::TempPathFactory",
+                    "context_for": [
+                        "src/_pytest/tmpdir.py::TempPathFactory.getbasetemp"
+                    ],
+                    "content_kind": "full_class"
+                }
+            ]
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-8906": {
@@ -1012,16 +1312,46 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/python.py::Module._importtestmodule"
+                ],
+                "supporting_base": [
+                    "src/_pytest/python.py::Module"
+                ],
+                "supporting_patched": [
+                    "src/_pytest/python.py::Module"
                 ]
             }
         ],
         "counts": {
             "changed_symbols": 1,
-            "base_objects": 1,
-            "patched_objects": 1
+            "base_objects": 2,
+            "patched_objects": 2
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [
+                {
+                    "class_symbol": "src/_pytest/python.py::Module",
+                    "document": "src/_pytest/python.py::Module",
+                    "context_for": [
+                        "src/_pytest/python.py::Module._importtestmodule"
+                    ],
+                    "content_kind": "full_class"
+                }
+            ],
+            "patched": [
+                {
+                    "class_symbol": "src/_pytest/python.py::Module",
+                    "document": "src/_pytest/python.py::Module",
+                    "context_for": [
+                        "src/_pytest/python.py::Module._importtestmodule"
+                    ],
+                    "content_kind": "full_class"
+                }
+            ]
+        },
         "non_python_files": []
     },
     "pytest-dev__pytest-9359": {
@@ -1056,7 +1386,9 @@
                 ],
                 "selected_patched": [
                     "src/_pytest/_code/source.py::get_statement_startend2"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -1066,6 +1398,12 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
         "non_python_files": []
     }
 }

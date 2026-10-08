@@ -38,6 +38,24 @@ appear only in base context. Renames retain the old path for base snippets.
 Unparseable changed Python files contribute explicit whole-file context with
 diagnostics; non-Python files are listed in the manifest.
 
+Selected class methods automatically bring enclosing class context from the
+same revision. Classes of at most 200 lines and 12,000 characters are included
+in full. Larger classes use a `class_outline`: class decorators and inheritance,
+class-body statements (including attributes and docstrings), method signatures
+and decorators, constructor/factory implementations, and directly referenced
+local helper implementations. Omitted method bodies are explicitly replaced
+with `...` comments; `source_spans` records the original source fragments.
+Inherited implementations outside the indexed patch files are not expanded.
+
+Class context is deduplicated across selected methods. Existing full-class or
+whole-file documents are reused when they already contain the enclosing class.
+Nested classes also retain their enclosing class structure. Documents record
+`class_context_ids`, `context_for`, and `enclosing_class_context` evidence; the
+manifest records `class_context` and each change's `supporting_base` and
+`supporting_patched` documents. Supporting classes are not added to the patch's
+changed-object list or to test-oracle targets. Base context always uses original
+buggy source; patched context uses the developer-fixed revision.
+
 The extractor reads only patch-named files, applies the patch in a temporary
 directory, and never checks out or resets the clone. It requires no LLM or target
 project installation. Partial clones may download missing historical blobs.

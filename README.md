@@ -89,6 +89,9 @@ It writes `code_retrieval_oracle_base.json`, `code_retrieval_oracle_patched.json
 and `oracle_code_manifest.json` under `retrieval_results/code/oracle/<dataset>/<repo>/`.
 Use the base JSON as `--context_code_path` to supply buggy-revision source.
 The patched JSON contains the developer fix and is a separate hindsight variant.
+Selected methods also include enclosing class context from the same revision:
+full source for small classes, or an outline with setup and directly referenced
+helpers for large classes. Context is shared across methods of the same class.
 See [ORACLE_CODE_GUIDE.md](ORACLE_CODE_GUIDE.md) for selection rules and usage.
 
 To store both code and augmented existing-test oracle context, run:

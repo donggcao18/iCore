@@ -16,7 +16,33 @@
                     "reason": "existing_symbol",
                     "confidence": 1.0
                 }
+            ],
+            "class_context_ids": [
+                "pylint/checkers/misc.py::EncodingChecker"
             ]
+        },
+        "pylint/checkers/misc.py::EncodingChecker": {
+            "obj_name": "EncodingChecker",
+            "node_type": "class",
+            "path": "pylint/checkers/misc.py",
+            "parent": null,
+            "qualified_name": "EncodingChecker",
+            "code_start_line": 77,
+            "code_end_line": 198,
+            "code_content": "class EncodingChecker(BaseChecker):\n\n    \"\"\"Checks for:\n    * warning notes in the code like FIXME, XXX\n    * encoding issues.\n    \"\"\"\n\n    __implements__ = (IRawChecker, ITokenChecker)\n\n    # configuration section name\n    name = \"miscellaneous\"\n    msgs = {\n        \"W0511\": (\n            \"%s\",\n            \"fixme\",\n            \"Used when a warning note as FIXME or XXX is detected.\",\n        )\n    }\n\n    options = (\n        (\n            \"notes\",\n            {\n                \"type\": \"csv\",\n                \"metavar\": \"<comma separated values>\",\n                \"default\": (\"FIXME\", \"XXX\", \"TODO\"),\n                \"help\": (\n                    \"List of note tags to take in consideration, \"\n                    \"separated by a comma.\"\n                ),\n            },\n        ),\n        (\n            \"notes-rgx\",\n            {\n                \"type\": \"string\",\n                \"metavar\": \"<regexp>\",\n                \"help\": \"Regular expression of note tags to take in consideration.\",\n            },\n        ),\n    )\n\n    def open(self):\n        super().open()\n\n        notes = \"|\".join(re.escape(note) for note in self.config.notes)\n        if self.config.notes_rgx:\n            regex_string = rf\"#\\s*({notes}|{self.config.notes_rgx})\\b\"\n        else:\n            regex_string = rf\"#\\s*({notes})\\b\"\n\n        self._fixme_pattern = re.compile(regex_string, re.I)\n\n    def _check_encoding(\n        self, lineno: int, line: bytes, file_encoding: str\n    ) -> Optional[str]:\n        try:\n            return line.decode(file_encoding)\n        except UnicodeDecodeError:\n            pass\n        except LookupError:\n            if (\n                line.startswith(b\"#\")\n                and \"coding\" in str(line)\n                and file_encoding in str(line)\n            ):\n                msg = f\"Cannot decode using encoding '{file_encoding}', bad encoding\"\n                self.add_message(\"syntax-error\", line=lineno, args=msg)\n        return None\n\n    def process_module(self, node: nodes.Module) -> None:\n        \"\"\"Inspect the source file to find encoding problem.\"\"\"\n        encoding = node.file_encoding if node.file_encoding else \"ascii\"\n\n        with node.stream() as stream:\n            for lineno, line in enumerate(stream):\n                self._check_encoding(lineno + 1, line, encoding)\n\n    def process_tokens(self, tokens):\n        \"\"\"Inspect the source to find fixme problems.\"\"\"\n        if not self.config.notes:\n            return\n        comments = (\n            token_info for token_info in tokens if token_info.type == tokenize.COMMENT\n        )\n        for comment in comments:\n            comment_text = comment.string[1:].lstrip()  # trim '#' and whitespaces\n\n            # handle pylint disable clauses\n            disable_option_match = OPTION_PO.search(comment_text)\n            if disable_option_match:\n                try:\n                    values = []\n                    try:\n                        for pragma_repr in (\n                            p_rep\n                            for p_rep in parse_pragma(disable_option_match.group(2))\n                            if p_rep.action == \"disable\"\n                        ):\n                            values.extend(pragma_repr.messages)\n                    except PragmaParserError:\n                        # Printing useful information dealing with this error is done in the lint package\n                        pass\n                    if set(values) & set(self.config.notes):\n                        continue\n                except ValueError:\n                    self.add_message(\n                        \"bad-inline-option\",\n                        args=disable_option_match.group(1).strip(),\n                        line=comment.start[0],\n                    )\n                    continue\n\n            # emit warnings if necessary\n            match = self._fixme_pattern.search(\"#\" + comment_text.lower())\n            if match:\n                self.add_message(\n                    \"fixme\",\n                    col_offset=comment.start[1] + 1,\n                    args=comment_text,\n                    line=comment.start[0],\n                )",
+            "revision": "base",
+            "selection_evidence": [
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "pylint/checkers/misc.py::EncodingChecker.open",
+                    "class_symbol": "pylint/checkers/misc.py::EncodingChecker",
+                    "confidence": 1.0
+                }
+            ],
+            "context_for": [
+                "pylint/checkers/misc.py::EncodingChecker.open"
+            ],
+            "content_kind": "full_class"
         }
     },
     "pylint-dev__pylint-6506": {
@@ -157,7 +183,33 @@
                     "reason": "existing_symbol",
                     "confidence": 1.0
                 }
+            ],
+            "class_context_ids": [
+                "pylint/reporters/text.py::TextReporter"
             ]
+        },
+        "pylint/reporters/text.py::TextReporter": {
+            "obj_name": "TextReporter",
+            "node_type": "class",
+            "path": "pylint/reporters/text.py",
+            "parent": null,
+            "qualified_name": "TextReporter",
+            "code_start_line": 152,
+            "code_end_line": 211,
+            "code_content": "class TextReporter(BaseReporter):\n    \"\"\"Reports messages and layouts in plain text.\"\"\"\n\n    name = \"text\"\n    extension = \"txt\"\n    line_format = \"{path}:{line}:{column}: {msg_id}: {msg} ({symbol})\"\n\n    def __init__(self, output: TextIO | None = None) -> None:\n        super().__init__(output)\n        self._modules: set[str] = set()\n        self._template = self.line_format\n        self._fixed_template = self.line_format\n        \"\"\"The output format template with any unrecognized arguments removed.\"\"\"\n\n    def on_set_current_module(self, module: str, filepath: str | None) -> None:\n        \"\"\"Set the format template to be used and check for unrecognized arguments.\"\"\"\n        template = str(self.linter.config.msg_template or self._template)\n\n        # Return early if the template is the same as the previous one\n        if template == self._template:\n            return\n\n        # Set template to the currently selected template\n        self._template = template\n\n        # Check to see if all parameters in the template are attributes of the Message\n        arguments = re.findall(r\"\\{(.+?)(:.*)?\\}\", template)\n        for argument in arguments:\n            if argument[0] not in MESSAGE_FIELDS:\n                warnings.warn(\n                    f\"Don't recognize the argument '{argument[0]}' in the --msg-template. \"\n                    \"Are you sure it is supported on the current version of pylint?\"\n                )\n                template = re.sub(r\"\\{\" + argument[0] + r\"(:.*?)?\\}\", \"\", template)\n        self._fixed_template = template\n\n    def write_message(self, msg: Message) -> None:\n        \"\"\"Convenience method to write a formatted message with class default\n        template.\n        \"\"\"\n        self_dict = asdict(msg)\n        for key in (\"end_line\", \"end_column\"):\n            self_dict[key] = self_dict[key] or \"\"\n\n        self.writeln(self._fixed_template.format(**self_dict))\n\n    def handle_message(self, msg: Message) -> None:\n        \"\"\"Manage message of different type and in the context of path.\"\"\"\n        if msg.module not in self._modules:\n            if msg.module:\n                self.writeln(f\"************* Module {msg.module}\")\n                self._modules.add(msg.module)\n            else:\n                self.writeln(\"************* \")\n        self.write_message(msg)\n\n    def _display(self, layout: Section) -> None:\n        \"\"\"Launch layouts display.\"\"\"\n        print(file=self.out)\n        TextWriter().format(layout, self.out)",
+            "revision": "base",
+            "selection_evidence": [
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "pylint/reporters/text.py::TextReporter.on_set_current_module",
+                    "class_symbol": "pylint/reporters/text.py::TextReporter",
+                    "confidence": 1.0
+                }
+            ],
+            "context_for": [
+                "pylint/reporters/text.py::TextReporter.on_set_current_module"
+            ],
+            "content_kind": "full_class"
         }
     }
 }

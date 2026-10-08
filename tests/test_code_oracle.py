@@ -50,12 +50,99 @@ class CodeOracleTests(unittest.TestCase):
         before = "LIMIT = 1\nclass Engine:\n    @staticmethod\n    def run():\n        return LIMIT\n"
         after = before.replace("LIMIT = 1", "LIMIT = 2").replace("return LIMIT", "return LIMIT + 1")
         base, _, _ = serialize(before, after)
-        self.assertEqual(set(base), {"core.py::LIMIT", "core.py::Engine.run"})
+        self.assertEqual(set(base), {"core.py::LIMIT", "core.py::Engine.run", "core.py::Engine"})
         method = base["core.py::Engine.run"]
         self.assertEqual(method["node_type"], "class_function")
         self.assertEqual(method["obj_name"], "run")
         self.assertEqual(method["parent"], "Engine")
         self.assertTrue(method["code_content"].startswith("    @staticmethod"))
+        self.assertEqual(method["class_context_ids"], ["core.py::Engine"])
+
+    def test_small_class_context_includes_original_setup_and_is_deduplicated(self):
+        before = ("@decorate\nclass Engine(Base):\n    LIMIT = 1\n"
+                  "    def __init__(self, value):\n        self.value = value\n"
+                  "    def run(self):\n        return self.value\n"
+                  "    def stop(self):\n        return self.LIMIT\n")
+        after = before.replace("return self.value", "return self.value + 1").replace("return self.LIMIT", "return self.LIMIT + 1")
+        base, patched, manifest = serialize(before, after)
+        context = base["core.py::Engine"]
+        self.assertEqual(context["code_content"], before.rstrip())
+        self.assertEqual(context["content_kind"], "full_class")
+        self.assertEqual(context["context_for"], ["core.py::Engine.run", "core.py::Engine.stop"])
+        self.assertEqual(patched["core.py::Engine"]["code_content"], after.rstrip())
+        self.assertEqual(len(manifest["class_context"]["base"]), 1)
+        self.assertEqual({item["name"] for item in manifest["changed_symbols"]}, {"Engine.run", "Engine.stop"})
+        for record in manifest["changed_symbols"]:
+            self.assertEqual(record["selected_base"], [record["id"]])
+            self.assertEqual(record["supporting_base"], ["core.py::Engine"])
+
+    def test_large_class_outline_preserves_structure_setup_and_direct_helpers(self):
+        before = ("@decorate\nclass Engine(\n    Base,\n):\n"
+                  "    \"\"\"Engine documentation.\"\"\"\n    limit: int = 1\n"
+                  "    def __init__(self, value):\n        self.value = self.normalize(value)\n"
+                  "    @classmethod\n    def from_config(cls, config):\n        return cls(config.value)\n"
+                  "    def normalize(self, value):\n        return abs(value)\n"
+                  "    def validate(self):\n        return self.value > self.limit\n"
+                  "    @property\n    def state(self):\n        return self.value\n"
+                  "    def run(self):\n        return self.validate()\n"
+                  "    def inline(\n        self,\n    ): return 42\n"
+                  "    async def unrelated(self):\n" + "        unused = 0\n" * 210)
+        after = before.replace("return self.validate()", "return not self.validate()")
+        base, patched, manifest = serialize(before, after)
+        outline = base["core.py::Engine"]
+        content = outline["code_content"]
+        ast.parse(content)
+        self.assertEqual(outline["content_kind"], "class_outline")
+        for snippet in ("@decorate", "class Engine(\n    Base,\n):", "limit: int = 1",
+                        "self.value = self.normalize(value)", "return cls(config.value)",
+                        "return abs(value)", "return self.value > self.limit", "@property",
+                        "    ): return 42",
+                        "async def unrelated(self):", "Body omitted from class outline"):
+            self.assertIn(snippet, content)
+        self.assertNotIn("unused = 0", content)
+        self.assertNotIn("return self.validate()", content)
+        self.assertNotIn("return not self.validate()", content)
+        self.assertIn("return self.validate()", base["core.py::Engine.run"]["code_content"])
+        self.assertIn("return not self.validate()", patched["core.py::Engine.run"]["code_content"])
+        self.assertEqual(manifest["class_context"]["base"][0]["content_kind"], "class_outline")
+        source_lines = before.splitlines()
+        for start, end in outline["source_spans"]:
+            self.assertIn("\n".join(source_lines[start - 1:end]), content)
+
+    def test_existing_full_class_context_is_reused(self):
+        before = "class Engine(Base):\n    def run(self):\n        return 1\n"
+        after = before.replace("Base", "OtherBase").replace("return 1", "return 2")
+        base, _, manifest = serialize(before, after)
+        self.assertEqual(set(base), {"core.py::Engine", "core.py::Engine.run"})
+        self.assertEqual(base["core.py::Engine"]["code_content"], before.rstrip())
+        reasons = {item["reason"] for item in base["core.py::Engine"]["selection_evidence"]}
+        self.assertEqual(reasons, {"existing_symbol", "enclosing_class_context"})
+        self.assertEqual(len(manifest["class_context"]["base"]), 1)
+
+    def test_whole_file_already_covers_class(self):
+        before = "import old\nclass Engine:\n    def run(self):\n        return 1\n"
+        after = before.replace("import old", "import new").replace("return 1", "return 2")
+        base, _, manifest = serialize(before, after)
+        self.assertNotIn("core.py::Engine", base)
+        self.assertEqual(base["core.py::Engine.run"]["class_context_ids"], ["core.py::<module>"])
+        self.assertEqual(manifest["class_context"]["base"][0]["document"], "core.py::<module>")
+
+    def test_nested_method_keeps_outer_class_structure(self):
+        before = "class Outer:\n    class Inner:\n        def run(self):\n            return 1\n"
+        after = before.replace("return 1", "return 2")
+        base, _, manifest = serialize(before, after)
+        self.assertEqual(set(base), {"core.py::Outer", "core.py::Outer.Inner.run"})
+        self.assertEqual(base["core.py::Outer"]["code_content"], before.rstrip())
+        self.assertEqual(base["core.py::Outer.Inner.run"]["class_context_ids"], ["core.py::Outer"])
+        self.assertEqual(len(manifest["class_context"]["base"]), 2)
+
+    def test_deleted_method_keeps_only_base_class_context(self):
+        before = "class Engine:\n    def run(self):\n        return 1\n    def keep(self):\n        return 0\n"
+        after = "class Engine:\n    def keep(self):\n        return 0\n"
+        base, patched, manifest = serialize(before, after)
+        self.assertIn("core.py::Engine", base)
+        self.assertNotIn("core.py::Engine.run", patched)
+        self.assertFalse(manifest["class_context"]["patched"])
 
     def test_added_helper_is_only_in_patched_and_base_caller_is_deduplicated(self):
         before = "def work(x):\n    return x\n"
@@ -148,6 +235,8 @@ class CodeOracleIntegrationTests(unittest.TestCase):
             store_instance(output, "example", (base, patched, manifest))
             formatted = namespace["get_retrieval_docs"]("example", output / OUTPUT_FILES[0])
             self.assertIn("Engine.run", formatted)
+            self.assertIn("- class: core.py Engine", formatted)
+            self.assertIn("class Engine:", formatted)
             self.assertIn("return 1", formatted)
             self.assertNotIn("return 2", formatted)
 

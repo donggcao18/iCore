@@ -8,6 +8,7 @@ and is a separate hindsight comparison. Neither variant changes the checkout.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 from pathlib import Path
 
@@ -23,6 +24,9 @@ OUTPUT_FILES = (
     "code_retrieval_oracle_patched.json",
     "oracle_code_manifest.json",
 )
+
+FULL_CLASS_MAX_LINES = 200
+FULL_CLASS_MAX_CHARS = 12_000
 
 
 def default_paths(dataset: str, repo: str) -> tuple[Path, Path]:
@@ -51,6 +55,107 @@ def code_document(index: DependencyIndex, symbol: Symbol, revision: str) -> dict
     }
 
 
+def _node_start(node: ast.AST) -> int:
+    return min([node.lineno, *[item.lineno for item in getattr(node, "decorator_list", [])]])
+
+
+def class_context_document(index: DependencyIndex, symbol: Symbol, revision: str,
+                           method_ids: set[str]) -> dict:
+    """Keep original source fragments; explicitly mark omitted method bodies."""
+    doc = code_document(index, symbol, revision)
+    doc["context_for"] = sorted(method_ids)
+    if (symbol.end - symbol.start + 1 <= FULL_CLASS_MAX_LINES
+            and len(doc["code_content"]) <= FULL_CLASS_MAX_CHARS):
+        doc["content_kind"] = "full_class"
+        return doc
+
+    node = symbol.node
+    lines = index.sources[symbol.file].splitlines()
+    methods = {item.name: item for item in node.body
+               if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))}
+    setup = {name for name in methods if name in {"__new__", "__init__"}}
+    # Factories returning cls(...) or ClassName(...) explain supported setup.
+    for name, method in methods.items():
+        if any(isinstance(item, ast.Return) and isinstance(item.value, ast.Call)
+               and isinstance(item.value.func, ast.Name)
+               and item.value.func.id in {"cls", node.name} for item in ast.walk(method)):
+            setup.add(name)
+    roots = [index.symbols[sid].node for sid in method_ids if index.symbols[sid].parent == symbol.id]
+    roots += [methods[name] for name in sorted(setup)]
+    helpers = {item.attr for root in roots for item in ast.walk(root)
+               if isinstance(item, ast.Attribute) and isinstance(item.value, ast.Name)
+               and item.value.id in {"self", "cls"} and item.attr in methods}
+    selected_names = {index.symbols[sid].node.name for sid in method_ids
+                      if index.symbols[sid].parent == symbol.id}
+    full_methods = setup | (helpers - selected_names)
+    fragments: list[str] = []
+    spans: list[list[int]] = []
+
+    def append_source(start: int, end: int) -> None:
+        if start <= end:
+            fragments.extend(lines[start - 1:end])
+            spans.append([start, end])
+
+    append_source(symbol.start, _node_start(node.body[0]) - 1)
+    for statement in node.body:
+        if not isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            append_source(_node_start(statement), statement.end_lineno)
+        else:
+            first_body = statement.body[0]
+            first_body_line = lines[first_body.lineno - 1]
+            # AST columns count UTF-8 bytes. Inline bodies may follow a
+            # multiline signature's closing colon; retain that entire method.
+            inline_body = first_body_line.encode("utf-8")[:first_body.col_offset].strip()
+            if statement.name in full_methods or inline_body:
+                append_source(_node_start(statement), statement.end_lineno)
+            else:
+                append_source(_node_start(statement), first_body.lineno - 1)
+                indent = first_body_line[:len(first_body_line) - len(first_body_line.lstrip())]
+                fragments.append(f"{indent}...  # Body omitted from class outline.")
+    doc.update(code_content="\n".join(fragments), content_kind="class_outline", source_spans=spans)
+    return doc
+
+
+def add_class_context(index: DependencyIndex, output: dict[str, dict], revision: str) -> list[dict]:
+    """Expand selected methods without changing patch targets or base mappings."""
+    requests: dict[str, set[str]] = {}
+    for sid in list(output):
+        symbol = index.symbols.get(sid)
+        if not symbol or symbol.kind != "function":
+            continue
+        parent = index.symbols.get(symbol.parent)
+        while parent and parent.kind == "class":
+            requests.setdefault(parent.id, set()).add(sid)
+            parent = index.symbols.get(parent.parent)
+    records = []
+    # Outer classes first, so their full source can cover nested classes.
+    for class_id in sorted(requests, key=lambda sid: (index.symbols[sid].file,
+                                                     index.symbols[sid].start, -index.symbols[sid].end, sid)):
+        symbol = index.symbols[class_id]
+        method_ids = requests[class_id]
+        covering = [sid for sid, doc in output.items()
+                    if doc["path"] == symbol.file and doc["node_type"] in {"class", "file"}
+                    and doc.get("content_kind") != "class_outline"
+                    and doc["code_start_line"] <= symbol.start and doc["code_end_line"] >= symbol.end]
+        document_id = min(covering, key=lambda sid: (output[sid]["code_end_line"] - output[sid]["code_start_line"], sid)) if covering else class_id
+        if not covering:
+            output[class_id] = class_context_document(index, symbol, revision, method_ids)
+        doc = output[document_id]
+        doc["context_for"] = sorted(set(doc.get("context_for", [])) | method_ids)
+        for method_id in sorted(method_ids):
+            evidence = {"reason": "enclosing_class_context", "related_symbol": method_id,
+                        "class_symbol": class_id, "confidence": 1.0}
+            if evidence not in doc["selection_evidence"]:
+                doc["selection_evidence"].append(evidence)
+            context_ids = output[method_id].setdefault("class_context_ids", [])
+            if document_id not in context_ids:
+                context_ids.append(document_id)
+        records.append({"class_symbol": class_id, "document": document_id,
+                        "context_for": sorted(method_ids),
+                        "content_kind": doc.get("content_kind", "full_class" if doc["node_type"] == "class" else "file")})
+    return records
+
+
 def serialize_code_oracle(before: DependencyIndex, after: DependencyIndex,
                           symbols: list[dict], base_commit: str) -> tuple[dict, dict, dict]:
     base: dict[str, dict] = {}
@@ -73,6 +178,13 @@ def serialize_code_oracle(before: DependencyIndex, after: DependencyIndex,
             doc["selection_evidence"].append({"changed_symbol": changed["id"], "reason": "changed_lines", "confidence": 1.0})
             record["selected_patched"].append(symbol.id)
         records.append(record)
+    base_context = add_class_context(before, base, "base")
+    patched_context = add_class_context(after, patched, "patched")
+    for record in records:
+        for revision, output in (("base", base), ("patched", patched)):
+            record[f"supporting_{revision}"] = sorted({context_id
+                for sid in record[f"selected_{revision}"]
+                for context_id in output[sid].get("class_context_ids", [])})
     manifest = {
         "base_commit": base_commit,
         "selection_uses_gold_patch": True,
@@ -82,6 +194,9 @@ def serialize_code_oracle(before: DependencyIndex, after: DependencyIndex,
         "counts": {"changed_symbols": len(symbols), "base_objects": len(base), "patched_objects": len(patched)},
         "base_parse_errors": before.diagnostics,
         "patched_parse_errors": after.diagnostics,
+        "class_context": {"full_class_max_lines": FULL_CLASS_MAX_LINES,
+                          "full_class_max_chars": FULL_CLASS_MAX_CHARS,
+                          "base": base_context, "patched": patched_context},
     }
     return base, patched, manifest
 

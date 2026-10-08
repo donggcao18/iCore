@@ -31,16 +31,46 @@
                 ],
                 "selected_patched": [
                     "pylint/checkers/misc.py::EncodingChecker.open"
+                ],
+                "supporting_base": [
+                    "pylint/checkers/misc.py::EncodingChecker"
+                ],
+                "supporting_patched": [
+                    "pylint/checkers/misc.py::EncodingChecker"
                 ]
             }
         ],
         "counts": {
             "changed_symbols": 1,
-            "base_objects": 1,
-            "patched_objects": 1
+            "base_objects": 2,
+            "patched_objects": 2
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [
+                {
+                    "class_symbol": "pylint/checkers/misc.py::EncodingChecker",
+                    "document": "pylint/checkers/misc.py::EncodingChecker",
+                    "context_for": [
+                        "pylint/checkers/misc.py::EncodingChecker.open"
+                    ],
+                    "content_kind": "full_class"
+                }
+            ],
+            "patched": [
+                {
+                    "class_symbol": "pylint/checkers/misc.py::EncodingChecker",
+                    "document": "pylint/checkers/misc.py::EncodingChecker",
+                    "context_for": [
+                        "pylint/checkers/misc.py::EncodingChecker.open"
+                    ],
+                    "content_kind": "full_class"
+                }
+            ]
+        },
         "non_python_files": []
     },
     "pylint-dev__pylint-6506": {
@@ -75,7 +105,9 @@
                 ],
                 "selected_patched": [
                     "pylint/config/config_initialization.py::_config_initialization"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -85,6 +117,12 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
         "non_python_files": []
     },
     "pylint-dev__pylint-7080": {
@@ -119,7 +157,9 @@
                 ],
                 "selected_patched": [
                     "pylint/lint/expand_modules.py::_is_ignored_file"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -129,6 +169,12 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
         "non_python_files": []
     },
     "pylint-dev__pylint-7114": {
@@ -163,7 +209,9 @@
                 ],
                 "selected_patched": [
                     "pylint/lint/expand_modules.py::expand_modules"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -173,6 +221,12 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
         "non_python_files": []
     },
     "pylint-dev__pylint-7228": {
@@ -207,7 +261,9 @@
                 ],
                 "selected_patched": [
                     "pylint/config/argument.py::<module>"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             },
             {
                 "id": "pylint/config/argument.py::_TYPE_TRANSFORMERS",
@@ -235,7 +291,9 @@
                 ],
                 "selected_patched": [
                     "pylint/config/argument.py::_TYPE_TRANSFORMERS"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             },
             {
                 "id": "pylint/config/argument.py::_regex_transformer",
@@ -260,7 +318,9 @@
                 ],
                 "selected_patched": [
                     "pylint/config/argument.py::_regex_transformer"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             },
             {
                 "id": "pylint/config/argument.py::_regexp_csv_transfomer",
@@ -288,7 +348,9 @@
                 ],
                 "selected_patched": [
                     "pylint/config/argument.py::_regexp_csv_transfomer"
-                ]
+                ],
+                "supporting_base": [],
+                "supporting_patched": []
             }
         ],
         "counts": {
@@ -298,6 +360,12 @@
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [],
+            "patched": []
+        },
         "non_python_files": []
     },
     "pylint-dev__pylint-7993": {
@@ -332,16 +400,46 @@
                 ],
                 "selected_patched": [
                     "pylint/reporters/text.py::TextReporter.on_set_current_module"
+                ],
+                "supporting_base": [
+                    "pylint/reporters/text.py::TextReporter"
+                ],
+                "supporting_patched": [
+                    "pylint/reporters/text.py::TextReporter"
                 ]
             }
         ],
         "counts": {
             "changed_symbols": 1,
-            "base_objects": 1,
-            "patched_objects": 1
+            "base_objects": 2,
+            "patched_objects": 2
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
+        "class_context": {
+            "full_class_max_lines": 200,
+            "full_class_max_chars": 12000,
+            "base": [
+                {
+                    "class_symbol": "pylint/reporters/text.py::TextReporter",
+                    "document": "pylint/reporters/text.py::TextReporter",
+                    "context_for": [
+                        "pylint/reporters/text.py::TextReporter.on_set_current_module"
+                    ],
+                    "content_kind": "full_class"
+                }
+            ],
+            "patched": [
+                {
+                    "class_symbol": "pylint/reporters/text.py::TextReporter",
+                    "document": "pylint/reporters/text.py::TextReporter",
+                    "context_for": [
+                        "pylint/reporters/text.py::TextReporter.on_set_current_module"
+                    ],
+                    "content_kind": "full_class"
+                }
+            ]
+        },
         "non_python_files": []
     }
 }

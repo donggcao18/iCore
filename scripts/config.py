@@ -11,10 +11,10 @@ API_KEY = {
     'gpt-4o': os.getenv('OPENAI_API_KEY'),
     'gpt-4o-2024-08-06': os.getenv('OPENAI_API_KEY'),
     'qwen-32b': os.getenv('QWEN_API_KEY'),
-    'qwen/qwen3.8-27b:free': os.getenv('QWEN_API_KEY'),
-    'nvidia/nemotron-3-super-120b-a12b:free': os.getenv('QWEN_API_KEY'),
-    'z-ai/glm-5.2:free': os.getenv('QWEN_API_KEY'),
-    'deepseek-v3-0324': os.getenv('DEEPSEEK_API_KEY'),
+    'qwen/qwen3.8-27b:free': os.getenv('QWEN_BASE_URL'),
+    'nvidia/nemotron-3-super-120b-a12b:free': os.getenv('QWEN_BASE_URL'),
+    'z-ai/glm-5.2:free': os.getenv('QWEN_BASE_URL'),
+    'deepseek-v3-0324': os.getenv('QWEN_BASE_URL'),
 }
 
 BASE_URL = {
@@ -24,5 +24,5 @@ BASE_URL = {
     'qwen/qwen3.8-27b:free': os.getenv('QWEN_BASE_URL') or None,
     'nvidia/nemotron-3-super-120b-a12b:free': os.getenv('QWEN_BASE_URL') or None,
     'z-ai/glm-5.2:free': os.getenv('QWEN_BASE_URL') or None,
-    'deepseek-v3-0324': os.getenv('DEEPSEEK_BASE_URL') or None,
+    'deepseek-v3-0324': os.getenv('QWEN_BASE_URL') or None,
 }

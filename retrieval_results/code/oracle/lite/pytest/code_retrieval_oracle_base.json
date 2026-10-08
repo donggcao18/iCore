@@ -16,6 +16,130 @@
                     "reason": "existing_symbol",
                     "confidence": 1.0
                 }
+            ],
+            "class_context_ids": [
+                "src/_pytest/assertion/rewrite.py::AssertionRewriter"
+            ]
+        },
+        "src/_pytest/assertion/rewrite.py::AssertionRewriter": {
+            "obj_name": "AssertionRewriter",
+            "node_type": "class",
+            "path": "src/_pytest/assertion/rewrite.py",
+            "parent": null,
+            "qualified_name": "AssertionRewriter",
+            "code_start_line": 588,
+            "code_end_line": 1135,
+            "code_content": "class AssertionRewriter(ast.NodeVisitor):\n    \"\"\"Assertion rewriting implementation.\n\n    The main entrypoint is to call .run() with an ast.Module instance,\n    this will then find all the assert statements and rewrite them to\n    provide intermediate values and a detailed assertion error.  See\n    http://pybites.blogspot.be/2011/07/behind-scenes-of-pytests-new-assertion.html\n    for an overview of how this works.\n\n    The entry point here is .run() which will iterate over all the\n    statements in an ast.Module and for each ast.Assert statement it\n    finds call .visit() with it.  Then .visit_Assert() takes over and\n    is responsible for creating new ast statements to replace the\n    original assert statement: it rewrites the test of an assertion\n    to provide intermediate values and replace it with an if statement\n    which raises an assertion error with a detailed explanation in\n    case the expression is false and calls pytest_assertion_pass hook\n    if expression is true.\n\n    For this .visit_Assert() uses the visitor pattern to visit all the\n    AST nodes of the ast.Assert.test field, each visit call returning\n    an AST node and the corresponding explanation string.  During this\n    state is kept in several instance attributes:\n\n    :statements: All the AST statements which will replace the assert\n       statement.\n\n    :variables: This is populated by .variable() with each variable\n       used by the statements so that they can all be set to None at\n       the end of the statements.\n\n    :variable_counter: Counter to create new unique variables needed\n       by statements.  Variables are created using .variable() and\n       have the form of \"@py_assert0\".\n\n    :expl_stmts: The AST statements which will be executed to get\n       data from the assertion.  This is the code which will construct\n       the detailed assertion message that is used in the AssertionError\n       or for the pytest_assertion_pass hook.\n\n    :explanation_specifiers: A dict filled by .explanation_param()\n       with %-formatting placeholders and their corresponding\n       expressions to use in the building of an assertion message.\n       This is used by .pop_format_context() to build a message.\n\n    :stack: A stack of the explanation_specifiers dicts maintained by\n       .push_format_context() and .pop_format_context() which allows\n       to build another %-formatted string while already building one.\n\n    :variables_overwrite: A dict filled with references to variables\n       that change value within an assert. This happens when a variable is\n       reassigned with the walrus operator\n\n    This state, except the variables_overwrite,  is reset on every new assert\n    statement visited and used by the other visitors.\n    \"\"\"\n    def __init__(\n        self, module_path: Optional[str], config: Optional[Config], source: bytes\n    ) -> None:\n        super().__init__()\n        self.module_path = module_path\n        self.config = config\n        if config is not None:\n            self.enable_assertion_pass_hook = config.getini(\n                \"enable_assertion_pass_hook\"\n            )\n        else:\n            self.enable_assertion_pass_hook = False\n        self.source = source\n        self.variables_overwrite: Dict[str, str] = {}\n    def run(self, mod: ast.Module) -> None:\n        ...  # Body omitted from class outline.\n    @staticmethod\n    def is_rewrite_disabled(docstring: str) -> bool:\n        return \"PYTEST_DONT_REWRITE\" in docstring\n    def variable(self) -> str:\n        ...  # Body omitted from class outline.\n    def assign(self, expr: ast.expr) -> ast.Name:\n        ...  # Body omitted from class outline.\n    def display(self, expr: ast.expr) -> ast.expr:\n        ...  # Body omitted from class outline.\n    def helper(self, name: str, *args: ast.expr) -> ast.expr:\n        ...  # Body omitted from class outline.\n    def builtin(self, name: str) -> ast.Attribute:\n        ...  # Body omitted from class outline.\n    def explanation_param(self, expr: ast.expr) -> str:\n        ...  # Body omitted from class outline.\n    def push_format_context(self) -> None:\n        ...  # Body omitted from class outline.\n    def pop_format_context(self, expl_expr: ast.expr) -> ast.Name:\n        ...  # Body omitted from class outline.\n    def generic_visit(self, node: ast.AST) -> Tuple[ast.Name, str]:\n        ...  # Body omitted from class outline.\n    def visit_Assert(self, assert_: ast.Assert) -> List[ast.stmt]:\n        ...  # Body omitted from class outline.\n    def visit_NamedExpr(self, name: ast.NamedExpr) -> Tuple[ast.NamedExpr, str]:\n        # This method handles the 'walrus operator' repr of the target\n        # name if it's a local variable or _should_repr_global_name()\n        # thinks it's acceptable.\n        ...  # Body omitted from class outline.\n    def visit_Name(self, name: ast.Name) -> Tuple[ast.Name, str]:\n        # Display the repr of the name if it's a local variable or\n        # _should_repr_global_name() thinks it's acceptable.\n        ...  # Body omitted from class outline.\n    def visit_BoolOp(self, boolop: ast.BoolOp) -> Tuple[ast.Name, str]:\n        ...  # Body omitted from class outline.\n    def visit_UnaryOp(self, unary: ast.UnaryOp) -> Tuple[ast.Name, str]:\n        ...  # Body omitted from class outline.\n    def visit_BinOp(self, binop: ast.BinOp) -> Tuple[ast.Name, str]:\n        ...  # Body omitted from class outline.\n    def visit_Call(self, call: ast.Call) -> Tuple[ast.Name, str]:\n        ...  # Body omitted from class outline.\n    def visit_Starred(self, starred: ast.Starred) -> Tuple[ast.Starred, str]:\n        # A Starred node can appear in a function call.\n        ...  # Body omitted from class outline.\n    def visit_Attribute(self, attr: ast.Attribute) -> Tuple[ast.Name, str]:\n        ...  # Body omitted from class outline.\n    def visit_Compare(self, comp: ast.Compare) -> Tuple[ast.expr, str]:\n        ...  # Body omitted from class outline.",
+            "revision": "base",
+            "selection_evidence": [
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter.run",
+                    "class_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                    "confidence": 1.0
+                }
+            ],
+            "context_for": [
+                "src/_pytest/assertion/rewrite.py::AssertionRewriter.run"
+            ],
+            "content_kind": "class_outline",
+            "source_spans": [
+                [
+                    588,
+                    588
+                ],
+                [
+                    589,
+                    643
+                ],
+                [
+                    645,
+                    658
+                ],
+                [
+                    660,
+                    660
+                ],
+                [
+                    744,
+                    746
+                ],
+                [
+                    748,
+                    748
+                ],
+                [
+                    755,
+                    755
+                ],
+                [
+                    761,
+                    761
+                ],
+                [
+                    765,
+                    765
+                ],
+                [
+                    771,
+                    771
+                ],
+                [
+                    776,
+                    776
+                ],
+                [
+                    788,
+                    788
+                ],
+                [
+                    801,
+                    801
+                ],
+                [
+                    821,
+                    821
+                ],
+                [
+                    827,
+                    827
+                ],
+                [
+                    944,
+                    947
+                ],
+                [
+                    956,
+                    958
+                ],
+                [
+                    966,
+                    966
+                ],
+                [
+                    1017,
+                    1017
+                ],
+                [
+                    1023,
+                    1023
+                ],
+                [
+                    1031,
+                    1031
+                ],
+                [
+                    1064,
+                    1065
+                ],
+                [
+                    1070,
+                    1070
+                ],
+                [
+                    1080,
+                    1080
+                ]
             ]
         }
     },
@@ -55,7 +179,23 @@
                     "changed_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
                     "reason": "existing_symbol",
                     "confidence": 1.0
+                },
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
+                    "class_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                    "confidence": 1.0
+                },
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy",
+                    "class_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                    "confidence": 1.0
                 }
+            ],
+            "context_for": [
+                "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
+                "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy"
             ]
         },
         "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35": {
@@ -79,6 +219,9 @@
                     "reason": "existing_symbol",
                     "confidence": 1.0
                 }
+            ],
+            "class_context_ids": [
+                "src/_pytest/assertion/rewrite.py::AssertionRewriter"
             ]
         },
         "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy": {
@@ -102,6 +245,9 @@
                     "reason": "existing_symbol",
                     "confidence": 1.0
                 }
+            ],
+            "class_context_ids": [
+                "src/_pytest/assertion/rewrite.py::AssertionRewriter"
             ]
         }
     },
@@ -161,7 +307,16 @@
                     "changed_symbol": "src/_pytest/_code/code.py::ExceptionInfo",
                     "reason": "existing_symbol",
                     "confidence": 1.0
+                },
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/_code/code.py::ExceptionInfo.__str__",
+                    "class_symbol": "src/_pytest/_code/code.py::ExceptionInfo",
+                    "confidence": 1.0
                 }
+            ],
+            "context_for": [
+                "src/_pytest/_code/code.py::ExceptionInfo.__str__"
             ]
         },
         "src/_pytest/_code/code.py::ExceptionInfo.__str__": {
@@ -180,6 +335,9 @@
                     "reason": "existing_symbol",
                     "confidence": 1.0
                 }
+            ],
+            "class_context_ids": [
+                "src/_pytest/_code/code.py::ExceptionInfo"
             ]
         }
     },
@@ -219,7 +377,16 @@
                     "changed_symbol": "src/_pytest/junitxml.py::<module>",
                     "reason": "existing_symbol",
                     "confidence": 1.0
+                },
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/junitxml.py::LogXML.pytest_sessionfinish",
+                    "class_symbol": "src/_pytest/junitxml.py::LogXML",
+                    "confidence": 1.0
                 }
+            ],
+            "context_for": [
+                "src/_pytest/junitxml.py::LogXML.pytest_sessionfinish"
             ]
         },
         "src/_pytest/junitxml.py::LogXML.pytest_sessionfinish": {
@@ -238,6 +405,9 @@
                     "reason": "existing_symbol",
                     "confidence": 1.0
                 }
+            ],
+            "class_context_ids": [
+                "src/_pytest/junitxml.py::<module>"
             ]
         }
     },
@@ -297,7 +467,16 @@
                     "changed_symbol": "src/_pytest/nodes.py::<module>",
                     "reason": "existing_symbol",
                     "confidence": 1.0
+                },
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/nodes.py::Node._repr_failure_py",
+                    "class_symbol": "src/_pytest/nodes.py::Node",
+                    "confidence": 1.0
                 }
+            ],
+            "context_for": [
+                "src/_pytest/nodes.py::Node._repr_failure_py"
             ]
         },
         "src/_pytest/nodes.py::Node._repr_failure_py": {
@@ -316,6 +495,9 @@
                     "reason": "existing_symbol",
                     "confidence": 1.0
                 }
+            ],
+            "class_context_ids": [
+                "src/_pytest/nodes.py::<module>"
             ]
         }
     },
@@ -335,7 +517,16 @@
                     "changed_symbol": "src/_pytest/mark/evaluate.py::<module>",
                     "reason": "existing_symbol",
                     "confidence": 1.0
+                },
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/mark/evaluate.py::MarkEvaluator._istrue",
+                    "class_symbol": "src/_pytest/mark/evaluate.py::MarkEvaluator",
+                    "confidence": 1.0
                 }
+            ],
+            "context_for": [
+                "src/_pytest/mark/evaluate.py::MarkEvaluator._istrue"
             ]
         },
         "src/_pytest/mark/evaluate.py::MarkEvaluator._istrue": {
@@ -359,6 +550,9 @@
                     "reason": "existing_caller",
                     "confidence": 0.8
                 }
+            ],
+            "class_context_ids": [
+                "src/_pytest/mark/evaluate.py::<module>"
             ]
         },
         "src/_pytest/mark/evaluate.py::cached_eval": {
@@ -491,7 +685,33 @@
                     "reason": "existing_symbol",
                     "confidence": 1.0
                 }
+            ],
+            "class_context_ids": [
+                "src/_pytest/tmpdir.py::TempPathFactory"
             ]
+        },
+        "src/_pytest/tmpdir.py::TempPathFactory": {
+            "obj_name": "TempPathFactory",
+            "node_type": "class",
+            "path": "src/_pytest/tmpdir.py",
+            "parent": null,
+            "qualified_name": "TempPathFactory",
+            "code_start_line": 23,
+            "code_end_line": 125,
+            "code_content": "@final\n@attr.s(init=False)\nclass TempPathFactory:\n    \"\"\"Factory for temporary directories under the common base temp directory.\n\n    The base directory can be configured using the ``--basetemp`` option.\n    \"\"\"\n\n    _given_basetemp = attr.ib(type=Optional[Path])\n    _trace = attr.ib()\n    _basetemp = attr.ib(type=Optional[Path])\n\n    def __init__(\n        self,\n        given_basetemp: Optional[Path],\n        trace,\n        basetemp: Optional[Path] = None,\n        *,\n        _ispytest: bool = False,\n    ) -> None:\n        check_ispytest(_ispytest)\n        if given_basetemp is None:\n            self._given_basetemp = None\n        else:\n            # Use os.path.abspath() to get absolute path instead of resolve() as it\n            # does not work the same in all platforms (see #4427).\n            # Path.absolute() exists, but it is not public (see https://bugs.python.org/issue25012).\n            self._given_basetemp = Path(os.path.abspath(str(given_basetemp)))\n        self._trace = trace\n        self._basetemp = basetemp\n\n    @classmethod\n    def from_config(\n        cls,\n        config: Config,\n        *,\n        _ispytest: bool = False,\n    ) -> \"TempPathFactory\":\n        \"\"\"Create a factory according to pytest configuration.\n\n        :meta private:\n        \"\"\"\n        check_ispytest(_ispytest)\n        return cls(\n            given_basetemp=config.option.basetemp,\n            trace=config.trace.get(\"tmpdir\"),\n            _ispytest=True,\n        )\n\n    def _ensure_relative_to_basetemp(self, basename: str) -> str:\n        basename = os.path.normpath(basename)\n        if (self.getbasetemp() / basename).resolve().parent != self.getbasetemp():\n            raise ValueError(f\"{basename} is not a normalized and relative path\")\n        return basename\n\n    def mktemp(self, basename: str, numbered: bool = True) -> Path:\n        \"\"\"Create a new temporary directory managed by the factory.\n\n        :param basename:\n            Directory base name, must be a relative path.\n\n        :param numbered:\n            If ``True``, ensure the directory is unique by adding a numbered\n            suffix greater than any existing one: ``basename=\"foo-\"`` and ``numbered=True``\n            means that this function will create directories named ``\"foo-0\"``,\n            ``\"foo-1\"``, ``\"foo-2\"`` and so on.\n\n        :returns:\n            The path to the new directory.\n        \"\"\"\n        basename = self._ensure_relative_to_basetemp(basename)\n        if not numbered:\n            p = self.getbasetemp().joinpath(basename)\n            p.mkdir()\n        else:\n            p = make_numbered_dir(root=self.getbasetemp(), prefix=basename)\n            self._trace(\"mktemp\", p)\n        return p\n\n    def getbasetemp(self) -> Path:\n        \"\"\"Return base temporary directory.\"\"\"\n        if self._basetemp is not None:\n            return self._basetemp\n\n        if self._given_basetemp is not None:\n            basetemp = self._given_basetemp\n            ensure_reset_dir(basetemp)\n            basetemp = basetemp.resolve()\n        else:\n            from_env = os.environ.get(\"PYTEST_DEBUG_TEMPROOT\")\n            temproot = Path(from_env or tempfile.gettempdir()).resolve()\n            user = get_user() or \"unknown\"\n            # use a sub-directory in the temproot to speed-up\n            # make_numbered_dir() call\n            rootdir = temproot.joinpath(f\"pytest-of-{user}\")\n            rootdir.mkdir(exist_ok=True)\n            basetemp = make_numbered_dir_with_cleanup(\n                prefix=\"pytest-\", root=rootdir, keep=3, lock_timeout=LOCK_TIMEOUT\n            )\n        assert basetemp is not None, basetemp\n        self._basetemp = t = basetemp\n        self._trace(\"new basetemp\", t)\n        return t",
+            "revision": "base",
+            "selection_evidence": [
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/tmpdir.py::TempPathFactory.getbasetemp",
+                    "class_symbol": "src/_pytest/tmpdir.py::TempPathFactory",
+                    "confidence": 1.0
+                }
+            ],
+            "context_for": [
+                "src/_pytest/tmpdir.py::TempPathFactory.getbasetemp"
+            ],
+            "content_kind": "full_class"
         }
     },
     "pytest-dev__pytest-8906": {
@@ -511,7 +731,33 @@
                     "reason": "existing_symbol",
                     "confidence": 1.0
                 }
+            ],
+            "class_context_ids": [
+                "src/_pytest/python.py::Module"
             ]
+        },
+        "src/_pytest/python.py::Module": {
+            "obj_name": "Module",
+            "node_type": "class",
+            "path": "src/_pytest/python.py",
+            "parent": null,
+            "qualified_name": "Module",
+            "code_start_line": 494,
+            "code_end_line": 617,
+            "code_content": "class Module(nodes.File, PyCollector):\n    \"\"\"Collector for test classes and functions.\"\"\"\n\n    def _getobj(self):\n        return self._importtestmodule()\n\n    def collect(self) -> Iterable[Union[nodes.Item, nodes.Collector]]:\n        self._inject_setup_module_fixture()\n        self._inject_setup_function_fixture()\n        self.session._fixturemanager.parsefactories(self)\n        return super().collect()\n\n    def _inject_setup_module_fixture(self) -> None:\n        \"\"\"Inject a hidden autouse, module scoped fixture into the collected module object\n        that invokes setUpModule/tearDownModule if either or both are available.\n\n        Using a fixture to invoke this methods ensures we play nicely and unsurprisingly with\n        other fixtures (#517).\n        \"\"\"\n        setup_module = _get_first_non_fixture_func(\n            self.obj, (\"setUpModule\", \"setup_module\")\n        )\n        teardown_module = _get_first_non_fixture_func(\n            self.obj, (\"tearDownModule\", \"teardown_module\")\n        )\n\n        if setup_module is None and teardown_module is None:\n            return\n\n        @fixtures.fixture(\n            autouse=True,\n            scope=\"module\",\n            # Use a unique name to speed up lookup.\n            name=f\"_xunit_setup_module_fixture_{self.obj.__name__}\",\n        )\n        def xunit_setup_module_fixture(request) -> Generator[None, None, None]:\n            if setup_module is not None:\n                _call_with_optional_argument(setup_module, request.module)\n            yield\n            if teardown_module is not None:\n                _call_with_optional_argument(teardown_module, request.module)\n\n        self.obj.__pytest_setup_module = xunit_setup_module_fixture\n\n    def _inject_setup_function_fixture(self) -> None:\n        \"\"\"Inject a hidden autouse, function scoped fixture into the collected module object\n        that invokes setup_function/teardown_function if either or both are available.\n\n        Using a fixture to invoke this methods ensures we play nicely and unsurprisingly with\n        other fixtures (#517).\n        \"\"\"\n        setup_function = _get_first_non_fixture_func(self.obj, (\"setup_function\",))\n        teardown_function = _get_first_non_fixture_func(\n            self.obj, (\"teardown_function\",)\n        )\n        if setup_function is None and teardown_function is None:\n            return\n\n        @fixtures.fixture(\n            autouse=True,\n            scope=\"function\",\n            # Use a unique name to speed up lookup.\n            name=f\"_xunit_setup_function_fixture_{self.obj.__name__}\",\n        )\n        def xunit_setup_function_fixture(request) -> Generator[None, None, None]:\n            if request.instance is not None:\n                # in this case we are bound to an instance, so we need to let\n                # setup_method handle this\n                yield\n                return\n            if setup_function is not None:\n                _call_with_optional_argument(setup_function, request.function)\n            yield\n            if teardown_function is not None:\n                _call_with_optional_argument(teardown_function, request.function)\n\n        self.obj.__pytest_setup_function = xunit_setup_function_fixture\n\n    def _importtestmodule(self):\n        # We assume we are only called once per module.\n        importmode = self.config.getoption(\"--import-mode\")\n        try:\n            mod = import_path(self.path, mode=importmode, root=self.config.rootpath)\n        except SyntaxError as e:\n            raise self.CollectError(\n                ExceptionInfo.from_current().getrepr(style=\"short\")\n            ) from e\n        except ImportPathMismatchError as e:\n            raise self.CollectError(\n                \"import file mismatch:\\n\"\n                \"imported module %r has this __file__ attribute:\\n\"\n                \"  %s\\n\"\n                \"which is not the same as the test file we want to collect:\\n\"\n                \"  %s\\n\"\n                \"HINT: remove __pycache__ / .pyc files and/or use a \"\n                \"unique basename for your test file modules\" % e.args\n            ) from e\n        except ImportError as e:\n            exc_info = ExceptionInfo.from_current()\n            if self.config.getoption(\"verbose\") < 2:\n                exc_info.traceback = exc_info.traceback.filter(filter_traceback)\n            exc_repr = (\n                exc_info.getrepr(style=\"short\")\n                if exc_info.traceback\n                else exc_info.exconly()\n            )\n            formatted_tb = str(exc_repr)\n            raise self.CollectError(\n                \"ImportError while importing test module '{path}'.\\n\"\n                \"Hint: make sure your test modules/packages have valid Python names.\\n\"\n                \"Traceback:\\n\"\n                \"{traceback}\".format(path=self.path, traceback=formatted_tb)\n            ) from e\n        except skip.Exception as e:\n            if e.allow_module_level:\n                raise\n            raise self.CollectError(\n                \"Using pytest.skip outside of a test is not allowed. \"\n                \"To decorate a test function, use the @pytest.mark.skip \"\n                \"or @pytest.mark.skipif decorators instead, and to skip a \"\n                \"module use `pytestmark = pytest.mark.{skip,skipif}.\"\n            ) from e\n        self.config.pluginmanager.consider_module(mod)\n        return mod",
+            "revision": "base",
+            "selection_evidence": [
+                {
+                    "reason": "enclosing_class_context",
+                    "related_symbol": "src/_pytest/python.py::Module._importtestmodule",
+                    "class_symbol": "src/_pytest/python.py::Module",
+                    "confidence": 1.0
+                }
+            ],
+            "context_for": [
+                "src/_pytest/python.py::Module._importtestmodule"
+            ],
+            "content_kind": "full_class"
         }
     },
     "pytest-dev__pytest-9359": {
