@@ -60,7 +60,7 @@ class BrtWorkflowTests(unittest.TestCase):
         for row in self.rows:
             paths = brt.artifact_paths(self.output, 'swt-verified', MODEL, row['repo'])
             paths.code.parent.mkdir(parents=True)
-            paths.code.write_text(json.dumps({row['instance_id']: {'symbol': None}}))
+            paths.code.write_text(json.dumps({row['instance_id']: {'symbol': {'code_content': 'def target(): pass'}}}))
             paths.tests.mkdir(parents=True)
             (paths.tests / 'related_tests_4.json').write_text(json.dumps({row['instance_id']: []}))
         self.commands = []
@@ -131,6 +131,79 @@ class BrtWorkflowTests(unittest.TestCase):
         preflight.assert_called_once_with(self.rows, MODEL)
         run.assert_not_called()
         self.assertFalse(any(self.output.rglob('run_config.json')))
+
+    def add_no_code_instances(self):
+        paths = brt.artifact_paths(self.output, 'swt-verified', MODEL, REPOS[0])
+        code = json.loads(paths.code.read_text())
+        skipped = []
+        for index, value in enumerate((None, {}, {'symbol': None})):
+            row = dict(self.rows[0], instance_id=f'pylint-no-code-{index}')
+            self.rows.append(row)
+            skipped.append(row['instance_id'])
+            code[row['instance_id']] = value
+        # A single null keyword must not exclude an instance with another hit.
+        code[self.rows[0]['instance_id']]['missing_symbol'] = None
+        paths.code.write_text(json.dumps(code))
+        write_csv(self.csv, self.rows)
+        return paths, skipped
+
+    def test_no_code_instances_are_excluded_from_generation_evaluation_and_rate(self):
+        paths, skipped = self.add_no_code_instances()
+        # The skipped IDs deliberately have no test context.
+        with patch.object(brt, 'preflight') as preflight, patch.object(brt, 'run_module', side_effect=self.run_module):
+            brt.main(self.args)
+        preflight.assert_called_once_with(self.rows[:2], MODEL)
+        root = paths.category('brt') / 'i3_s1'
+        self.assertEqual((root / 'selections/selected_ids.txt').read_text().split(), [self.rows[0]['instance_id']])
+        summary = json.loads((root / 'summary.json').read_text())
+        self.assertEqual(summary['instances'], 1)
+        self.assertEqual(summary['total_selected_instances'], 4)
+        self.assertEqual(summary['skipped_no_code_instance_ids'], skipped)
+        self.assertEqual(summary['instance_reproduction_rate'], 1)
+        self.assertFalse(any((root / 'generated_tests' / f'{bug_id}_n1.txt').exists() for bug_id in skipped))
+
+    def test_resume_old_manifest_preserves_candidates_and_excludes_old_no_code_results(self):
+        paths, skipped = self.add_no_code_instances()
+        with patch.object(brt, 'preflight'), patch.object(brt, 'run_module', side_effect=self.run_module):
+            brt.main(self.args)
+        root = paths.category('brt') / 'i3_s1'
+        manifest_path = root / 'run_config.json'
+        manifest = json.loads(manifest_path.read_text())
+        del manifest['skipped_no_code_instance_ids']
+        manifest_path.write_text(json.dumps(manifest))
+        result_path = root / 'execution_results.json'
+        results = json.loads(result_path.read_text())
+        results[skipped[0]] = {f'{skipped[0]}_n1.txt': {'success': True}}
+        result_path.write_text(json.dumps(results))
+        candidate = root / 'generated_tests' / f'{self.rows[0]["instance_id"]}_n1.txt'
+        original = candidate.read_text()
+        with patch.object(brt, 'preflight'), patch.object(brt, 'run_module'):
+            brt.main(self.args + ['--stage', 'evaluate'])
+        self.assertEqual(candidate.read_text(), original)
+        self.assertIn(skipped[0], json.loads(result_path.read_text()))
+        self.assertEqual(json.loads((root / 'summary.json').read_text())['fail_to_pass_candidates'], 1)
+
+    def test_all_null_repository_is_skipped_and_next_repository_runs(self):
+        paths = brt.artifact_paths(self.output, 'swt-verified', MODEL, REPOS[0])
+        paths.code.write_text(json.dumps({self.rows[0]['instance_id']: {'symbol': None}}))
+        (paths.tests / 'related_tests_4.json').unlink()
+        with patch.object(brt, 'preflight') as preflight, patch.object(brt, 'run_module', side_effect=self.run_module):
+            brt.main(self.args)
+        preflight.assert_called_once_with([self.rows[1]], MODEL)
+        self.assertEqual(len(self.commands), 2)
+        summary = json.loads((paths.category('brt') / 'i3_s1/summary.json').read_text())
+        self.assertEqual(summary['instances'], 0)
+        self.assertIsNone(summary['instance_reproduction_rate'])
+
+    def test_missing_or_malformed_code_is_not_silently_excluded(self):
+        paths = brt.artifact_paths(self.output, 'swt-verified', MODEL, REPOS[0])
+        for value in ({}, {self.rows[0]['instance_id']: {'symbol': {'code_content': ''}}},
+                      {self.rows[0]['instance_id']: ['invalid node']}):
+            with self.subTest(value=value):
+                paths.code.write_text(json.dumps(value))
+                with patch.object(brt, 'run_module') as run, self.assertRaises(RuntimeError):
+                    brt.main(self.args)
+                run.assert_not_called()
 
 
 class EvaluationTests(unittest.TestCase):
