@@ -3,7 +3,7 @@ set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."
 
 # Edit these selections for the oracle-test-only experiment.
-MODEL="${MODEL:-mistralai/mistral-small-3.2-24b-instruct}"
+MODEL="${MODEL:-z-ai/glm-5.3-flash}"
 REPO="${REPO:-pylint-dev/pylint}"
 ORACLE="${ORACLE:-./retrieval_results/test/oracle/swt-bench-verified/pylint/related_tests_oracle_base_augmented.json}"
 DATASET_CSV="${DATASET_CSV:-./data/swt-bench-verified/oracle_input_pylint_pytest.csv}"
