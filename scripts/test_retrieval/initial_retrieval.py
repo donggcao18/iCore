@@ -7,6 +7,7 @@ from scripts.utils.llm_api import create_chat_completion
 from scripts.test_retrieval.function_calls import FunctionCalls, get_tools
 from scripts.test_retrieval.utils import get_related_test
 from scripts.test_retrieval.response_parser import parse_test_selection, ensure_test_selection
+from scripts.test_retrieval.tool_call_utils import InvalidToolCall, validate_tool_calls, load_tool_history
 from scripts.utils.benchmark_data import load_selected_csv
 from scripts.utils.git_utils import *
 import json
@@ -77,9 +78,18 @@ def extract_function_call(chunks):
                             "arguments": ""
                         }
                     }
-                func = tool_call.get("function", {})
-                if "name" in func and func["name"] is not None:
-                    tool_call_map[index]["function"]["name"] = func["name"]
+                func = tool_call.get("function") or {}
+                # Some providers supply IDs/types after the first delta.
+                for field in ('id', 'type'):
+                    if tool_call.get(field):
+                        tool_call_map[index][field] = tool_call[field]
+                name = func.get('name')
+                if name:
+                    current = tool_call_map[index]['function']['name']
+                    # Ignore empty continuations; concatenate name fragments.
+                    # Some providers also repeat the whole name unchanged.
+                    if name != current:
+                        tool_call_map[index]['function']['name'] += name
                 if "arguments" in func and func["arguments"] is not None:
                     tool_call_map[index]["function"]["arguments"] += func["arguments"]
 
@@ -88,7 +98,7 @@ def extract_function_call(chunks):
         "role": role,
         "content": ''.join(content_parts) if content_parts else None,
     }
-    tool_calls = list(tool_call_map.values())
+    tool_calls = [tool_call_map[index] for index in sorted(tool_call_map)]
     if reasoning_parts:
         response_message['reasoning'] = ''.join(reasoning_parts)
     if reasoning_details:
@@ -97,6 +107,24 @@ def extract_function_call(chunks):
         response_message["tool_calls"] = copy.deepcopy(tool_calls)
 
     return tool_calls, response_message
+
+
+def request_tool_message(client, **kwargs):
+    """Never append or execute malformed streamed tool calls; retry twice."""
+    for attempt in range(3):
+        response = create_chat_completion(client, **kwargs)
+        chunks = [json.loads(chunk.model_dump_json()) for chunk in response]
+        calls, message = extract_function_call(chunks)
+        if calls:
+            try:
+                validate_tool_calls(calls)
+            except InvalidToolCall as error:
+                if attempt == 2:
+                    raise InvalidToolCall(f'Malformed tool response after 3 attempts: {error}') from error
+                print(f'Malformed tool response ({error}); retry {attempt + 1}/2 '
+                      'using the unchanged conversation.', flush=True)
+                continue
+        return calls, message
 
 
 def finalize_test_selection(messages, client, model_name, messages_path, bug_id, topk=5):
@@ -132,12 +160,14 @@ def chat_with_llm(instance, model_name, messages_path, restart=False):
     base_url = BASE_URL[model_name]
     client = OpenAI(api_key=api_key, base_url=base_url)
     if os.path.exists(messages_path) and not restart:
-        with open(messages_path, 'r') as f:
-            messages = json.load(f)
+        messages = load_tool_history(messages_path)
+    else:
+        messages = []
+    if messages:
         if messages[-1]['role'] == 'assistant' and not messages[-1].get('tool_calls'):
             finalize_test_selection(messages, client, model_name, messages_path, bug_id)
             return
-        first_time = False
+        first_time = len(messages) == 2 and messages[-1]['role'] == 'user'
     else:
         messages = [
             {
@@ -153,7 +183,7 @@ def chat_with_llm(instance, model_name, messages_path, restart=False):
     error_retries = 0
     while True:
         if first_time:
-            response = create_chat_completion(
+            tool_calls, response_message = request_tool_message(
                 client,
                 model=model_name,
                 messages=messages,
@@ -165,7 +195,7 @@ def chat_with_llm(instance, model_name, messages_path, restart=False):
             )
             first_time = False
         else:
-            response = create_chat_completion(
+            tool_calls, response_message = request_tool_message(
                 client,
                 model=model_name,
                 messages=messages,
@@ -174,13 +204,6 @@ def chat_with_llm(instance, model_name, messages_path, restart=False):
                 timeout=60,
                 temperature=0.0
             )
-        chunks = []
-        for chunk in response:
-            message_json = chunk.model_dump_json()
-            chunks.append(json.loads(message_json))
-        
-        # Concatenate all messages
-        tool_calls, response_message = extract_function_call(chunks)
         messages.append(response_message)
         if not tool_calls:
             finalize_test_selection(messages, client, model_name, messages_path, bug_id)

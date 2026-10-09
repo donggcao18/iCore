@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import Mock
 
 from scripts.test_retrieval.response_parser import ensure_test_selection
+from scripts.test_retrieval.tool_call_utils import InvalidToolCall, validate_tool_calls, load_tool_history
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -95,13 +96,15 @@ class RetrievalRecoveryIntegrationTests(unittest.TestCase):
         namespace = {
             'copy': copy, 'json': json, 'os': os,
             'ensure_test_selection': ensure_test_selection,
+            'InvalidToolCall': InvalidToolCall, 'validate_tool_calls': validate_tool_calls,
+            'load_tool_history': load_tool_history,
             'create_chat_completion': create, 'OpenAI': Mock(return_value=client),
             'API_KEY': {'vendor/model': 'test-key'}, 'BASE_URL': {'vendor/model': 'https://example.invalid'},
             'FunctionCalls': Mock(), 'get_tools': Mock(return_value=[{'type': 'function'}]),
             'list_candidates': Mock(return_value=[]), 'system_prompt': 'Select tests.',
         }
         initial = ROOT / 'scripts/test_retrieval/initial_retrieval.py'
-        load_functions(initial, ['extract_function_call', 'finalize_test_selection'], namespace)
+        load_functions(initial, ['extract_function_call', 'request_tool_message', 'finalize_test_selection'], namespace)
         load_functions(ROOT / f'scripts/test_retrieval/{stage}.py', ['chat_with_llm'], namespace)
 
         def run():
@@ -136,6 +139,65 @@ class RetrievalRecoveryIntegrationTests(unittest.TestCase):
                 run()
                 create.assert_not_called()
                 client.close.assert_called_once()
+
+    def test_saved_empty_tool_name_is_removed_before_request_in_both_stages(self):
+        for stage in ('initial_retrieval', 'rerank'):
+            with self.subTest(stage=stage):
+                history = [
+                    {'role': 'system', 'content': 'Select tests.'},
+                    {'role': 'user', 'content': 'bug'},
+                    {'role': 'assistant', 'content': None, 'tool_calls': [{
+                        'id': 'good', 'type': 'function',
+                        'function': {'name': 'list_root', 'arguments': '{}'}}]},
+                    {'role': 'tool', 'tool_call_id': 'good', 'content': 'tests/test_one.py'},
+                    {'role': 'assistant', 'content': None, 'tool_calls': [{
+                        'id': 'bad', 'type': 'function',
+                        'function': {'name': '', 'arguments': '{}'}}]},
+                    {'role': 'tool', 'tool_call_id': 'bad', 'content': 'Unknown function'},
+                ]
+                original = json.dumps(history).encode()
+                self.path.write_bytes(original)
+                run, namespace, _, create = self.load_chat(stage, [SELECTION])
+                snapshots = []
+                def respond(client, **kwargs):
+                    snapshots.append(copy.deepcopy(kwargs['messages']))
+                    return chunks(SELECTION)
+                create.side_effect = respond
+                with self.assertLogs(level='WARNING'):
+                    run()
+                self.assertEqual(snapshots, [history[:4]])
+                self.assertTrue(any(path.read_bytes() == original for path in
+                                    self.path.parent.glob('instance.invalid_tool_calls*.json')))
+                namespace['FunctionCalls'].return_value.call_function.assert_not_called()
+                self.assertEqual(json.loads(self.path.read_text())[-1]['content'], SELECTION)
+
+    def test_bad_streamed_call_is_retried_before_execution_in_both_stages(self):
+        for stage in ('initial_retrieval', 'rerank'):
+            with self.subTest(stage=stage):
+                if self.path.exists():
+                    self.path.unlink()
+                def tool_chunk(name):
+                    data = json.dumps({'choices': [{'delta': {'tool_calls': [{
+                        'index': 0, 'id': 'call_1', 'type': 'function',
+                        'function': {'name': name, 'arguments': '{}'}}]}}]})
+                    return [SimpleNamespace(model_dump_json=lambda: data)]
+                run, namespace, _, create = self.load_chat(stage, [])
+                snapshots = []
+                responses = iter([tool_chunk(''), tool_chunk('list_root'), chunks(SELECTION)])
+                def respond(client, **kwargs):
+                    snapshots.append(copy.deepcopy(kwargs['messages']))
+                    return next(responses)
+                create.side_effect = respond
+                function = namespace['FunctionCalls'].return_value.call_function
+                function.return_value = 'tests/test_one.py'
+                run()
+                self.assertEqual(snapshots[0], snapshots[1])
+                self.assertEqual(create.call_count, 3)
+                function.assert_called_once_with('list_root', {})
+                history = json.loads(self.path.read_text())
+                for message in history:
+                    if message.get('tool_calls'):
+                        validate_tool_calls(message['tool_calls'])
 
     def test_new_invalid_reply_is_repaired_in_both_stages(self):
         for stage in ('initial_retrieval', 'rerank'):

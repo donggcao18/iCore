@@ -6,7 +6,8 @@ from openai import OpenAI
 from scripts.config import API_KEY, BASE_URL
 from scripts.utils.llm_api import create_chat_completion
 from scripts.test_retrieval.function_calls import FunctionCalls, get_tools
-from scripts.test_retrieval.initial_retrieval import extract_function_call, finalize_test_selection
+from scripts.test_retrieval.initial_retrieval import request_tool_message, finalize_test_selection
+from scripts.test_retrieval.tool_call_utils import load_tool_history
 from scripts.test_retrieval.utils import get_related_test
 from scripts.test_retrieval.response_parser import parse_test_selection
 from scripts.utils.benchmark_data import load_selected_csv
@@ -106,9 +107,10 @@ def chat_with_llm(instance, model_name, messages_path, test_similarity_dir, last
     proj = instance['repo']
     
     if os.path.exists(messages_path) and not restart:
-        with open(messages_path, 'r') as f:
-            messages = json.load(f)
+        messages = load_tool_history(messages_path)
     else:
+        messages = []
+    if not messages:
         candidates = list_candidates(proj, bug_id, test_similarity_dir, last_related_tests_path, wo_functioncall, topk)
         candidate_tests = "\n".join(candidates)
         messages = [
@@ -132,7 +134,7 @@ def chat_with_llm(instance, model_name, messages_path, test_similarity_dir, last
         return
     
     while True:
-        response = create_chat_completion(
+        tool_calls, response_message = request_tool_message(
             client,
             model=model_name,
             messages=messages,
@@ -141,13 +143,6 @@ def chat_with_llm(instance, model_name, messages_path, test_similarity_dir, last
             timeout=60,
             temperature=0.0
         )
-        chunks = []
-        for chunk in response:
-            message_json = chunk.model_dump_json()
-            chunks.append(json.loads(message_json))
-        
-        # concatenate all messages
-        tool_calls, response_message = extract_function_call(chunks)
         messages.append(response_message)
         if not tool_calls:
             finalize_test_selection(messages, client, model_name, messages_path, bug_id, topk=topk)

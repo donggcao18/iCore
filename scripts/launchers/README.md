@@ -13,7 +13,7 @@ bash scripts/launchers/run_retrieval_brt_swt_verified.sh
 ```
 
 This launcher selects all 15 `pytest-dev/pytest` instances, uses three test
-refinement rounds, generates one final candidate per instance, and allows 500
+refinement rounds, generates one final candidate per instance, and allows 1500
 seconds per API attempt. Both runners share the same model, repository, input
 CSV, iteration count, and output root. Retrieval failures stop the launcher
 before final generation. `DATASET_CSV` defaults to the prepared
@@ -33,6 +33,29 @@ With defaults, outputs are under
 `code/pytest-dev/pytest/`, `test/pytest-dev/pytest/`, and
 `brt/pytest-dev/pytest/i3_s1/`. Final execution details and aggregate results are
 `execution_results.json` and `summary.json` inside that BRT directory.
+
+To resume test retrieval alone with the same DeepSeek R1/pytest selections:
+
+```bash
+bash scripts/launchers/run_test_retrieval_swt_verified.sh
+# Override the current 1500-second API timeout if desired:
+ICORE_LLM_TIMEOUT=500 bash scripts/launchers/run_test_retrieval_swt_verified.sh
+```
+
+This uses existing keywords and code retrieval in the same output root, then
+performs initial test selection and three refinement rounds. It does not rerun
+code retrieval or final BRT generation/evaluation. Completed test selections
+and drafts retain their existing resume behavior.
+
+Streamed tool names now preserve nonempty fragments across empty continuation
+chunks. Initial retrieval and reranking validate tool calls before saving or
+executing them, with up to two retries for malformed responses. On resume,
+malformed saved tool calls are backed up as
+`<instance_id>.invalid_tool_calls[.N].json`, and the conversation resumes from
+before the invalid assistant turn. Keep the saved messages; manual deletion or
+`--restart` is unnecessary for this repair. Null production-code matches remain
+included; the initial test-selection stage uses the issue and repository tools,
+and draft generation omits unavailable production-code snippets.
 
 ## Retrieval with a chosen benchmark, model, and repositories
 
