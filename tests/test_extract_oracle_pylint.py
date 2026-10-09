@@ -83,8 +83,8 @@ class OracleExtractionTests(unittest.TestCase):
         verified_csv, verified_output = default_paths("swt-verified", "pylint-dev/pylint")
         self.assertEqual(lite_csv.name, "test.csv")
         self.assertEqual(verified_csv.name, "test.csv")
-        self.assertEqual(lite_output.parts[-3:], ("oracle", "lite", "pylint"))
-        self.assertEqual(verified_output.parts[-3:], ("oracle", "swt-bench-verified", "pylint"))
+        self.assertEqual(lite_output.parts[-4:], ("oracle", "test", "lite", "pylint"))
+        self.assertEqual(verified_output.parts[-4:], ("oracle", "test", "swt-bench-verified", "pylint"))
 
 
 if __name__ == "__main__":

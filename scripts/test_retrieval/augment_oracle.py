@@ -470,7 +470,7 @@ def main():
     parser.add_argument("--repo-dir", type=Path)
     parser.add_argument("--clone-url")
     parser.add_argument("--output-dir", type=Path)
-    parser.add_argument("--code-output-dir", type=Path, help="Code oracle directory; defaults to retrieval_results/code/oracle/<dataset>/<repo>")
+    parser.add_argument("--code-output-dir", type=Path, help="Code oracle directory; defaults to retrieval_results/oracle/code/<dataset>/<repo>")
     parser.add_argument("--instance-id", action="append")
     parser.add_argument("--top-k", type=int, default=10, help="Maximum tests per variant; 0 means all")
     parser.add_argument("--max-depth", type=int, default=8)

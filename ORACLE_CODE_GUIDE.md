@@ -29,7 +29,7 @@ records the restored lines and hashes. Use `--csv` with this prepared input
 when rerunning these Verified oracle extractions. Run manifests retain
 `production_patch_provenance` independently of generator-facing documents.
 
-Outputs are stored in `retrieval_results/code/oracle/<dataset>/<repo>/`, where
+Outputs are stored in `retrieval_results/oracle/code/<dataset>/<repo>/`, where
 dataset is `lite` or `swt-bench-verified` and repo is the short name:
 
 | File | Contents |

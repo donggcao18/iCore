@@ -164,7 +164,7 @@ class CodeOracleTests(unittest.TestCase):
         self.assertIn("added.py::added", patched)
 
     def test_default_directories_parallel_test_oracle(self):
-        self.assertEqual(default_paths("lite", "pylint-dev/pylint")[1].parts[-4:], ("code", "oracle", "lite", "pylint"))
+        self.assertEqual(default_paths("lite", "pylint-dev/pylint")[1].parts[-4:], ("oracle", "code", "lite", "pylint"))
         self.assertEqual(default_paths("swt-verified", "pylint-dev/pylint")[1].parts[-2:], ("swt-bench-verified", "pylint"))
 
     def test_store_preserves_other_instances_and_updates_rerun(self):

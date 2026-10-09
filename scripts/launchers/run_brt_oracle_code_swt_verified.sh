@@ -5,7 +5,7 @@ cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."
 # Only base production-code oracle snippets enter this experiment's prompts.
 MODEL="${MODEL:-deepseek/deepseek-r1-0528}"
 REPO="${REPO:-pytest-dev/pytest}"
-CODE="${CODE:-./retrieval_results/code/oracle/swt-bench-verified/${REPO##*/}/code_retrieval_oracle_base.json}"
+CODE="${CODE:-./retrieval_results/oracle/code/swt-bench-verified/${REPO##*/}/code_retrieval_oracle_base.json}"
 DATASET_CSV="${DATASET_CSV:-./data/swt-bench-verified/oracle_input_pylint_pytest.csv}"
 EXCLUDE_INSTANCE="${EXCLUDE_INSTANCE-}"
 SAMPLES="${SAMPLES:-1}"

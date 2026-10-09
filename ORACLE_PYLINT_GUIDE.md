@@ -15,7 +15,7 @@ python -m scripts.test_retrieval.extract_oracle --dataset lite --repo pylint-dev
 Use `--repo-dir` to point at an existing full Pylint clone, `--csv` for another
 benchmark export, `--output-dir` for another destination, or `--instance-id`
 to process one ID. The output directory is
-`retrieval_results/test/oracle/lite/pylint/` and contains:
+`retrieval_results/oracle/test/lite/pylint/` and contains:
 
 - `related_tests_oracle_patched.json`: all changed test functions using the
   developer's post-patch source. This is a hindsight upper bound; it includes
@@ -55,8 +55,8 @@ python -m scripts.generator.llm_query \
   --repo pylint-dev/pylint \
   --exp_name oracle_pylint_base \
   --query_time 1 \
-  --context_code_path retrieval_results/code/oracle/lite/pylint/code_retrieval_oracle_base.json \
-  --context_test_path retrieval_results/test/oracle/lite/pylint/related_tests_oracle_base.json \
+  --context_code_path retrieval_results/oracle/code/lite/pylint/code_retrieval_oracle_base.json \
+  --context_test_path retrieval_results/oracle/test/lite/pylint/related_tests_oracle_base.json \
   --out_dir data/oracle_pylint_base/gen_tests_gpt-4o \
   --template_file data/prompt_templates/prompt_with_code_and_tests.json \
   --model gpt-4o \

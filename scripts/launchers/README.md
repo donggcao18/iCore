@@ -402,7 +402,7 @@ bash scripts/launchers/run_brt_oracle_test_swt_verified.sh
 
 This separate launcher reuses the existing generator, test-only prompt template,
 and buggy/fixed evaluator. It passes
-`retrieval_results/test/oracle/swt-bench-verified/pytest/related_tests_oracle_base_augmented.json`
+`retrieval_results/oracle/test/swt-bench-verified/pytest/related_tests_oracle_base_augmented.json`
 as both generation context and evaluation injection reference. No code-retrieval
 file is loaded. The model sees the bug report and the oracle test snippets;
 production fixes are used only by evaluation.
@@ -442,7 +442,7 @@ bash scripts/launchers/run_brt_oracle_code_swt_verified.sh
 ```
 
 Its default `CODE` input is
-`retrieval_results/code/oracle/swt-bench-verified/pytest/code_retrieval_oracle_base.json`
+`retrieval_results/oracle/code/swt-bench-verified/pytest/code_retrieval_oracle_base.json`
 inside the checkout.
 Generation uses the existing code-only prompt template with the issue and these
 base production-code snippets, including their class context. No test-retrieval

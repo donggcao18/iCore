@@ -32,7 +32,7 @@ FULL_CLASS_MAX_CHARS = 12_000
 
 def default_paths(dataset: str, repo: str) -> tuple[Path, Path]:
     csv_path, test_output = test_default_paths(dataset, repo)
-    return csv_path, ROOT / "retrieval_results/code/oracle" / test_output.parent.name / repo.split("/")[1]
+    return csv_path, ROOT / "retrieval_results/oracle/code" / test_output.parent.name / repo.split("/")[1]
 
 
 def code_document(index: DependencyIndex, symbol: Symbol, revision: str) -> dict:

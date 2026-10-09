@@ -112,7 +112,7 @@ python -m scripts.test_retrieval.extract_oracle --dataset swt-verified --repo py
 Change `--repo` for another project. The exporter creates one normalized
 `data/swt-bench-verified/test.csv` containing every repository; the extractor
 filters that CSV by `--repo`. Lite uses `data/swe-bench-lite/test.csv`.
-Oracle output is grouped as `retrieval_results/test/oracle/<dataset>/<repo>/`
+Oracle output is grouped as `retrieval_results/oracle/test/<dataset>/<repo>/`
 (for example, `lite/pylint/` or `swt-bench-verified/pylint/`).
 
 Production-code oracle retrieval observes the normalized developer code `patch`
@@ -124,7 +124,7 @@ python -m scripts.code_retrieval.extract_oracle --dataset lite --repo pytest-dev
 ```
 
 It writes `code_retrieval_oracle_base.json`, `code_retrieval_oracle_patched.json`,
-and `oracle_code_manifest.json` under `retrieval_results/code/oracle/<dataset>/<repo>/`.
+and `oracle_code_manifest.json` under `retrieval_results/oracle/code/<dataset>/<repo>/`.
 Use the base JSON as `--context_code_path` to supply buggy-revision source.
 The patched JSON contains the developer fix and is a separate hindsight variant.
 Selected methods also include enclosing class context from the same revision:
