@@ -64,6 +64,37 @@ class StreamedToolTests(unittest.TestCase):
         self.assertEqual(self.create.call_count, 3)
         self.assertEqual(history, [{'role': 'user', 'content': 'bug'}])
 
+    def test_plain_reasoning_fragments_join_without_losing_block_boundaries(self):
+        fragments = [('We', 0), (' are', 0), (' testing.', 0), ('Next block.', 1)]
+        chunks = [{'choices': [{'delta': {
+            'reasoning': text,
+            'reasoning_details': [{'type': 'reasoning.text', 'text': text,
+                                   'format': 'unknown', 'index': index}],
+        }}]} for text, index in fragments]
+        original = copy.deepcopy(chunks)
+        _, message = self.extract(chunks)
+        self.assertEqual(message['reasoning'], 'We are testing.Next block.')
+        self.assertEqual(message['reasoning_details'], [
+            {'type': 'reasoning.text', 'text': 'We are testing.', 'format': 'unknown', 'index': 0},
+            {'type': 'reasoning.text', 'text': 'Next block.', 'format': 'unknown', 'index': 1},
+        ])
+        self.assertEqual(chunks, original)
+
+    def test_special_reasoning_payloads_and_signed_sequences_are_preserved(self):
+        plain = {'type': 'reasoning.text', 'text': 'We', 'format': 'unknown', 'index': 0}
+        continuation = dict(plain, text=' are')
+        special = [dict(plain, text='', signature='opaque-signature'),
+                   {'type': 'reasoning.encrypted', 'data': 'opaque-payload', 'index': 1},
+                   dict(plain, format='anthropic-claude-v1'),
+                   dict(plain, id='reasoning-id'), dict(plain, provider_metadata='opaque')]
+        for payload in special:
+            with self.subTest(payload=payload):
+                details = [plain, continuation, payload]
+                chunks = [{'choices': [{'delta': {'reasoning_details': [detail]}}]}
+                          for detail in details]
+                _, message = self.extract(chunks)
+                self.assertEqual(message['reasoning_details'], details)
+
     def test_malformed_ids_and_arguments_are_rejected(self):
         good = {'id': 'call_1', 'type': 'function',
                 'function': {'name': 'list_root', 'arguments': '{}'}}

@@ -102,6 +102,24 @@ def extract_function_call(chunks):
     if reasoning_parts:
         response_message['reasoning'] = ''.join(reasoning_parts)
     if reasoning_details:
+        # Join deltas belonging to the same plain-text block. Preserve special
+        # formats, signed/encrypted payloads and unknown metadata verbatim.
+        plain_fields = {'type', 'text', 'format', 'index', 'id', 'signature'}
+        if all(isinstance(detail, dict)
+               and detail.get('type') == 'reasoning.text'
+               and isinstance(detail.get('text'), str)
+               and detail.get('format', 'unknown') == 'unknown'
+               and not detail.get('id') and not detail.get('signature')
+               and set(detail) <= plain_fields for detail in reasoning_details):
+            blocks = []
+            for detail in reasoning_details:
+                metadata = {key: value for key, value in detail.items() if key != 'text'}
+                if blocks and blocks[-1][0] == metadata:
+                    blocks[-1][1].append(detail['text'])
+                else:
+                    blocks.append((metadata, [detail['text']]))
+            reasoning_details = [dict(metadata, text=''.join(parts))
+                                 for metadata, parts in blocks]
         response_message['reasoning_details'] = reasoning_details
     if tool_calls:
         response_message["tool_calls"] = copy.deepcopy(tool_calls)

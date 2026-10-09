@@ -57,6 +57,12 @@ before the invalid assistant turn. Keep the saved messages; manual deletion or
 included; the initial test-selection stage uses the issue and repository tools,
 and draft generation omits unavailable production-code snippets.
 
+For plain unsigned reasoning, streamed text fragments from the same block are
+joined into one `reasoning_details` entry before saving. The full `reasoning`
+string is also retained. Signed, encrypted, and provider-specific reasoning
+payloads retain their original structure for API replay. Existing saved messages
+are left unchanged; the compact format applies to new responses.
+
 ## Retrieval with a chosen benchmark, model, and repositories
 
 The three generic launchers require `--model` and at least one `--repo`.
