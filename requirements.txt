@@ -16,3 +16,4 @@ rank_bm25
 Requests
 tqdm
 zss
+huggingface_hub>=1.0,<2.0

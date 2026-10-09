@@ -1,3 +1,6 @@
 /repos/
 __pycache__/
 *.pyc
+.vscode/
+.cache/
+retrieval_results/
