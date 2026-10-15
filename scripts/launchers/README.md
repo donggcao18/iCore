@@ -490,6 +490,50 @@ REPO=pylint-dev/pylint EXCLUDE_INSTANCE=pylint-dev__pylint-7277 \
   bash scripts/launchers/run_brt_oracle_code_swt_verified.sh
 ```
 
+For **both base code oracle and the archived broad test oracle**, run:
+
+```bash
+bash scripts/launchers/run_brt_oracle_code_test_swt_verified.sh
+# Evaluate this experiment's saved candidates only:
+STAGE=evaluate bash scripts/launchers/run_brt_oracle_code_test_swt_verified.sh
+```
+
+This reuses `scripts.generator.llm_query` with the existing code-and-tests prompt
+and `scripts.libro.postprocess_swe` for buggy/fixed evaluation. Defaults are
+DeepSeek R1-0528, all 15 Verified pytest instances, one candidate each, temperature
+0.7, and `STAGE=all`. Its exact default inputs are:
+
+- `CODE=./retrieval_results/oracle/code/swt-bench-verified/pytest/code_retrieval_oracle_base.json`
+- `ORACLE=./retrieval_results/oracle/test/broad_selection_backup_2026-10-12/swt-bench-verified/pytest/related_tests_oracle_base_augmented.json`
+
+The broad backup has 113 test snippets. Its empty `pytest-dev__pytest-7236`
+selection is allowed: generation uses the issue and code oracle for that instance.
+Missing records or invalid snippets stop the run before generation. Evaluation
+uses the same base-test oracle as insertion references; an empty list uses the
+existing LIBRO fallback. Set `INJECTION=libro` to use LIBRO for every candidate,
+or supply a separate base-test insertion JSON. This changes insertion only;
+both oracle files still enter generation prompts.
+
+Outputs are separate from `i3_s1`, code-only, and test-only experiments:
+
+```text
+retrieval_results/swt-bench-verified/<escaped-model-id>/brt/pytest-dev/pytest/oracle_code_and_test_base_s1/
+```
+
+The directory contains frozen input copies in `inputs/`, saved prompts,
+`generated_tests/`, `selections/`, `run_config.json`, `execution_results.json`,
+and `summary.json`. Configuration hashes protect against mixing different
+code/test/insertion contexts or model settings on resume. A generation-only run
+uses `STAGE=generate`; `STAGE=evaluate` requires the saved experiment and
+candidates. Generation context contains base snippets, not the production fix
+or developer test patch. Evaluation runs the generated candidates on the buggy
+and fixed revisions.
+
+Override `MODEL`, `REPO`, `CODE`, `ORACLE`, `INJECTION`, `DATASET_CSV`, `SAMPLES`,
+`OUTPUT_ROOT`, `EXCLUDE_INSTANCE`, or `PYTHON` as needed. Use the Linux/Conda
+benchmark environment prepared for the existing launchers. For another oracle
+selection, use a separate `OUTPUT_ROOT` to keep the comparison isolated.
+
 For the patched-oracle-test diagnostic, generate and evaluate in one command:
 
 ```bash
@@ -538,6 +582,7 @@ future solution information, so report this as an oracle diagnostic.
 | `run_brt_flask.sh` | Existing BRT generation/evaluation workflow. |
 | `generate_brt_oracle_pylint.sh` | BRT generation with oracle context. |
 | `generate_brt_swt_verified_pylint.sh` | SWT Verified Pylint oracle BRT generation. |
+| `run_brt_oracle_code_test_swt_verified.sh` | Generate with base code oracle and archived broad base-test oracle, then evaluate. |
 | `run_brt_oracle_test_patched_swt_verified.sh` | Generate from patched oracle tests, then evaluate on buggy/fixed production code. |
 
 All nine existing root launchers have moved here. Their working-directory setup,
