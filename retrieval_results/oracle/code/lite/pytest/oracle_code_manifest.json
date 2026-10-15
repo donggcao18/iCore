@@ -422,36 +422,6 @@
         "patched_contains_developer_fix": true,
         "changed_symbols": [
             {
-                "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
-                "file": "src/_pytest/assertion/rewrite.py",
-                "name": "AssertionRewriter",
-                "kind": "class",
-                "change": "modified",
-                "old_span": [
-                    608,
-                    1084
-                ],
-                "new_span": [
-                    608,
-                    1109
-                ],
-                "base_targets": [
-                    {
-                        "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
-                        "reason": "existing_symbol",
-                        "confidence": 1.0
-                    }
-                ],
-                "selected_base": [
-                    "src/_pytest/assertion/rewrite.py::AssertionRewriter"
-                ],
-                "selected_patched": [
-                    "src/_pytest/assertion/rewrite.py::AssertionRewriter"
-                ],
-                "supporting_base": [],
-                "supporting_patched": []
-            },
-            {
                 "id": "src/_pytest/assertion/rewrite.py::AssertionRewriter._visit_all",
                 "file": "src/_pytest/assertion/rewrite.py",
                 "name": "AssertionRewriter._visit_all",
@@ -558,7 +528,7 @@
             }
         ],
         "counts": {
-            "changed_symbols": 4,
+            "changed_symbols": 3,
             "base_objects": 3,
             "patched_objects": 4
         },
@@ -575,7 +545,7 @@
                         "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
                         "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy"
                     ],
-                    "content_kind": "full_class"
+                    "content_kind": "class_outline"
                 }
             ],
             "patched": [
@@ -587,40 +557,13 @@
                         "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
                         "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy"
                     ],
-                    "content_kind": "full_class"
+                    "content_kind": "class_outline"
                 }
             ]
         },
         "non_python_files": [],
         "documents": {
             "base": {
-                "src/_pytest/assertion/rewrite.py::AssertionRewriter": {
-                    "qualified_name": "AssertionRewriter",
-                    "revision": "base",
-                    "selection_evidence": [
-                        {
-                            "changed_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
-                            "reason": "existing_symbol",
-                            "confidence": 1.0
-                        },
-                        {
-                            "reason": "enclosing_class_context",
-                            "related_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
-                            "class_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
-                            "confidence": 1.0
-                        },
-                        {
-                            "reason": "enclosing_class_context",
-                            "related_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy",
-                            "class_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
-                            "confidence": 1.0
-                        }
-                    ],
-                    "context_for": [
-                        "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
-                        "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy"
-                    ]
-                },
                 "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35": {
                     "qualified_name": "AssertionRewriter.visit_Call_35",
                     "revision": "base",
@@ -658,24 +601,11 @@
                     "class_context_ids": [
                         "src/_pytest/assertion/rewrite.py::AssertionRewriter"
                     ]
-                }
-            },
-            "patched": {
+                },
                 "src/_pytest/assertion/rewrite.py::AssertionRewriter": {
                     "qualified_name": "AssertionRewriter",
-                    "revision": "patched",
+                    "revision": "base",
                     "selection_evidence": [
-                        {
-                            "changed_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
-                            "reason": "changed_lines",
-                            "confidence": 1.0
-                        },
-                        {
-                            "reason": "enclosing_class_context",
-                            "related_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter._visit_all",
-                            "class_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
-                            "confidence": 1.0
-                        },
                         {
                             "reason": "enclosing_class_context",
                             "related_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
@@ -690,11 +620,119 @@
                         }
                     ],
                     "context_for": [
-                        "src/_pytest/assertion/rewrite.py::AssertionRewriter._visit_all",
                         "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
                         "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy"
+                    ],
+                    "content_kind": "class_outline",
+                    "source_spans": [
+                        [
+                            608,
+                            608
+                        ],
+                        [
+                            609,
+                            658
+                        ],
+                        [
+                            660,
+                            663
+                        ],
+                        [
+                            665,
+                            665
+                        ],
+                        [
+                            730,
+                            731
+                        ],
+                        [
+                            734,
+                            734
+                        ],
+                        [
+                            741,
+                            745
+                        ],
+                        [
+                            747,
+                            749
+                        ],
+                        [
+                            751,
+                            751
+                        ],
+                        [
+                            757,
+                            757
+                        ],
+                        [
+                            762,
+                            773
+                        ],
+                        [
+                            775,
+                            775
+                        ],
+                        [
+                            789,
+                            789
+                        ],
+                        [
+                            808,
+                            808
+                        ],
+                        [
+                            814,
+                            814
+                        ],
+                        [
+                            881,
+                            881
+                        ],
+                        [
+                            908,
+                            910
+                        ],
+                        [
+                            918,
+                            918
+                        ],
+                        [
+                            953,
+                            953
+                        ],
+                        [
+                            959,
+                            959
+                        ],
+                        [
+                            967,
+                            967
+                        ],
+                        [
+                            994,
+                            995
+                        ],
+                        [
+                            1000,
+                            1000
+                        ],
+                        [
+                            1033,
+                            1036
+                        ],
+                        [
+                            1038,
+                            1038
+                        ],
+                        [
+                            1048,
+                            1048
+                        ]
                     ]
-                },
+                }
+            },
+            "patched": {
                 "src/_pytest/assertion/rewrite.py::AssertionRewriter._visit_all": {
                     "qualified_name": "AssertionRewriter._visit_all",
                     "revision": "patched",
@@ -735,6 +773,146 @@
                     ],
                     "class_context_ids": [
                         "src/_pytest/assertion/rewrite.py::AssertionRewriter"
+                    ]
+                },
+                "src/_pytest/assertion/rewrite.py::AssertionRewriter": {
+                    "qualified_name": "AssertionRewriter",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter._visit_all",
+                            "class_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                            "confidence": 1.0
+                        },
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
+                            "class_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                            "confidence": 1.0
+                        },
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy",
+                            "class_symbol": "src/_pytest/assertion/rewrite.py::AssertionRewriter",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "src/_pytest/assertion/rewrite.py::AssertionRewriter._visit_all",
+                        "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_35",
+                        "src/_pytest/assertion/rewrite.py::AssertionRewriter.visit_Call_legacy"
+                    ],
+                    "content_kind": "class_outline",
+                    "source_spans": [
+                        [
+                            608,
+                            608
+                        ],
+                        [
+                            609,
+                            658
+                        ],
+                        [
+                            660,
+                            663
+                        ],
+                        [
+                            665,
+                            665
+                        ],
+                        [
+                            730,
+                            731
+                        ],
+                        [
+                            734,
+                            734
+                        ],
+                        [
+                            741,
+                            745
+                        ],
+                        [
+                            747,
+                            749
+                        ],
+                        [
+                            751,
+                            751
+                        ],
+                        [
+                            757,
+                            757
+                        ],
+                        [
+                            762,
+                            773
+                        ],
+                        [
+                            775,
+                            775
+                        ],
+                        [
+                            789,
+                            789
+                        ],
+                        [
+                            808,
+                            808
+                        ],
+                        [
+                            814,
+                            814
+                        ],
+                        [
+                            881,
+                            881
+                        ],
+                        [
+                            908,
+                            910
+                        ],
+                        [
+                            918,
+                            918
+                        ],
+                        [
+                            953,
+                            953
+                        ],
+                        [
+                            959,
+                            959
+                        ],
+                        [
+                            967,
+                            967
+                        ],
+                        [
+                            996,
+                            996
+                        ],
+                        [
+                            1017,
+                            1018
+                        ],
+                        [
+                            1023,
+                            1023
+                        ],
+                        [
+                            1058,
+                            1061
+                        ],
+                        [
+                            1063,
+                            1063
+                        ],
+                        [
+                            1073,
+                            1073
+                        ]
                     ]
                 }
             }
@@ -907,36 +1085,6 @@
         "patched_contains_developer_fix": true,
         "changed_symbols": [
             {
-                "id": "src/_pytest/_code/code.py::ExceptionInfo",
-                "file": "src/_pytest/_code/code.py",
-                "name": "ExceptionInfo",
-                "kind": "class",
-                "change": "modified",
-                "old_span": [
-                    373,
-                    555
-                ],
-                "new_span": [
-                    373,
-                    548
-                ],
-                "base_targets": [
-                    {
-                        "id": "src/_pytest/_code/code.py::ExceptionInfo",
-                        "reason": "existing_symbol",
-                        "confidence": 1.0
-                    }
-                ],
-                "selected_base": [
-                    "src/_pytest/_code/code.py::ExceptionInfo"
-                ],
-                "selected_patched": [
-                    "src/_pytest/_code/code.py::ExceptionInfo"
-                ],
-                "supporting_base": [],
-                "supporting_patched": []
-            },
-            {
                 "id": "src/_pytest/_code/code.py::ExceptionInfo.__str__",
                 "file": "src/_pytest/_code/code.py",
                 "name": "ExceptionInfo.__str__",
@@ -965,9 +1113,9 @@
             }
         ],
         "counts": {
-            "changed_symbols": 2,
+            "changed_symbols": 1,
             "base_objects": 2,
-            "patched_objects": 1
+            "patched_objects": 0
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
@@ -989,26 +1137,6 @@
         "non_python_files": [],
         "documents": {
             "base": {
-                "src/_pytest/_code/code.py::ExceptionInfo": {
-                    "qualified_name": "ExceptionInfo",
-                    "revision": "base",
-                    "selection_evidence": [
-                        {
-                            "changed_symbol": "src/_pytest/_code/code.py::ExceptionInfo",
-                            "reason": "existing_symbol",
-                            "confidence": 1.0
-                        },
-                        {
-                            "reason": "enclosing_class_context",
-                            "related_symbol": "src/_pytest/_code/code.py::ExceptionInfo.__str__",
-                            "class_symbol": "src/_pytest/_code/code.py::ExceptionInfo",
-                            "confidence": 1.0
-                        }
-                    ],
-                    "context_for": [
-                        "src/_pytest/_code/code.py::ExceptionInfo.__str__"
-                    ]
-                },
                 "src/_pytest/_code/code.py::ExceptionInfo.__str__": {
                     "qualified_name": "ExceptionInfo.__str__",
                     "revision": "base",
@@ -1022,19 +1150,22 @@
                     "class_context_ids": [
                         "src/_pytest/_code/code.py::ExceptionInfo"
                     ]
-                }
-            },
-            "patched": {
+                },
                 "src/_pytest/_code/code.py::ExceptionInfo": {
                     "qualified_name": "ExceptionInfo",
-                    "revision": "patched",
+                    "revision": "base",
                     "selection_evidence": [
                         {
-                            "changed_symbol": "src/_pytest/_code/code.py::ExceptionInfo",
-                            "reason": "changed_lines",
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "src/_pytest/_code/code.py::ExceptionInfo.__str__",
+                            "class_symbol": "src/_pytest/_code/code.py::ExceptionInfo",
                             "confidence": 1.0
                         }
-                    ]
+                    ],
+                    "context_for": [
+                        "src/_pytest/_code/code.py::ExceptionInfo.__str__"
+                    ],
+                    "content_kind": "full_class"
                 }
             }
         }
@@ -2017,36 +2148,6 @@
         "patched_contains_developer_fix": true,
         "changed_symbols": [
             {
-                "id": "src/_pytest/skipping.py::<module>",
-                "file": "src/_pytest/skipping.py",
-                "name": "<module>",
-                "kind": "module",
-                "change": "modified",
-                "old_span": [
-                    1,
-                    315
-                ],
-                "new_span": [
-                    1,
-                    316
-                ],
-                "base_targets": [
-                    {
-                        "id": "src/_pytest/skipping.py::<module>",
-                        "reason": "existing_symbol",
-                        "confidence": 1.0
-                    }
-                ],
-                "selected_base": [
-                    "src/_pytest/skipping.py::<module>"
-                ],
-                "selected_patched": [
-                    "src/_pytest/skipping.py::<module>"
-                ],
-                "supporting_base": [],
-                "supporting_patched": []
-            },
-            {
                 "id": "src/_pytest/skipping.py::pytest_runtest_call",
                 "file": "src/_pytest/skipping.py",
                 "name": "pytest_runtest_call",
@@ -2108,9 +2209,9 @@
             }
         ],
         "counts": {
-            "changed_symbols": 3,
-            "base_objects": 3,
-            "patched_objects": 3
+            "changed_symbols": 2,
+            "base_objects": 2,
+            "patched_objects": 2
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
@@ -2123,17 +2224,6 @@
         "non_python_files": [],
         "documents": {
             "base": {
-                "src/_pytest/skipping.py::<module>": {
-                    "qualified_name": "<module>",
-                    "revision": "base",
-                    "selection_evidence": [
-                        {
-                            "changed_symbol": "src/_pytest/skipping.py::<module>",
-                            "reason": "existing_symbol",
-                            "confidence": 1.0
-                        }
-                    ]
-                },
                 "src/_pytest/skipping.py::pytest_runtest_call": {
                     "qualified_name": "pytest_runtest_call",
                     "revision": "base",
@@ -2158,17 +2248,6 @@
                 }
             },
             "patched": {
-                "src/_pytest/skipping.py::<module>": {
-                    "qualified_name": "<module>",
-                    "revision": "patched",
-                    "selection_evidence": [
-                        {
-                            "changed_symbol": "src/_pytest/skipping.py::<module>",
-                            "reason": "changed_lines",
-                            "confidence": 1.0
-                        }
-                    ]
-                },
                 "src/_pytest/skipping.py::pytest_runtest_call": {
                     "qualified_name": "pytest_runtest_call",
                     "revision": "patched",

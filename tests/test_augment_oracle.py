@@ -9,7 +9,7 @@ from pathlib import Path
 
 from scripts.test_retrieval.augment_oracle import (
     ProductionChange, augment_instance, changed_symbols, collection_settings, merge_tests,
-    production_changes, retrieve, safe_path, _save,
+    production_changes, retrieve_auxiliary, safe_path, _save,
 )
 from scripts.test_retrieval.static_dependencies import DependencyIndex
 
@@ -24,7 +24,7 @@ def diff(path, before, after):
 def selection(sources, target, **kwargs):
     index = DependencyIndex(sources).build()
     changed = [{"id": target, "base_targets": [{"id": target, "reason": "existing_symbol", "confidence": 1.0}]}]
-    tests, evidence = retrieve(index, changed, fallback=False, **kwargs)
+    tests, evidence = retrieve_auxiliary(index, changed, fallback=False, **kwargs)
     return {item["name"] for item in tests}, evidence, index
 
 

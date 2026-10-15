@@ -1,224 +1,943 @@
 {
-  "dataset": "SWE-bench/SWE-bench_Lite",
+  "input_csv": "F:\\GitHub\\iCoRe\\data\\swe-bench-lite\\test.csv",
+  "input_csv_sha256": "89a483de652a0524f83d997c58c707557661a912f529fed86384208ff7ebc1f4",
+  "selection_policy": "strict_direct_existing_object_v1",
   "parameters": {
     "top_k": 10,
-    "max_depth": 8,
-    "fallback": true
+    "direct_depth": 1,
+    "fallback": false,
+    "include_auxiliary": false
   },
+  "affected_regression_tests_passed": 66,
+  "full_suite": {
+    "tests": 157,
+    "passed": 156,
+    "preexisting_failure": "test_streamed_tools_preserve_reasoning_and_fragmented_arguments"
+  },
+  "previous_run_summary": "retrieval_results\\oracle\\test\\broad_selection_backup_2026-10-12\\lite\\oracle_augmented_run_summary.json",
   "repositories": {
     "pylint-dev/pylint": {
       "instances": 6,
       "original_base_tests": 5,
-      "augmented_tests": 60,
+      "augmented_tests": 7,
+      "production_selected_tests": 2,
       "empty_before": 3,
-      "empty_after": 0,
-      "module_proximity_instances": [
-        "pylint-dev__pylint-7993"
+      "empty_after": 3,
+      "empty_augmented_instances": [
+        "pylint-dev__pylint-5859",
+        "pylint-dev__pylint-7080",
+        "pylint-dev__pylint-7228"
       ],
-      "all_selected_snippets_verified_against_base_commit": true,
+      "module_proximity_instances": [],
       "per_instance": [
         {
           "instance_id": "pylint-dev__pylint-5859",
-          "original_base": 0,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 10,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 0,
+          "removed_tests": [
+            {
+              "file": "tests/checkers/unittest_misc.py",
+              "name": "TestFixme.test_absent_codetag"
+            },
+            {
+              "file": "tests/checkers/unittest_misc.py",
+              "name": "TestFixme.test_dont_trigger_on_todoist"
+            },
+            {
+              "file": "tests/checkers/unittest_misc.py",
+              "name": "TestFixme.test_fixme_with_message"
+            },
+            {
+              "file": "tests/checkers/unittest_misc.py",
+              "name": "TestFixme.test_issue_2321_should_not_trigger"
+            },
+            {
+              "file": "tests/checkers/unittest_misc.py",
+              "name": "TestFixme.test_issue_2321_should_trigger"
+            },
+            {
+              "file": "tests/checkers/unittest_misc.py",
+              "name": "TestFixme.test_other_present_codetag"
+            },
+            {
+              "file": "tests/checkers/unittest_misc.py",
+              "name": "TestFixme.test_todo_without_message"
+            },
+            {
+              "file": "tests/checkers/unittest_misc.py",
+              "name": "TestFixme.test_without_space_fixme"
+            },
+            {
+              "file": "tests/checkers/unittest_misc.py",
+              "name": "TestFixme.test_xxx_middle"
+            },
+            {
+              "file": "tests/checkers/unittest_misc.py",
+              "name": "TestFixme.test_xxx_without_space"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 0
         },
         {
           "instance_id": "pylint-dev__pylint-6506",
-          "original_base": 2,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 8,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 2,
+          "removed_tests": [
+            {
+              "file": "doc/test_messages_documentation.py",
+              "name": "test_code_examples"
+            },
+            {
+              "file": "tests/checkers/unittest_format.py",
+              "name": "test_disable_global_option_end_of_line"
+            },
+            {
+              "file": "tests/checkers/unittest_refactoring.py",
+              "name": "test_issue_5724"
+            },
+            {
+              "file": "tests/config/test_find_default_config_files.py",
+              "name": "test_verbose_output_no_config"
+            },
+            {
+              "file": "tests/test_functional.py",
+              "name": "test_functional"
+            },
+            {
+              "file": "tests/testutils/test_functional_testutils.py",
+              "name": "test_minimal_messages_config_enabled"
+            },
+            {
+              "file": "tests/testutils/test_functional_testutils.py",
+              "name": "test_minimal_messages_config_excluded_file"
+            },
+            {
+              "file": "tests/testutils/test_functional_testutils.py",
+              "name": "test_parsing_of_pylintrc_init_hook"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 2
         },
         {
           "instance_id": "pylint-dev__pylint-7080",
-          "original_base": 0,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 10,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 0,
+          "removed_tests": [
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j1"
+            },
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j1_all_checks_lots_of_files"
+            },
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j1_single_working_checker"
+            },
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j2"
+            },
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j2_single_working_checker"
+            },
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_lots_of_files_j1"
+            },
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_lots_of_files_j1_empty_checker"
+            },
+            {
+              "file": "tests/lint/unittest_expand_modules.py",
+              "name": "TestExpandModules.test_expand_modules"
+            },
+            {
+              "file": "tests/lint/unittest_expand_modules.py",
+              "name": "TestExpandModules.test_expand_modules_with_ignore"
+            },
+            {
+              "file": "tests/lint/unittest_lint.py",
+              "name": "test_recursive_ignore"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 0
         },
         {
           "instance_id": "pylint-dev__pylint-7114",
-          "original_base": 1,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 9,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 3,
+          "removed_tests": [
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j1"
+            },
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j1_all_checks_lots_of_files"
+            },
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j1_single_working_checker"
+            },
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j2"
+            },
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j2_single_working_checker"
+            },
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_lots_of_files_j1"
+            },
+            {
+              "file": "tests/lint/unittest_lint.py",
+              "name": "test_recursive_ignore"
+            }
+          ],
+          "production_after": 2,
+          "original_base": 1
         },
         {
           "instance_id": "pylint-dev__pylint-7228",
-          "original_base": 0,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 10,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 0,
+          "removed_tests": [
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j1_single_working_checker"
+            },
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_benchmark_j2_single_working_checker"
+            },
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_lots_of_files_j1_empty_checker"
+            },
+            {
+              "file": "tests/benchmark/test_baseline_benchmarks.py",
+              "name": "TestEstablishBaselineBenchmarks.test_baseline_lots_of_files_j2_empty_checker"
+            },
+            {
+              "file": "tests/checkers/unittest_base_checker.py",
+              "name": "test_base_checker_ordering"
+            },
+            {
+              "file": "tests/config/test_deprecations.py",
+              "name": "TestDeprecationArgumentsManager.test_get_global_option"
+            },
+            {
+              "file": "tests/config/test_deprecations.py",
+              "name": "TestDeprecationArgumentsManager.test_no_default_in_optdict"
+            },
+            {
+              "file": "tests/config/test_deprecations.py",
+              "name": "TestDeprecationArgumentsManager.test_no_level_in_optdict"
+            },
+            {
+              "file": "tests/config/test_deprecations.py",
+              "name": "TestDeprecationArgumentsManager.test_register_options_provider_load_defaults"
+            },
+            {
+              "file": "tests/lint/unittest_lint.py",
+              "name": "test_pylint_visit_method_taken_in_account"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 0
         },
         {
           "instance_id": "pylint-dev__pylint-7993",
-          "original_base": 2,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 8,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 2,
+          "removed_tests": [
+            {
+              "file": "tests/checkers/unittest_refactoring.py",
+              "name": "test_issue_5724"
+            },
+            {
+              "file": "tests/checkers/unittest_refactoring.py",
+              "name": "test_process_tokens"
+            },
+            {
+              "file": "tests/lint/unittest_lint.py",
+              "name": "test_pylint_visit_method_taken_in_account"
+            },
+            {
+              "file": "tests/reporters/unittest_reporting.py",
+              "name": "test_display_results_is_renamed"
+            },
+            {
+              "file": "tests/test_self.py",
+              "name": "TestRunTC.test_all"
+            },
+            {
+              "file": "tests/test_self.py",
+              "name": "TestRunTC.test_no_crash_with_formatting_regex_defaults"
+            },
+            {
+              "file": "tests/test_self.py",
+              "name": "TestRunTC.test_output_file_can_be_combined_with_custom_reporter"
+            },
+            {
+              "file": "tests/test_self.py",
+              "name": "TestRunTC.test_pkginfo"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 2
         }
-      ]
+      ],
+      "all_selected_snippets_verified_against_base_commit": true,
+      "generator_schema_verified": true
     },
     "pytest-dev/pytest": {
       "instances": 17,
       "original_base_tests": 22,
-      "augmented_tests": 150,
+      "augmented_tests": 34,
+      "production_selected_tests": 14,
       "empty_before": 11,
-      "empty_after": 0,
-      "module_proximity_instances": [
-        "pytest-dev__pytest-5221",
-        "pytest-dev__pytest-5227",
-        "pytest-dev__pytest-6116",
+      "empty_after": 9,
+      "empty_augmented_instances": [
+        "pytest-dev__pytest-11143",
+        "pytest-dev__pytest-5103",
+        "pytest-dev__pytest-5413",
+        "pytest-dev__pytest-5495",
+        "pytest-dev__pytest-7220",
+        "pytest-dev__pytest-7373",
         "pytest-dev__pytest-7432",
-        "pytest-dev__pytest-8906"
+        "pytest-dev__pytest-7490",
+        "pytest-dev__pytest-9359"
       ],
-      "all_selected_snippets_verified_against_base_commit": true,
+      "module_proximity_instances": [],
       "per_instance": [
         {
           "instance_id": "pytest-dev__pytest-11143",
-          "original_base": 0,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 10,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 0,
+          "removed_tests": [
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_assert_already_has_message"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_assert_raising__bool__in_comparison"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_assertrepr_compare_same_width"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_attribute"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_binary_op"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_boolop"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_dont_rewrite"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_location_is_set"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_place_initial_imports"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewriteHookDetails.test_read_pyc_success"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 0
         },
         {
           "instance_id": "pytest-dev__pytest-11148",
-          "original_base": 2,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 8,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 10,
+          "removed_tests": [],
+          "production_after": 10,
+          "original_base": 2
         },
         {
           "instance_id": "pytest-dev__pytest-5103",
-          "original_base": 0,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 10,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 0,
+          "removed_tests": [
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_assert_already_has_message"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_assert_raising_nonzero_in_comparison"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_attribute"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_binary_op"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_boolop"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_boolop_percent"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_call"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_dont_rewrite"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestAssertionRewrite.test_place_initial_imports"
+            },
+            {
+              "file": "testing/test_assertrewrite.py",
+              "name": "TestRewriteOnImport.test_remember_rewritten_modules"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 0
         },
         {
           "instance_id": "pytest-dev__pytest-5221",
-          "original_base": 2,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 8,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 2,
+          "removed_tests": [
+            {
+              "file": "testing/python/collect.py",
+              "name": "TestConftestCustomization.test_makeitem_non_underscore"
+            },
+            {
+              "file": "testing/python/collect.py",
+              "name": "TestFunction.test_function_equality"
+            },
+            {
+              "file": "testing/python/collect.py",
+              "name": "TestFunction.test_getmodulecollector"
+            },
+            {
+              "file": "testing/python/collect.py",
+              "name": "TestFunction.test_repr_produces_actual_test_id"
+            },
+            {
+              "file": "testing/python/collect.py",
+              "name": "TestSorting.test_check_equality"
+            },
+            {
+              "file": "testing/python/fixtures.py",
+              "name": "TestRequestBasic.test_request_addfinalizer"
+            },
+            {
+              "file": "testing/python/integration.py",
+              "name": "test_wrapped_getfslineno"
+            },
+            {
+              "file": "testing/python/metafunc.py",
+              "name": "TestMetafunc.test_bytes_idval"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 2
         },
         {
           "instance_id": "pytest-dev__pytest-5227",
-          "original_base": 5,
-          "production_selected": 2,
-          "augmented": 7,
-          "added": 2,
-          "source_verified": true
+          "augmented_before": 7,
+          "augmented_after": 5,
+          "removed_tests": [
+            {
+              "file": "testing/logging/test_formatter.py",
+              "name": "test_coloredlogformatter"
+            },
+            {
+              "file": "testing/logging/test_reporting.py",
+              "name": "test_live_logging_suspends_capture"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 5
         },
         {
           "instance_id": "pytest-dev__pytest-5413",
-          "original_base": 0,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 10,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 0,
+          "removed_tests": [
+            {
+              "file": "testing/code/test_code.py",
+              "name": "TestExceptionInfo.test_bad_getsource"
+            },
+            {
+              "file": "testing/code/test_code.py",
+              "name": "TestExceptionInfo.test_from_current_with_missing"
+            },
+            {
+              "file": "testing/code/test_code.py",
+              "name": "TestTracebackEntry.test_getsource"
+            },
+            {
+              "file": "testing/code/test_code.py",
+              "name": "test_unicode_handling"
+            },
+            {
+              "file": "testing/code/test_excinfo.py",
+              "name": "TestFormattedExcinfo.test_exc_chain_repr"
+            },
+            {
+              "file": "testing/code/test_excinfo.py",
+              "name": "TestFormattedExcinfo.test_exc_chain_repr_cycle"
+            },
+            {
+              "file": "testing/code/test_excinfo.py",
+              "name": "TestFormattedExcinfo.test_exc_repr_chain_suppression"
+            },
+            {
+              "file": "testing/code/test_excinfo.py",
+              "name": "TestFormattedExcinfo.test_format_excinfo"
+            },
+            {
+              "file": "testing/code/test_excinfo.py",
+              "name": "TestFormattedExcinfo.test_repr_excinfo_addouterr"
+            },
+            {
+              "file": "testing/code/test_excinfo.py",
+              "name": "TestFormattedExcinfo.test_repr_excinfo_reprcrash"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 0
         },
         {
           "instance_id": "pytest-dev__pytest-5495",
-          "original_base": 0,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 10,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 0,
+          "removed_tests": [
+            {
+              "file": "testing/test_assertion.py",
+              "name": "TestAssert_reprcompare.test_Sequence"
+            },
+            {
+              "file": "testing/test_assertion.py",
+              "name": "TestAssert_reprcompare.test_dict"
+            },
+            {
+              "file": "testing/test_assertion.py",
+              "name": "TestAssert_reprcompare.test_dict_different_items"
+            },
+            {
+              "file": "testing/test_assertion.py",
+              "name": "TestAssert_reprcompare.test_dict_omitting"
+            },
+            {
+              "file": "testing/test_assertion.py",
+              "name": "TestAssert_reprcompare.test_dict_omitting_with_verbosity_1"
+            },
+            {
+              "file": "testing/test_assertion.py",
+              "name": "TestAssert_reprcompare.test_dict_omitting_with_verbosity_2"
+            },
+            {
+              "file": "testing/test_assertion.py",
+              "name": "TestAssert_reprcompare.test_different_types"
+            },
+            {
+              "file": "testing/test_assertion.py",
+              "name": "TestAssert_reprcompare.test_frozenzet"
+            },
+            {
+              "file": "testing/test_assertion.py",
+              "name": "test_reprcompare_notin"
+            },
+            {
+              "file": "testing/test_assertion.py",
+              "name": "test_reprcompare_whitespaces"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 0
         },
         {
           "instance_id": "pytest-dev__pytest-5692",
-          "original_base": 0,
-          "production_selected": 4,
-          "augmented": 4,
-          "added": 4,
-          "source_verified": true
+          "augmented_before": 4,
+          "augmented_after": 3,
+          "removed_tests": [
+            {
+              "file": "testing/test_junitxml.py",
+              "name": "test_dont_configure_on_slaves"
+            }
+          ],
+          "production_after": 3,
+          "original_base": 0
         },
         {
           "instance_id": "pytest-dev__pytest-6116",
-          "original_base": 2,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 8,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 2,
+          "removed_tests": [
+            {
+              "file": "testing/acceptance_test.py",
+              "name": "TestGeneralUsage.test_config_error"
+            },
+            {
+              "file": "testing/acceptance_test.py",
+              "name": "TestGeneralUsage.test_directory_skipped"
+            },
+            {
+              "file": "testing/acceptance_test.py",
+              "name": "TestGeneralUsage.test_early_skip"
+            },
+            {
+              "file": "testing/acceptance_test.py",
+              "name": "TestGeneralUsage.test_file_not_found_unconfigure_issue143"
+            },
+            {
+              "file": "testing/acceptance_test.py",
+              "name": "TestGeneralUsage.test_issue109_sibling_conftests_not_loaded"
+            },
+            {
+              "file": "testing/acceptance_test.py",
+              "name": "TestGeneralUsage.test_issue93_initialnode_importing_capturing"
+            },
+            {
+              "file": "testing/acceptance_test.py",
+              "name": "TestGeneralUsage.test_not_collectable_arguments"
+            },
+            {
+              "file": "testing/acceptance_test.py",
+              "name": "TestGeneralUsage.test_report_all_failed_collections_initargs"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 2
         },
         {
           "instance_id": "pytest-dev__pytest-7168",
-          "original_base": 10,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 0,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 10,
+          "removed_tests": [],
+          "production_after": 0,
+          "original_base": 10
         },
         {
           "instance_id": "pytest-dev__pytest-7220",
-          "original_base": 0,
-          "production_selected": 7,
-          "augmented": 7,
-          "added": 7,
-          "source_verified": true
+          "augmented_before": 7,
+          "augmented_after": 0,
+          "removed_tests": [
+            {
+              "file": "testing/deprecated_test.py",
+              "name": "test_node_direct_ctor_warning"
+            },
+            {
+              "file": "testing/test_junitxml.py",
+              "name": "test_mangle_test_address"
+            },
+            {
+              "file": "testing/test_junitxml.py",
+              "name": "test_unicode_issue368"
+            },
+            {
+              "file": "testing/test_junitxml.py",
+              "name": "test_url_property"
+            },
+            {
+              "file": "testing/test_nodes.py",
+              "name": "test__check_initialpaths_for_relpath"
+            },
+            {
+              "file": "testing/test_nodes.py",
+              "name": "test_ischildnode"
+            },
+            {
+              "file": "testing/test_nodes.py",
+              "name": "test_node_from_parent_disallowed_arguments"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 0
         },
         {
           "instance_id": "pytest-dev__pytest-7373",
-          "original_base": 0,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 10,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 0,
+          "removed_tests": [
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluator.test_marked_no_args"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluator.test_marked_one_arg"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluator.test_marked_one_arg_twice"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluator.test_marked_one_arg_twice2"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluator.test_marked_one_arg_with_reason"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluator.test_marked_skip_with_not_string"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluator.test_no_marker"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluator.test_skipif_class"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestSkipif.test_skipif_conditional"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestSkipif.test_skipif_using_platform"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 0
         },
         {
           "instance_id": "pytest-dev__pytest-7432",
-          "original_base": 0,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 10,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 0,
+          "removed_tests": [
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluation.test_marked_one_arg"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluation.test_marked_one_arg_twice"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluation.test_marked_one_arg_twice2"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluation.test_marked_one_arg_with_reason"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluation.test_marked_skipif_no_args"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluation.test_marked_xfail_no_args"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluation.test_no_marker"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestEvaluation.test_skipif_class"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestSkipif.test_skipif_conditional"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestSkipif.test_skipif_using_platform"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 0
         },
         {
           "instance_id": "pytest-dev__pytest-7490",
-          "original_base": 0,
-          "production_selected": 2,
-          "augmented": 2,
-          "added": 2,
-          "source_verified": true
+          "augmented_before": 2,
+          "augmented_after": 0,
+          "removed_tests": [
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestSkipif.test_skipif_conditional"
+            },
+            {
+              "file": "testing/test_skipping.py",
+              "name": "TestSkipif.test_skipif_using_platform"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 0
         },
         {
           "instance_id": "pytest-dev__pytest-8365",
-          "original_base": 0,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 10,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 1,
+          "removed_tests": [
+            {
+              "file": "testing/test_cacheprovider.py",
+              "name": "TestNewAPI.test_custom_abs_cache_dir"
+            },
+            {
+              "file": "testing/test_cacheprovider.py",
+              "name": "test_cache_reportheader_external_abspath"
+            },
+            {
+              "file": "testing/test_conftest.py",
+              "name": "TestConftestValueAccessGlobal.test_basic_init"
+            },
+            {
+              "file": "testing/test_conftest.py",
+              "name": "TestConftestValueAccessGlobal.test_immediate_initialiation_and_incremental_are_the_same"
+            },
+            {
+              "file": "testing/test_conftest.py",
+              "name": "TestConftestValueAccessGlobal.test_value_access_by_path"
+            },
+            {
+              "file": "testing/test_conftest.py",
+              "name": "TestConftestValueAccessGlobal.test_value_access_not_existing"
+            },
+            {
+              "file": "testing/test_conftest.py",
+              "name": "TestConftestValueAccessGlobal.test_value_access_with_confmod"
+            },
+            {
+              "file": "testing/test_pathlib.py",
+              "name": "TestImportPath.test_a"
+            },
+            {
+              "file": "testing/test_pathlib.py",
+              "name": "TestImportPath.test_b"
+            }
+          ],
+          "production_after": 1,
+          "original_base": 0
         },
         {
           "instance_id": "pytest-dev__pytest-8906",
-          "original_base": 1,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 9,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 1,
+          "removed_tests": [
+            {
+              "file": "testing/python/collect.py",
+              "name": "TestFunction.test_function_originalname"
+            },
+            {
+              "file": "testing/python/collect.py",
+              "name": "TestFunction.test_getmodulecollector"
+            },
+            {
+              "file": "testing/python/collect.py",
+              "name": "TestReportInfo.test_class_reportinfo"
+            },
+            {
+              "file": "testing/python/collect.py",
+              "name": "TestReportInfo.test_reportinfo_with_nasty_getattr"
+            },
+            {
+              "file": "testing/python/collect.py",
+              "name": "TestSorting.test_check_equality"
+            },
+            {
+              "file": "testing/python/fixtures.py",
+              "name": "TestFillFixtures.test_funcarg_basic"
+            },
+            {
+              "file": "testing/python/fixtures.py",
+              "name": "TestRequestBasic.test_getfixturevalue"
+            },
+            {
+              "file": "testing/python/fixtures.py",
+              "name": "TestRequestBasic.test_request_addfinalizer"
+            },
+            {
+              "file": "testing/python/fixtures.py",
+              "name": "TestRequestBasic.test_request_attributes"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 1
         },
         {
           "instance_id": "pytest-dev__pytest-9359",
-          "original_base": 0,
-          "production_selected": 10,
-          "augmented": 10,
-          "added": 10,
-          "source_verified": true
+          "augmented_before": 10,
+          "augmented_after": 0,
+          "removed_tests": [
+            {
+              "file": "testing/code/test_source.py",
+              "name": "TestIf.test_body"
+            },
+            {
+              "file": "testing/code/test_source.py",
+              "name": "TestIf.test_elif"
+            },
+            {
+              "file": "testing/code/test_source.py",
+              "name": "TestIf.test_elif_clause"
+            },
+            {
+              "file": "testing/code/test_source.py",
+              "name": "TestIf.test_else"
+            },
+            {
+              "file": "testing/code/test_source.py",
+              "name": "TestSourceParsing.test_getstatementrange_ast_issue58"
+            },
+            {
+              "file": "testing/code/test_source.py",
+              "name": "TestSourceParsing.test_getstatementrange_bug"
+            },
+            {
+              "file": "testing/code/test_source.py",
+              "name": "TestSourceParsing.test_getstatementrange_bug2"
+            },
+            {
+              "file": "testing/code/test_source.py",
+              "name": "TestSourceParsing.test_getstatementrange_out_of_bounds_py3"
+            },
+            {
+              "file": "testing/code/test_source.py",
+              "name": "TestSourceParsing.test_getstatementrange_with_syntaxerror_issue7"
+            },
+            {
+              "file": "testing/code/test_source.py",
+              "name": "test_comment_and_no_newline_at_end"
+            }
+          ],
+          "production_after": 0,
+          "original_base": 0
         }
-      ]
+      ],
+      "all_selected_snippets_verified_against_base_commit": true,
+      "generator_schema_verified": true
     }
   }
 }

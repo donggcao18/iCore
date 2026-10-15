@@ -81,6 +81,7 @@ class DependencyIndex:
         self.diagnostics: list[dict] = []
         self._unresolved: set[tuple[str, int, str]] = set()
         self._specializations: dict[tuple[str, str], str] = {}
+        self._type_annotations: set[int] = set()
         # Keep caches local to this snapshot so processing many commits does
         # not retain every historical AST through a class-level cache.
         self.bases = lru_cache(maxsize=None)(self.bases)
@@ -148,7 +149,11 @@ class DependencyIndex:
                     if node.args.kwarg:
                         args.append(node.args.kwarg)
                     for arg in args:
+                        if arg.annotation is not None:
+                            self._type_annotations.add(id(arg.annotation))
                         self.bindings[sid][arg.arg].append(arg.annotation)
+                    if node.returns is not None:
+                        self._type_annotations.add(id(node.returns))
                 self._collect(node.body, sid, name, sid if kind == "class" else class_id)
                 continue
             if isinstance(node, (ast.Import, ast.ImportFrom)):
@@ -223,11 +228,16 @@ class DependencyIndex:
                 elif isinstance(value, Import):
                     result.update(self._import(value.target, seen))
                 elif value is not None:
-                    result.update(self.resolve(value, scope, context, seen))
+                    resolved = self.resolve(value, scope, context, seen)
+                    if id(value) in self._type_annotations:
+                        resolved = {Ref(ref.target, True) for ref in resolved}
+                    result.update(resolved or {Ref(f"unknown:{scope}:{name}")})
                 else:
                     fixture = self.fixture_for(scope, name)
                     if fixture:
                         result.update(self._returns(fixture, seen))
+                    else:
+                        result.add(Ref(f"unknown:{scope}:{name}"))
             return result
         symbol = self.symbols[scope]
         if symbol.parent:
@@ -311,7 +321,7 @@ class DependencyIndex:
             return set()
         if isinstance(node, ast.Name):
             return self._name(node.id, scope, context, seen)
-        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) in self._type_annotations:
             # Forward-reference type annotations, not arbitrary generated source.
             try:
                 return self.resolve(ast.parse(node.value, mode="eval").body, scope, context, seen | {("str", node.value)})
@@ -335,6 +345,8 @@ class DependencyIndex:
                         result.update(self._attribute(symbol.id, node.attr, symbol.id, seen))
                 elif ref.target.startswith("external:"):
                     result.update(self._import(ref.target[9:] + "." + node.attr, seen))
+                elif ref.target.startswith("unknown:"):
+                    result.add(ref)
             return result
         if isinstance(node, ast.Call):
             if isinstance(node.func, ast.Name) and node.func.id == "super" and context:
@@ -351,7 +363,8 @@ class DependencyIndex:
             return result
         if isinstance(node, (ast.IfExp, ast.BoolOp)):
             values = [node.body, node.orelse] if isinstance(node, ast.IfExp) else node.values
-            return set().union(*(self.resolve(value, scope, context, seen) for value in values))
+            return set().union(*(self.resolve(value, scope, context, seen)
+                                 or {Ref("unknown:expression")} for value in values))
         return set()
 
     def _returns(self, sid, seen) -> set[Ref]:
@@ -366,7 +379,8 @@ class DependencyIndex:
                 self.resolve(annotation, sid, symbol.context, seen | {key})))
         for node in self._walk(symbol.node):
             if isinstance(node, (ast.Return, ast.Yield)):
-                result.update(self.resolve(node.value, sid, symbol.context, seen | {key}))
+                result.update(self.resolve(node.value, sid, symbol.context, seen | {key})
+                              or {Ref(f"unknown:return:{sid}")})
         return result
 
     @staticmethod
@@ -530,7 +544,7 @@ class DependencyIndex:
                                 constructor = self._member(ref.target, "__init__")
                                 if constructor:
                                     self.add_edge(sid, self._specialize(constructor, ref.target), "constructor")
-                        if not refs and isinstance(node.func, ast.Attribute):
+                        if (not refs or any(ref.target.startswith("unknown:") for ref in refs)) and isinstance(node.func, ast.Attribute):
                             self._unresolved.add((symbol.file, node.lineno, ast.unparse(node.func)))
                     elif isinstance(node, (ast.Name, ast.Attribute)) and isinstance(node.ctx, ast.Load):
                         for ref in self.resolve(node, sid, symbol.context):
@@ -553,6 +567,67 @@ class DependencyIndex:
                     routes[edge.source] = [edge, *path]
                     queue.append(edge.source)
         return {sid: path for sid, path in routes.items() if sid in self.tests}
+
+    def direct_test_uses(self, sid: str) -> list[dict]:
+        """Resolve body-level uses without traversing helper/setup execution."""
+        symbol = self.symbols[sid]
+        uses = []
+
+        def walk(node):
+            if isinstance(node, (*FUNCTIONS, ast.ClassDef, ast.Lambda, ast.GeneratorExp)):
+                return
+            yield node
+            if isinstance(node, ast.AnnAssign):
+                for child in (node.target, node.value):
+                    if child is not None:
+                        yield from walk(child)
+                return
+            for child in ast.iter_child_nodes(node):
+                yield from walk(child)
+
+        def emit(node, refs, kind, targets):
+            if targets:
+                uses.append({
+                    "kind": kind, "targets": sorted(set(targets)),
+                    "unambiguous": len(refs) == 1,
+                    "line": node.lineno, "end_line": node.end_lineno,
+                    "expression": ast.unparse(node),
+                })
+
+        def original(target):
+            return self.symbols[target].original or target
+
+        for statement in symbol.node.body:
+            for node in walk(statement):
+                if isinstance(node, ast.Call):
+                    refs = self.expand(self.resolve(node.func, sid, symbol.context), context=symbol.context)
+                    calls, constructors = [], []
+                    for ref in refs:
+                        target = self.symbols.get(ref.target)
+                        if not target:
+                            continue
+                        if target.kind == "function":
+                            calls.append(original(target.id))
+                        elif target.kind == "class" and not ref.instance:
+                            calls.append(target.id)  # Explicit class construction.
+                            for hook in ("__init__", "__new__"):
+                                constructor = self._member(target.id, hook)
+                                if constructor:
+                                    constructors.append(original(constructor))
+                        elif target.kind == "class" and ref.instance:
+                            method = self._member(target.id, "__call__")
+                            if method:
+                                calls.append(original(method))
+                    emit(node, refs, "call", calls)
+                    emit(node, refs, "constructor", constructors)
+                    if (not refs or any(ref.target.startswith("unknown:") for ref in refs)) and isinstance(node.func, ast.Attribute):
+                        self._unresolved.add((symbol.file, node.lineno, ast.unparse(node.func)))
+                elif isinstance(node, (ast.Name, ast.Attribute)) and isinstance(node.ctx, ast.Load):
+                    refs = self.resolve(node, sid, symbol.context)
+                    variables = [ref.target for ref in refs
+                                 if ref.target in self.symbols and self.symbols[ref.target].kind == "variable"]
+                    emit(node, refs, "read", variables)
+        return uses
 
     def report(self) -> dict:
         return {"parsed_files": len(self.modules), "test_functions": len(self.tests),

@@ -6,36 +6,6 @@
         "patched_contains_developer_fix": true,
         "changed_symbols": [
             {
-                "id": "src/_pytest/logging.py::<module>",
-                "file": "src/_pytest/logging.py",
-                "name": "<module>",
-                "kind": "module",
-                "change": "modified",
-                "old_span": [
-                    1,
-                    826
-                ],
-                "new_span": [
-                    1,
-                    829
-                ],
-                "base_targets": [
-                    {
-                        "id": "src/_pytest/logging.py::<module>",
-                        "reason": "existing_symbol",
-                        "confidence": 1.0
-                    }
-                ],
-                "selected_base": [
-                    "src/_pytest/logging.py::<module>"
-                ],
-                "selected_patched": [
-                    "src/_pytest/logging.py::<module>"
-                ],
-                "supporting_base": [],
-                "supporting_patched": []
-            },
-            {
                 "id": "src/_pytest/logging.py::LogCaptureFixture.clear",
                 "file": "src/_pytest/logging.py",
                 "name": "LogCaptureFixture.clear",
@@ -63,41 +33,11 @@
                     "src/_pytest/logging.py::LogCaptureFixture.clear"
                 ],
                 "supporting_base": [
-                    "src/_pytest/logging.py::<module>"
+                    "src/_pytest/logging.py::LogCaptureFixture"
                 ],
                 "supporting_patched": [
-                    "src/_pytest/logging.py::<module>"
+                    "src/_pytest/logging.py::LogCaptureFixture"
                 ]
-            },
-            {
-                "id": "src/_pytest/logging.py::LogCaptureHandler",
-                "file": "src/_pytest/logging.py",
-                "name": "LogCaptureHandler",
-                "kind": "class",
-                "change": "modified",
-                "old_span": [
-                    331,
-                    354
-                ],
-                "new_span": [
-                    330,
-                    357
-                ],
-                "base_targets": [
-                    {
-                        "id": "src/_pytest/logging.py::LogCaptureHandler",
-                        "reason": "existing_symbol",
-                        "confidence": 1.0
-                    }
-                ],
-                "selected_base": [
-                    "src/_pytest/logging.py::LogCaptureHandler"
-                ],
-                "selected_patched": [
-                    "src/_pytest/logging.py::LogCaptureHandler"
-                ],
-                "supporting_base": [],
-                "supporting_patched": []
             },
             {
                 "id": "src/_pytest/logging.py::LogCaptureHandler.clear",
@@ -130,7 +70,7 @@
             }
         ],
         "counts": {
-            "changed_symbols": 4,
+            "changed_symbols": 2,
             "base_objects": 3,
             "patched_objects": 4
         },
@@ -142,11 +82,11 @@
             "base": [
                 {
                     "class_symbol": "src/_pytest/logging.py::LogCaptureFixture",
-                    "document": "src/_pytest/logging.py::<module>",
+                    "document": "src/_pytest/logging.py::LogCaptureFixture",
                     "context_for": [
                         "src/_pytest/logging.py::LogCaptureFixture.clear"
                     ],
-                    "content_kind": "file"
+                    "content_kind": "full_class"
                 }
             ],
             "patched": [
@@ -160,11 +100,11 @@
                 },
                 {
                     "class_symbol": "src/_pytest/logging.py::LogCaptureFixture",
-                    "document": "src/_pytest/logging.py::<module>",
+                    "document": "src/_pytest/logging.py::LogCaptureFixture",
                     "context_for": [
                         "src/_pytest/logging.py::LogCaptureFixture.clear"
                     ],
-                    "content_kind": "file"
+                    "content_kind": "full_class"
                 }
             ]
         },
@@ -176,26 +116,6 @@
         },
         "documents": {
             "base": {
-                "src/_pytest/logging.py::<module>": {
-                    "qualified_name": "<module>",
-                    "revision": "base",
-                    "selection_evidence": [
-                        {
-                            "changed_symbol": "src/_pytest/logging.py::<module>",
-                            "reason": "existing_symbol",
-                            "confidence": 1.0
-                        },
-                        {
-                            "reason": "enclosing_class_context",
-                            "related_symbol": "src/_pytest/logging.py::LogCaptureFixture.clear",
-                            "class_symbol": "src/_pytest/logging.py::LogCaptureFixture",
-                            "confidence": 1.0
-                        }
-                    ],
-                    "context_for": [
-                        "src/_pytest/logging.py::LogCaptureFixture.clear"
-                    ]
-                },
                 "src/_pytest/logging.py::LogCaptureFixture.clear": {
                     "qualified_name": "LogCaptureFixture.clear",
                     "revision": "base",
@@ -207,36 +127,24 @@
                         }
                     ],
                     "class_context_ids": [
-                        "src/_pytest/logging.py::<module>"
+                        "src/_pytest/logging.py::LogCaptureFixture"
                     ]
                 },
                 "src/_pytest/logging.py::LogCaptureHandler": {
                     "qualified_name": "LogCaptureHandler",
                     "revision": "base",
                     "selection_evidence": [
-                        {
-                            "changed_symbol": "src/_pytest/logging.py::LogCaptureHandler",
-                            "reason": "existing_symbol",
-                            "confidence": 1.0
-                        },
                         {
                             "changed_symbol": "src/_pytest/logging.py::LogCaptureHandler.clear",
                             "reason": "class_fallback",
                             "confidence": 0.35
                         }
                     ]
-                }
-            },
-            "patched": {
-                "src/_pytest/logging.py::<module>": {
-                    "qualified_name": "<module>",
-                    "revision": "patched",
+                },
+                "src/_pytest/logging.py::LogCaptureFixture": {
+                    "qualified_name": "LogCaptureFixture",
+                    "revision": "base",
                     "selection_evidence": [
-                        {
-                            "changed_symbol": "src/_pytest/logging.py::<module>",
-                            "reason": "changed_lines",
-                            "confidence": 1.0
-                        },
                         {
                             "reason": "enclosing_class_context",
                             "related_symbol": "src/_pytest/logging.py::LogCaptureFixture.clear",
@@ -246,8 +154,11 @@
                     ],
                     "context_for": [
                         "src/_pytest/logging.py::LogCaptureFixture.clear"
-                    ]
-                },
+                    ],
+                    "content_kind": "full_class"
+                }
+            },
+            "patched": {
                 "src/_pytest/logging.py::LogCaptureFixture.clear": {
                     "qualified_name": "LogCaptureFixture.clear",
                     "revision": "patched",
@@ -259,27 +170,7 @@
                         }
                     ],
                     "class_context_ids": [
-                        "src/_pytest/logging.py::<module>"
-                    ]
-                },
-                "src/_pytest/logging.py::LogCaptureHandler": {
-                    "qualified_name": "LogCaptureHandler",
-                    "revision": "patched",
-                    "selection_evidence": [
-                        {
-                            "changed_symbol": "src/_pytest/logging.py::LogCaptureHandler",
-                            "reason": "changed_lines",
-                            "confidence": 1.0
-                        },
-                        {
-                            "reason": "enclosing_class_context",
-                            "related_symbol": "src/_pytest/logging.py::LogCaptureHandler.clear",
-                            "class_symbol": "src/_pytest/logging.py::LogCaptureHandler",
-                            "confidence": 1.0
-                        }
-                    ],
-                    "context_for": [
-                        "src/_pytest/logging.py::LogCaptureHandler.clear"
+                        "src/_pytest/logging.py::LogCaptureFixture"
                     ]
                 },
                 "src/_pytest/logging.py::LogCaptureHandler.clear": {
@@ -295,6 +186,38 @@
                     "class_context_ids": [
                         "src/_pytest/logging.py::LogCaptureHandler"
                     ]
+                },
+                "src/_pytest/logging.py::LogCaptureHandler": {
+                    "qualified_name": "LogCaptureHandler",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "src/_pytest/logging.py::LogCaptureHandler.clear",
+                            "class_symbol": "src/_pytest/logging.py::LogCaptureHandler",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "src/_pytest/logging.py::LogCaptureHandler.clear"
+                    ],
+                    "content_kind": "full_class"
+                },
+                "src/_pytest/logging.py::LogCaptureFixture": {
+                    "qualified_name": "LogCaptureFixture",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "src/_pytest/logging.py::LogCaptureFixture.clear",
+                            "class_symbol": "src/_pytest/logging.py::LogCaptureFixture",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "src/_pytest/logging.py::LogCaptureFixture.clear"
+                    ],
+                    "content_kind": "full_class"
                 }
             }
         }
@@ -588,36 +511,6 @@
         "patched_contains_developer_fix": true,
         "changed_symbols": [
             {
-                "id": "src/_pytest/capture.py::EncodedFile",
-                "file": "src/_pytest/capture.py",
-                "name": "EncodedFile",
-                "kind": "class",
-                "change": "modified",
-                "old_span": [
-                    425,
-                    451
-                ],
-                "new_span": [
-                    425,
-                    455
-                ],
-                "base_targets": [
-                    {
-                        "id": "src/_pytest/capture.py::EncodedFile",
-                        "reason": "existing_symbol",
-                        "confidence": 1.0
-                    }
-                ],
-                "selected_base": [
-                    "src/_pytest/capture.py::EncodedFile"
-                ],
-                "selected_patched": [
-                    "src/_pytest/capture.py::EncodedFile"
-                ],
-                "supporting_base": [],
-                "supporting_patched": []
-            },
-            {
                 "id": "src/_pytest/capture.py::EncodedFile.mode",
                 "file": "src/_pytest/capture.py",
                 "name": "EncodedFile.mode",
@@ -648,7 +541,7 @@
             }
         ],
         "counts": {
-            "changed_symbols": 2,
+            "changed_symbols": 1,
             "base_objects": 1,
             "patched_objects": 2
         },
@@ -682,11 +575,6 @@
                     "revision": "base",
                     "selection_evidence": [
                         {
-                            "changed_symbol": "src/_pytest/capture.py::EncodedFile",
-                            "reason": "existing_symbol",
-                            "confidence": 1.0
-                        },
-                        {
                             "changed_symbol": "src/_pytest/capture.py::EncodedFile.mode",
                             "reason": "class_fallback",
                             "confidence": 0.35
@@ -695,26 +583,6 @@
                 }
             },
             "patched": {
-                "src/_pytest/capture.py::EncodedFile": {
-                    "qualified_name": "EncodedFile",
-                    "revision": "patched",
-                    "selection_evidence": [
-                        {
-                            "changed_symbol": "src/_pytest/capture.py::EncodedFile",
-                            "reason": "changed_lines",
-                            "confidence": 1.0
-                        },
-                        {
-                            "reason": "enclosing_class_context",
-                            "related_symbol": "src/_pytest/capture.py::EncodedFile.mode",
-                            "class_symbol": "src/_pytest/capture.py::EncodedFile",
-                            "confidence": 1.0
-                        }
-                    ],
-                    "context_for": [
-                        "src/_pytest/capture.py::EncodedFile.mode"
-                    ]
-                },
                 "src/_pytest/capture.py::EncodedFile.mode": {
                     "qualified_name": "EncodedFile.mode",
                     "revision": "patched",
@@ -728,6 +596,22 @@
                     "class_context_ids": [
                         "src/_pytest/capture.py::EncodedFile"
                     ]
+                },
+                "src/_pytest/capture.py::EncodedFile": {
+                    "qualified_name": "EncodedFile",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "src/_pytest/capture.py::EncodedFile.mode",
+                            "class_symbol": "src/_pytest/capture.py::EncodedFile",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "src/_pytest/capture.py::EncodedFile.mode"
+                    ],
+                    "content_kind": "full_class"
                 }
             }
         }
@@ -1940,36 +1824,6 @@
         "patched_contains_developer_fix": true,
         "changed_symbols": [
             {
-                "id": "src/_pytest/python.py::Module",
-                "file": "src/_pytest/python.py",
-                "name": "Module",
-                "kind": "class",
-                "change": "modified",
-                "old_span": [
-                    432,
-                    556
-                ],
-                "new_span": [
-                    429,
-                    545
-                ],
-                "base_targets": [
-                    {
-                        "id": "src/_pytest/python.py::Module",
-                        "reason": "existing_symbol",
-                        "confidence": 1.0
-                    }
-                ],
-                "selected_base": [
-                    "src/_pytest/python.py::Module"
-                ],
-                "selected_patched": [
-                    "src/_pytest/python.py::Module"
-                ],
-                "supporting_base": [],
-                "supporting_patched": []
-            },
-            {
                 "id": "src/_pytest/python.py::Module.__init__",
                 "file": "src/_pytest/python.py",
                 "name": "Module.__init__",
@@ -2123,9 +1977,9 @@
             }
         ],
         "counts": {
-            "changed_symbols": 6,
+            "changed_symbols": 5,
             "base_objects": 7,
-            "patched_objects": 5
+            "patched_objects": 4
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
@@ -2186,26 +2040,6 @@
         },
         "documents": {
             "base": {
-                "src/_pytest/python.py::Module": {
-                    "qualified_name": "Module",
-                    "revision": "base",
-                    "selection_evidence": [
-                        {
-                            "changed_symbol": "src/_pytest/python.py::Module",
-                            "reason": "existing_symbol",
-                            "confidence": 1.0
-                        },
-                        {
-                            "reason": "enclosing_class_context",
-                            "related_symbol": "src/_pytest/python.py::Module.__init__",
-                            "class_symbol": "src/_pytest/python.py::Module",
-                            "confidence": 1.0
-                        }
-                    ],
-                    "context_for": [
-                        "src/_pytest/python.py::Module.__init__"
-                    ]
-                },
                 "src/_pytest/python.py::Module.__init__": {
                     "qualified_name": "Module.__init__",
                     "revision": "base",
@@ -2289,6 +2123,22 @@
                         "src/_pytest/python.py::PyobjMixin"
                     ]
                 },
+                "src/_pytest/python.py::Module": {
+                    "qualified_name": "Module",
+                    "revision": "base",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "src/_pytest/python.py::Module.__init__",
+                            "class_symbol": "src/_pytest/python.py::Module",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "src/_pytest/python.py::Module.__init__"
+                    ],
+                    "content_kind": "full_class"
+                },
                 "src/_pytest/python.py::Package": {
                     "qualified_name": "Package",
                     "revision": "base",
@@ -2307,17 +2157,6 @@
                 }
             },
             "patched": {
-                "src/_pytest/python.py::Module": {
-                    "qualified_name": "Module",
-                    "revision": "patched",
-                    "selection_evidence": [
-                        {
-                            "changed_symbol": "src/_pytest/python.py::Module",
-                            "reason": "changed_lines",
-                            "confidence": 1.0
-                        }
-                    ]
-                },
                 "src/_pytest/python.py::Package.collect": {
                     "qualified_name": "Package.collect",
                     "revision": "patched",
@@ -2537,36 +2376,6 @@
         "patched_contains_developer_fix": true,
         "changed_symbols": [
             {
-                "id": "src/_pytest/unittest.py::<module>",
-                "file": "src/_pytest/unittest.py",
-                "name": "<module>",
-                "kind": "module",
-                "change": "modified",
-                "old_span": [
-                    1,
-                    303
-                ],
-                "new_span": [
-                    1,
-                    308
-                ],
-                "base_targets": [
-                    {
-                        "id": "src/_pytest/unittest.py::<module>",
-                        "reason": "existing_symbol",
-                        "confidence": 1.0
-                    }
-                ],
-                "selected_base": [
-                    "src/_pytest/unittest.py::<module>"
-                ],
-                "selected_patched": [
-                    "src/_pytest/unittest.py::<module>"
-                ],
-                "supporting_base": [],
-                "supporting_patched": []
-            },
-            {
                 "id": "src/_pytest/unittest.py::TestCaseFunction.runtest",
                 "file": "src/_pytest/unittest.py",
                 "name": "TestCaseFunction.runtest",
@@ -2594,10 +2403,10 @@
                     "src/_pytest/unittest.py::TestCaseFunction.runtest"
                 ],
                 "supporting_base": [
-                    "src/_pytest/unittest.py::<module>"
+                    "src/_pytest/unittest.py::TestCaseFunction"
                 ],
                 "supporting_patched": [
-                    "src/_pytest/unittest.py::<module>"
+                    "src/_pytest/unittest.py::TestCaseFunction"
                 ]
             },
             {
@@ -2628,10 +2437,10 @@
                     "src/_pytest/unittest.py::UnitTestCase.collect"
                 ],
                 "supporting_base": [
-                    "src/_pytest/unittest.py::<module>"
+                    "src/_pytest/unittest.py::UnitTestCase"
                 ],
                 "supporting_patched": [
-                    "src/_pytest/unittest.py::<module>"
+                    "src/_pytest/unittest.py::UnitTestCase"
                 ]
             },
             {
@@ -2671,7 +2480,8 @@
                     "src/_pytest/unittest.py::_is_skipped"
                 ],
                 "supporting_base": [
-                    "src/_pytest/unittest.py::<module>"
+                    "src/_pytest/unittest.py::TestCaseFunction",
+                    "src/_pytest/unittest.py::UnitTestCase"
                 ],
                 "supporting_patched": []
             },
@@ -2707,9 +2517,9 @@
             }
         ],
         "counts": {
-            "changed_symbols": 5,
-            "base_objects": 4,
-            "patched_objects": 5
+            "changed_symbols": 4,
+            "base_objects": 5,
+            "patched_objects": 6
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
@@ -2719,37 +2529,37 @@
             "base": [
                 {
                     "class_symbol": "src/_pytest/unittest.py::UnitTestCase",
-                    "document": "src/_pytest/unittest.py::<module>",
+                    "document": "src/_pytest/unittest.py::UnitTestCase",
                     "context_for": [
                         "src/_pytest/unittest.py::UnitTestCase.collect"
                     ],
-                    "content_kind": "file"
+                    "content_kind": "full_class"
                 },
                 {
                     "class_symbol": "src/_pytest/unittest.py::TestCaseFunction",
-                    "document": "src/_pytest/unittest.py::<module>",
+                    "document": "src/_pytest/unittest.py::TestCaseFunction",
                     "context_for": [
                         "src/_pytest/unittest.py::TestCaseFunction.runtest"
                     ],
-                    "content_kind": "file"
+                    "content_kind": "full_class"
                 }
             ],
             "patched": [
                 {
                     "class_symbol": "src/_pytest/unittest.py::UnitTestCase",
-                    "document": "src/_pytest/unittest.py::<module>",
+                    "document": "src/_pytest/unittest.py::UnitTestCase",
                     "context_for": [
                         "src/_pytest/unittest.py::UnitTestCase.collect"
                     ],
-                    "content_kind": "file"
+                    "content_kind": "full_class"
                 },
                 {
                     "class_symbol": "src/_pytest/unittest.py::TestCaseFunction",
-                    "document": "src/_pytest/unittest.py::<module>",
+                    "document": "src/_pytest/unittest.py::TestCaseFunction",
                     "context_for": [
                         "src/_pytest/unittest.py::TestCaseFunction.runtest"
                     ],
-                    "content_kind": "file"
+                    "content_kind": "full_class"
                 }
             ]
         },
@@ -2761,33 +2571,6 @@
         },
         "documents": {
             "base": {
-                "src/_pytest/unittest.py::<module>": {
-                    "qualified_name": "<module>",
-                    "revision": "base",
-                    "selection_evidence": [
-                        {
-                            "changed_symbol": "src/_pytest/unittest.py::<module>",
-                            "reason": "existing_symbol",
-                            "confidence": 1.0
-                        },
-                        {
-                            "reason": "enclosing_class_context",
-                            "related_symbol": "src/_pytest/unittest.py::UnitTestCase.collect",
-                            "class_symbol": "src/_pytest/unittest.py::UnitTestCase",
-                            "confidence": 1.0
-                        },
-                        {
-                            "reason": "enclosing_class_context",
-                            "related_symbol": "src/_pytest/unittest.py::TestCaseFunction.runtest",
-                            "class_symbol": "src/_pytest/unittest.py::TestCaseFunction",
-                            "confidence": 1.0
-                        }
-                    ],
-                    "context_for": [
-                        "src/_pytest/unittest.py::TestCaseFunction.runtest",
-                        "src/_pytest/unittest.py::UnitTestCase.collect"
-                    ]
-                },
                 "src/_pytest/unittest.py::TestCaseFunction.runtest": {
                     "qualified_name": "TestCaseFunction.runtest",
                     "revision": "base",
@@ -2804,7 +2587,7 @@
                         }
                     ],
                     "class_context_ids": [
-                        "src/_pytest/unittest.py::<module>"
+                        "src/_pytest/unittest.py::TestCaseFunction"
                     ]
                 },
                 "src/_pytest/unittest.py::UnitTestCase.collect": {
@@ -2823,7 +2606,7 @@
                         }
                     ],
                     "class_context_ids": [
-                        "src/_pytest/unittest.py::<module>"
+                        "src/_pytest/unittest.py::UnitTestCase"
                     ]
                 },
                 "src/_pytest/unittest.py::_make_xunit_fixture.fixture": {
@@ -2841,24 +2624,27 @@
                             "confidence": 1.0
                         }
                     ]
-                }
-            },
-            "patched": {
-                "src/_pytest/unittest.py::<module>": {
-                    "qualified_name": "<module>",
-                    "revision": "patched",
+                },
+                "src/_pytest/unittest.py::UnitTestCase": {
+                    "qualified_name": "UnitTestCase",
+                    "revision": "base",
                     "selection_evidence": [
-                        {
-                            "changed_symbol": "src/_pytest/unittest.py::<module>",
-                            "reason": "changed_lines",
-                            "confidence": 1.0
-                        },
                         {
                             "reason": "enclosing_class_context",
                             "related_symbol": "src/_pytest/unittest.py::UnitTestCase.collect",
                             "class_symbol": "src/_pytest/unittest.py::UnitTestCase",
                             "confidence": 1.0
-                        },
+                        }
+                    ],
+                    "context_for": [
+                        "src/_pytest/unittest.py::UnitTestCase.collect"
+                    ],
+                    "content_kind": "full_class"
+                },
+                "src/_pytest/unittest.py::TestCaseFunction": {
+                    "qualified_name": "TestCaseFunction",
+                    "revision": "base",
+                    "selection_evidence": [
                         {
                             "reason": "enclosing_class_context",
                             "related_symbol": "src/_pytest/unittest.py::TestCaseFunction.runtest",
@@ -2867,10 +2653,12 @@
                         }
                     ],
                     "context_for": [
-                        "src/_pytest/unittest.py::TestCaseFunction.runtest",
-                        "src/_pytest/unittest.py::UnitTestCase.collect"
-                    ]
-                },
+                        "src/_pytest/unittest.py::TestCaseFunction.runtest"
+                    ],
+                    "content_kind": "full_class"
+                }
+            },
+            "patched": {
                 "src/_pytest/unittest.py::TestCaseFunction.runtest": {
                     "qualified_name": "TestCaseFunction.runtest",
                     "revision": "patched",
@@ -2882,7 +2670,7 @@
                         }
                     ],
                     "class_context_ids": [
-                        "src/_pytest/unittest.py::<module>"
+                        "src/_pytest/unittest.py::TestCaseFunction"
                     ]
                 },
                 "src/_pytest/unittest.py::UnitTestCase.collect": {
@@ -2896,7 +2684,7 @@
                         }
                     ],
                     "class_context_ids": [
-                        "src/_pytest/unittest.py::<module>"
+                        "src/_pytest/unittest.py::UnitTestCase"
                     ]
                 },
                 "src/_pytest/unittest.py::_is_skipped": {
@@ -2920,6 +2708,38 @@
                             "confidence": 1.0
                         }
                     ]
+                },
+                "src/_pytest/unittest.py::UnitTestCase": {
+                    "qualified_name": "UnitTestCase",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "src/_pytest/unittest.py::UnitTestCase.collect",
+                            "class_symbol": "src/_pytest/unittest.py::UnitTestCase",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "src/_pytest/unittest.py::UnitTestCase.collect"
+                    ],
+                    "content_kind": "full_class"
+                },
+                "src/_pytest/unittest.py::TestCaseFunction": {
+                    "qualified_name": "TestCaseFunction",
+                    "revision": "patched",
+                    "selection_evidence": [
+                        {
+                            "reason": "enclosing_class_context",
+                            "related_symbol": "src/_pytest/unittest.py::TestCaseFunction.runtest",
+                            "class_symbol": "src/_pytest/unittest.py::TestCaseFunction",
+                            "confidence": 1.0
+                        }
+                    ],
+                    "context_for": [
+                        "src/_pytest/unittest.py::TestCaseFunction.runtest"
+                    ],
+                    "content_kind": "full_class"
                 }
             }
         }

@@ -267,15 +267,30 @@ def apply_production_patch(repo_dir: Path, commit: str, patch: str,
     return after
 
 
+def _formatting_blank_lines(index: DependencyIndex, path: str) -> set[int]:
+    """Identify blank formatting lines, preserving multiline literal content."""
+    source = index.sources.get(path, "")
+    blank = {number for number, text in enumerate(source.splitlines(), 1)
+             if not text.strip()}
+    if blank and f"{path}::<module>" in index.symbols:
+        literal_types = {tokenize.STRING, getattr(tokenize, "FSTRING_MIDDLE", -1)}
+        for token in tokenize.generate_tokens(io.StringIO(source).readline):
+            if token.type in literal_types:
+                blank.difference_update(range(token.start[0], token.end[0] + 1))
+    return blank
+
+
 def changed_symbols(before: DependencyIndex, after: DependencyIndex,
                     changes: list[ProductionChange]) -> list[dict]:
-    """Map each changed line to its narrowest containing definition."""
+    """Map non-formatting changed lines to their narrowest definitions."""
     pairs: set[tuple[str, str]] = set()
     for change in changes:
         for index, path, lines in ((before, change.old_path, change.old_lines),
                                    (after, change.path, change.new_lines)):
             symbols = [s for s in index.symbols.values() if s.file == path and not s.original]
-            for line in lines:
+            # A removed separator must not mark the entire module as changed.
+            # Blank lines inside literals are data and remain eligible targets.
+            for line in lines - _formatting_blank_lines(index, path):
                 containing = [s for s in symbols if s.start <= line <= s.end]
                 if containing:
                     symbol = min(containing, key=lambda s: (s.end - s.start, -s.start, s.kind == "module"))
@@ -318,8 +333,65 @@ def changed_symbols(before: DependencyIndex, after: DependencyIndex,
     return records
 
 
-def retrieve(index: DependencyIndex, changes: list[dict], max_depth: int = 8,
-             top_k: int = 10, fallback: bool = True) -> tuple[list[dict], list[dict]]:
+def _select_matches(index: DependencyIndex, matches: dict, top_k: int) -> tuple[list[dict], list[dict]]:
+    selected, covered = [], set()
+    remaining = set(matches)
+    while remaining and (top_k == 0 or len(selected) < top_k):
+        def rank(sid):
+            evidence = list(matches[sid].values())
+            return (-max(item["confidence"] for item in evidence),
+                    -len(set(matches[sid]) - covered), -len(evidence),
+                    min(item["distance"] for item in evidence), sid)
+        chosen = min(remaining, key=rank)
+        selected.append(chosen)
+        covered.update(matches[chosen])
+        remaining.remove(chosen)
+    return ([index.tests[sid] for sid in selected],
+            [{"file": index.tests[sid]["file"], "name": index.tests[sid]["name"],
+              "source": "production_patch", "matched_symbols": sorted(matches[sid]),
+              "evidence": list(matches[sid].values())} for sid in selected])
+
+
+def retrieve(index: DependencyIndex, changes: list[dict], top_k: int = 10,
+             audit: dict | None = None) -> tuple[list[dict], list[dict]]:
+    """Select only unambiguous, direct uses of exact existing changed objects."""
+    targets, matches = {}, {}
+    rejected_targets, rejected_uses = [], []
+    for change in changes:
+        for target in change["base_targets"]:
+            symbol = index.symbols[target["id"]]
+            if target["reason"] != "existing_symbol" or symbol.kind not in {"function", "class", "variable"}:
+                rejected_targets.append({"changed_symbol": change["id"], "base_target": target["id"],
+                                         "reason": "substitute_base_object" if target["reason"] != "existing_symbol"
+                                         else "module_is_not_an_exact_object"})
+                continue
+            targets.setdefault(target["id"], []).append(change["id"])
+    for sid in sorted(index.tests):
+        for use in index.direct_test_uses(sid):
+            relevant = set(use["targets"]) & targets.keys()
+            if not relevant:
+                continue
+            if not use["unambiguous"]:
+                rejected_uses.append({"file": index.tests[sid]["file"], "name": index.tests[sid]["name"],
+                                      "reason": "ambiguous_resolution", **use})
+                continue
+            for target in sorted(relevant):
+                for changed in targets[target]:
+                    evidence = {"changed_symbol": changed, "base_target": target,
+                                "mapping": "existing_symbol", "confidence": 1.0, "distance": 1,
+                                "path": [{"source": sid, "target": target, "kind": use["kind"], "confidence": 1.0}],
+                                "location": {"file": index.tests[sid]["file"], "line": use["line"],
+                                             "end_line": use["end_line"], "expression": use["expression"]}}
+                    matches.setdefault(sid, {}).setdefault(changed, evidence)
+    if audit is not None:
+        audit.update(rejected_targets=rejected_targets, rejected_uses=rejected_uses,
+                     eligible_base_targets=sorted(targets), matching_tests_before_cap=len(matches))
+    return _select_matches(index, matches, top_k)
+
+
+def retrieve_auxiliary(index: DependencyIndex, changes: list[dict], max_depth: int = 8,
+                       top_k: int = 10, fallback: bool = False) -> tuple[list[dict], list[dict]]:
+    """Legacy possible dependencies for optional diagnostics, never primary context."""
     matches: dict[str, dict[str, dict]] = {}
     for change in changes:
         for target in change["base_targets"]:
@@ -344,23 +416,7 @@ def retrieve(index: DependencyIndex, changes: list[dict], max_depth: int = 8,
                     "changed_symbol": changed, "base_target": edge.target, "mapping": "module_proximity",
                     "confidence": 0.2, "distance": len(path), "path": [asdict(item) for item in path],
                 }
-    selected = []
-    covered = set()
-    remaining = set(matches)
-    while remaining and (top_k == 0 or len(selected) < top_k):
-        def rank(sid):
-            evidence = list(matches[sid].values())
-            return (-max(item["confidence"] for item in evidence),
-                    -len(set(matches[sid]) - covered), -len(evidence),
-                    min(item["distance"] for item in evidence), sid)
-        chosen = min(remaining, key=rank)
-        selected.append(chosen)
-        covered.update(matches[chosen])
-        remaining.remove(chosen)
-    return ([index.tests[sid] for sid in selected],
-            [{"file": index.tests[sid]["file"], "name": index.tests[sid]["name"],
-              "source": "production_patch", "matched_symbols": sorted(matches[sid]),
-              "evidence": list(matches[sid].values())} for sid in selected])
+    return _select_matches(index, matches, top_k)
 
 
 def merge_tests(base: list[dict], retrieved: list[dict], top_k: int) -> list[dict]:
@@ -377,14 +433,14 @@ def merge_tests(base: list[dict], retrieved: list[dict], top_k: int) -> list[dic
 
 
 def augment_instance(row: dict[str, str], repo_dir: Path, *, max_depth=8, top_k=10,
-                     fallback=True) -> tuple[list[dict], list[dict], dict]:
+                     fallback=False, include_auxiliary=False) -> tuple[list[dict], list[dict], dict]:
     sources, decode_errors, settings = base_sources(repo_dir, row["base_commit"])
     try:
         known_tests = {change.path for change in parse_patch(row["test_patch"]) if change.path.endswith(".py")}
     except ValueError:
         known_tests = set()
     before = DependencyIndex(sources, test_patterns=settings.get("test_patterns"),
-                             ignore_patterns=settings.get("ignore_patterns", ()), extra_test_files=known_tests).build()
+                             ignore_patterns=settings.get("ignore_patterns", ()), extra_test_files=known_tests)
     changes = production_changes(row["patch"])
     patched = apply_production_patch(repo_dir, row["base_commit"], row["patch"], changes)
     # Only modified files are needed to map new definitions/callers. Base graph
@@ -392,7 +448,15 @@ def augment_instance(row: dict[str, str], repo_dir: Path, *, max_depth=8, top_k=
     after_sources = {c.path: patched[c.path] for c in changes if c.path in patched and patched[c.path] is not None}
     after = DependencyIndex(after_sources).build()
     symbols = changed_symbols(before, after, changes)
-    retrieved, evidence = retrieve(before, symbols, max_depth, top_k, fallback)
+    audit = {}
+    retrieved, evidence = retrieve(before, symbols, top_k, audit)
+    auxiliary = []
+    if include_auxiliary:
+        before.build()
+        _, auxiliary = retrieve_auxiliary(before, symbols, max_depth, top_k, fallback)
+        primary_keys = {(item["file"], item["name"]) for item in evidence}
+        auxiliary = [dict(item, primary_eligible=False, rejection_reason="not_a_strict_direct_match")
+                     for item in auxiliary if (item["file"], item["name"]) not in primary_keys]
     original_error = None
     try:
         _, base, _ = extract_instance(row, repo_dir)
@@ -416,12 +480,17 @@ def augment_instance(row: dict[str, str], repo_dir: Path, *, max_depth=8, top_k=
         entry["available_at_base"] = True
         selected.append(entry)
     report = before.report()
+    report["dependency_graph_built"] = include_auxiliary
     report["collection_config_file"] = settings.get("config_file")
     report["decode_errors"] = decode_errors
     manifest = {"base_commit": row["base_commit"], "selection_uses_gold_patch": True,
-                "parameters": {"top_k": top_k, "max_depth": max_depth, "fallback": fallback},
+                "selection_policy": "strict_direct_existing_object_v1",
+                "parameters": {"top_k": top_k, "direct_depth": 1, "fallback": False,
+                               "include_auxiliary": include_auxiliary, "auxiliary_max_depth": max_depth,
+                               "auxiliary_fallback": fallback if include_auxiliary else False},
                 "changed_symbols": symbols, "selected_tests": selected,
-                "production_candidates": evidence,
+                "production_candidates": evidence, "strict_selection_audit": audit,
+                "auxiliary_candidates": auxiliary,
                 "counts": {"original_base": len(base), "production_selected": len(retrieved),
                            "augmented": len(combined), "added": len(selected_keys - base_keys)},
                 "analysis": report, "patched_parse_errors": after.diagnostics}
@@ -434,7 +503,7 @@ def augment_instance(row: dict[str, str], repo_dir: Path, *, max_depth=8, top_k=
     if not symbols:
         manifest["retrieval_reason"] = "No parsed Python production symbols changed"
     elif not retrieved:
-        manifest["retrieval_reason"] = "No base tests reached the changed symbols within the depth limit"
+        manifest["retrieval_reason"] = "No unambiguous direct test-body uses of exact existing changed objects"
     return retrieved, combined, manifest
 
 
@@ -473,8 +542,9 @@ def main():
     parser.add_argument("--code-output-dir", type=Path, help="Code oracle directory; defaults to retrieval_results/oracle/code/<dataset>/<repo>")
     parser.add_argument("--instance-id", action="append")
     parser.add_argument("--top-k", type=int, default=10, help="Maximum tests per variant; 0 means all")
-    parser.add_argument("--max-depth", type=int, default=8)
-    parser.add_argument("--no-fallback", action="store_true", help="Disable module-proximity fallback")
+    parser.add_argument("--include-auxiliary", action="store_true", help="Record indirect candidates in the manifest only")
+    parser.add_argument("--max-depth", type=int, default=8, help="Depth limit for optional auxiliary diagnostics")
+    parser.add_argument("--no-fallback", action="store_true", help="Compatibility flag; primary module fallback is always disabled")
     args = parser.parse_args()
     if args.top_k < 0 or args.max_depth < 1:
         parser.error("--top-k must be nonnegative and --max-depth must be positive")
@@ -505,7 +575,7 @@ def main():
         store_instance(code_output, row["instance_id"], code_values)
         print(f"{row['instance_id']}: saved {len(code_values[0])} base oracle code objects", flush=True)
         retrieved, combined, manifest = augment_instance(row, repo_dir, max_depth=args.max_depth,
-                                                         top_k=args.top_k, fallback=not args.no_fallback)
+                                                         top_k=args.top_k, include_auxiliary=args.include_auxiliary)
         manifest["code_oracle_directory"] = str(code_output)
         for destination, value in zip(outputs, (retrieved, combined, manifest)):
             destination[row["instance_id"]] = value

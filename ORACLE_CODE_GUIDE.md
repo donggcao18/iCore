@@ -54,6 +54,9 @@ the formatter's optional `all_content=True` mode for historical oracle context.
 
 Changed lines map to their smallest enclosing AST definition in both versions,
 including insertion-only changes, decorators, and module/class variables.
+Added, removed, or edited blank/whitespace-only formatting lines do not select
+objects or whole modules. Blank lines inside multiline strings, byte strings,
+and f-strings remain eligible because they can change literal values.
 Added helpers can select an existing caller in the changed files or an existing
 enclosing class with lower confidence. Base objects are deduplicated; objects
 without a base mapping have no invented old implementation. Deleted objects

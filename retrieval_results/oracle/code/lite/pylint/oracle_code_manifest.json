@@ -386,36 +386,6 @@
         "patched_contains_developer_fix": true,
         "changed_symbols": [
             {
-                "id": "pylint/config/argument.py::<module>",
-                "file": "pylint/config/argument.py",
-                "name": "<module>",
-                "kind": "module",
-                "change": "modified",
-                "old_span": [
-                    1,
-                    488
-                ],
-                "new_span": [
-                    1,
-                    497
-                ],
-                "base_targets": [
-                    {
-                        "id": "pylint/config/argument.py::<module>",
-                        "reason": "existing_symbol",
-                        "confidence": 1.0
-                    }
-                ],
-                "selected_base": [
-                    "pylint/config/argument.py::<module>"
-                ],
-                "selected_patched": [
-                    "pylint/config/argument.py::<module>"
-                ],
-                "supporting_base": [],
-                "supporting_patched": []
-            },
-            {
                 "id": "pylint/config/argument.py::_TYPE_TRANSFORMERS",
                 "file": "pylint/config/argument.py",
                 "name": "_TYPE_TRANSFORMERS",
@@ -504,9 +474,9 @@
             }
         ],
         "counts": {
-            "changed_symbols": 4,
-            "base_objects": 3,
-            "patched_objects": 4
+            "changed_symbols": 3,
+            "base_objects": 2,
+            "patched_objects": 3
         },
         "base_parse_errors": [],
         "patched_parse_errors": [],
@@ -519,17 +489,6 @@
         "non_python_files": [],
         "documents": {
             "base": {
-                "pylint/config/argument.py::<module>": {
-                    "qualified_name": "<module>",
-                    "revision": "base",
-                    "selection_evidence": [
-                        {
-                            "changed_symbol": "pylint/config/argument.py::<module>",
-                            "reason": "existing_symbol",
-                            "confidence": 1.0
-                        }
-                    ]
-                },
                 "pylint/config/argument.py::_TYPE_TRANSFORMERS": {
                     "qualified_name": "_TYPE_TRANSFORMERS",
                     "revision": "base",
@@ -559,17 +518,6 @@
                 }
             },
             "patched": {
-                "pylint/config/argument.py::<module>": {
-                    "qualified_name": "<module>",
-                    "revision": "patched",
-                    "selection_evidence": [
-                        {
-                            "changed_symbol": "pylint/config/argument.py::<module>",
-                            "reason": "changed_lines",
-                            "confidence": 1.0
-                        }
-                    ]
-                },
                 "pylint/config/argument.py::_TYPE_TRANSFORMERS": {
                     "qualified_name": "_TYPE_TRANSFORMERS",
                     "revision": "patched",
