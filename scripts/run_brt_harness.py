@@ -40,6 +40,8 @@ def main(argv=None):
     parser.add_argument('--attempts', type=positive, default=4)
     parser.add_argument('--max-hosts', type=positive, default=2)
     parser.add_argument('--max-context-chars', type=positive, default=24000)
+    parser.add_argument('--llm-timeout', type=positive, default=os.getenv('ICORE_LLM_TIMEOUT', '300'),
+                        help='Maximum seconds per LLM request (default: ICORE_LLM_TIMEOUT or 300).')
     parser.add_argument('--test-timeout', type=positive, default=60)
     parser.add_argument('--repetitions', type=positive, default=2, help='Independent runs per version in final evaluation.')
     parser.add_argument('--install-project', action='store_true',
@@ -47,6 +49,8 @@ def main(argv=None):
     parser.add_argument('--temperature', type=float, default=0.7)
     parser.add_argument('--context-provenance', choices=('retrieved', 'oracle-base'), default='retrieved')
     args = parser.parse_args(argv)
+    # The shared model client and its request watchdog read this setting.
+    os.environ['ICORE_LLM_TIMEOUT'] = str(args.llm_timeout)
     if not 0 <= args.temperature <= 2:
         parser.error('--temperature must be between 0 and 2')
     if args.repo in {'django/django', 'sympy/sympy'}:

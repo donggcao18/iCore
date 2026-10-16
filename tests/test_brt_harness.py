@@ -4,6 +4,7 @@ import csv
 import difflib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -229,17 +230,23 @@ class RepositoryFixture(unittest.TestCase):
         refs.write_text(json.dumps({row['instance_id']: self.refs for row in (self.row, other)}))
         answers = iter([json.dumps(candidate('def test_brt_comma(sample):\n    assert api(sample) == "a,b"\n')),
                         json.dumps(candidate('def test_brt_normal(sample):\n    assert api("ab") == "ab"\n'))])
-        fake_api = SimpleNamespace(query_llm=lambda *args: next(answers))
+        def complete(*args):
+            self.assertEqual(os.environ['ICORE_LLM_TIMEOUT'], '750')
+            return next(answers)
+
+        fake_api = SimpleNamespace(query_llm=complete)
         output = self.root / 'cli'
         argv = ['--dataset-csv', str(data), '--repo', 'example/core', '--repo-dir', str(self.repo),
                 '--tests', str(refs), '--output-dir', str(output), '--attempts', '1',
-                '--python', sys.executable, '--repetitions', '1']
+                '--python', sys.executable, '--repetitions', '1', '--llm-timeout', '750']
         with patch.dict(sys.modules, {'scripts.utils.llm_api': fake_api}):
             main(argv)
         summary = json.loads((output / 'summary.json').read_text())
         self.assertEqual(summary['instances'], 2)
         self.assertEqual(summary['selected_instances'], 1)
         self.assertEqual(summary['instance_reproduction_rate'], 0.5)
+        manifest = json.loads((output / self.row['instance_id'] / 'run_config.json').read_text())
+        self.assertEqual(manifest['settings']['request_timeout'], '750')
         with patch('scripts.run_brt_harness.evaluate_frozen', side_effect=AssertionError('must reuse evaluation')):
             main(argv + ['--stage', 'evaluate'])
         # A changed reference fix cannot reuse an old final result.

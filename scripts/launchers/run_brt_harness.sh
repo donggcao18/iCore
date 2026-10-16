@@ -14,6 +14,7 @@ TESTS="${TESTS:-./retrieval_results/oracle/test/swt-bench-verified/${REPO##*/}/r
 OUTPUT_DIR="${OUTPUT_DIR:-./retrieval_results/brt_harness/${REPO##*/}_code_test_trial}"
 ATTEMPTS="${ATTEMPTS:-4}"
 MAX_HOSTS="${MAX_HOSTS:-2}"
+LLM_TIMEOUT="${LLM_TIMEOUT:-${ICORE_LLM_TIMEOUT:-600}}"
 TEST_TIMEOUT="${TEST_TIMEOUT:-120}"
 REPETITIONS="${REPETITIONS:-2}"
 CONTEXT_PROVENANCE="${CONTEXT_PROVENANCE:-oracle-base}"
@@ -27,6 +28,7 @@ exec "${PYTHON:-python}" -m scripts.run_brt_harness \
   --dataset-csv "$DATASET_CSV" \
   --repo "$REPO" --tests "$TESTS" --output-dir "$OUTPUT_DIR" \
   --model "$MODEL" --attempts "$ATTEMPTS" \
+  --llm-timeout "$LLM_TIMEOUT" \
   --max-hosts "$MAX_HOSTS" --test-timeout "$TEST_TIMEOUT" \
   --repetitions "$REPETITIONS" --context-provenance "$CONTEXT_PROVENANCE" \
   --stage "$STAGE" \

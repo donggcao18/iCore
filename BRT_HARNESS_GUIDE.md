@@ -64,11 +64,18 @@ overridden through environment variables or trailing CLI flags. For example:
 ```bash
 bash "$PWD/scripts/launchers/run_brt_harness.sh" --stage prepare
 bash "$PWD/scripts/launchers/run_brt_harness.sh" --instance-id pylint-dev__pylint-6386
+bash "$PWD/scripts/launchers/run_brt_harness.sh" --llm-timeout 600
 ```
+
+`--llm-timeout` sets the maximum wait per LLM request in seconds, including the
+shared client's request watchdog. It defaults to 300 seconds, or an existing
+`ICORE_LLM_TIMEOUT` value. The launcher also accepts `LLM_TIMEOUT=600`. A trailing
+`--llm-timeout` flag takes precedence. This is separate from `--test-timeout`;
+API retries can make the total wait longer than one request timeout.
 
 Environment variables include `CODE` (an explicit empty value omits code context),
 `TESTS`, `REPO`, `REPO_DIR`, `DATASET_CSV`, `MODEL`, `OUTPUT_DIR`, `ATTEMPTS`,
-`MAX_HOSTS`, `TEST_TIMEOUT`, `REPETITIONS`, `CONTEXT_PROVENANCE`, `STAGE`, and
+`MAX_HOSTS`, `LLM_TIMEOUT`, `TEST_TIMEOUT`, `REPETITIONS`, `CONTEXT_PROVENANCE`, `STAGE`, and
 `BENCHMARK_PYTHON`. Use `CONTEXT_PROVENANCE=retrieved` with ordinary retrieval.
 
 ## Generation and repair
