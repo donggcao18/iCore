@@ -6,7 +6,7 @@ cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."
 # variables or trailing CLI flags. Credentials and historical environments must
 # already be configured; this launcher never stores API keys.
 MODEL="${MODEL:-deepseek/deepseek-r1-0528}"
-REPO="${REPO:-pylint-dev/pylint}"
+REPO="${REPO:-pytest-dev/pytest}"
 REPO_DIR="${REPO_DIR:-${REPO_ROOT_DIR:-./repos}/${REPO##*/}}"
 DATASET_CSV="${DATASET_CSV:-./data/swt-bench-verified/oracle_input_pylint_pytest.csv}"
 CODE="${CODE-./retrieval_results/oracle/code/swt-bench-verified/${REPO##*/}/code_retrieval_oracle_base.json}"
