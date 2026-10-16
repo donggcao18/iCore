@@ -171,6 +171,10 @@ python -m scripts.generator.llm_query \
     --swt
 ```
 
+The opt-in [experimental BRT harness](BRT_HARNESS_GUIDE.md) adds executable test
+scaffolds, bounded repair from buggy-side feedback, and frozen-patch evaluation:
+`python -m scripts.run_brt_harness --help`.
+
 # Repository Organization
 The repository is organized as follows:
 ```
