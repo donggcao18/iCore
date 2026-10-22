@@ -65,6 +65,12 @@ For Qwen, set `QWEN_API_KEY` and `QWEN_BASE_URL`; for DeepSeek, set
 Variables are read at process startup. `.env` files are not loaded automatically.
 Environment setup alone does not require an API key.
 
+For Gemini through the OpenAI-compatible team gateway, follow
+[the Gemini gateway guide](GEMINI_GATEWAY_GUIDE.md). All pipeline LLM stages
+accept `gemini-3.1-flash-lite`, `gemini-3.5-flash-lite`, or `gemini-3.8-flash`
+with `LITELLM_API_KEY` and `LITELLM_BASE_URL`. The gateway alias `team-chat`
+is also configured; its underlying model is chosen by the gateway.
+
 Additional models: `--model qwen/qwen3.8-27b:free` and `--model z-ai/glm-5.2:free`.
 Qwen uses `QWEN_API_KEY` and `QWEN_BASE_URL`; GLM uses `GLM_API_KEY`
 and `GLM_BASE_URL`. For OpenRouter, set both base URLs to

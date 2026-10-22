@@ -136,7 +136,7 @@ def query_chat_llm(prompt, model, temperature=0.7):
     api_key = API_KEY.get(model, None)
     base_url = BASE_URL.get(model, None)
     if not api_key:
-        raise ValueError(f'API key for model {model} is not set. Export the corresponding OPENAI_API_KEY, QWEN_API_KEY, GLM_API_KEY, or DEEPSEEK_API_KEY environment variable before running.')
+        raise ValueError(f'API key for model {model} is not set. Export the corresponding LITELLM_API_KEY, OPENAI_API_KEY, QWEN_API_KEY, GLM_API_KEY, or DEEPSEEK_API_KEY environment variable before running.')
     if model == 'gpt-4o' or model == 'gpt-4o-2024-08-06':
         client = OpenAI(api_key=api_key, base_url=base_url)
         model_name = 'gpt-4o-2024-08-06'
