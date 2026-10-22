@@ -391,7 +391,7 @@ def retrieve(index: DependencyIndex, changes: list[dict], top_k: int = 10,
 
 def retrieve_auxiliary(index: DependencyIndex, changes: list[dict], max_depth: int = 8,
                        top_k: int = 10, fallback: bool = False) -> tuple[list[dict], list[dict]]:
-    """Legacy possible dependencies for optional diagnostics, never primary context."""
+    """Select tests reachable from changed code through bounded dependency paths."""
     matches: dict[str, dict[str, dict]] = {}
     for change in changes:
         for target in change["base_targets"]:
@@ -433,7 +433,8 @@ def merge_tests(base: list[dict], retrieved: list[dict], top_k: int) -> list[dic
 
 
 def augment_instance(row: dict[str, str], repo_dir: Path, *, max_depth=8, top_k=10,
-                     fallback=False, include_auxiliary=False) -> tuple[list[dict], list[dict], dict]:
+                     fallback=False, include_auxiliary=False,
+                     selection_policy="strict") -> tuple[list[dict], list[dict], dict]:
     sources, decode_errors, settings = base_sources(repo_dir, row["base_commit"])
     try:
         known_tests = {change.path for change in parse_patch(row["test_patch"]) if change.path.endswith(".py")}
@@ -449,9 +450,15 @@ def augment_instance(row: dict[str, str], repo_dir: Path, *, max_depth=8, top_k=
     after = DependencyIndex(after_sources).build()
     symbols = changed_symbols(before, after, changes)
     audit = {}
-    retrieved, evidence = retrieve(before, symbols, top_k, audit)
     auxiliary = []
-    if include_auxiliary:
+    if selection_policy == "legacy-paths":
+        # Historical policy: traverse up to max_depth edges and use the
+        # module-proximity fallback when no direct path reaches a test.
+        before.build()
+        retrieved, evidence = retrieve_auxiliary(before, symbols, max_depth, top_k, fallback=True)
+    else:
+        retrieved, evidence = retrieve(before, symbols, top_k, audit)
+    if include_auxiliary and selection_policy == "strict":
         before.build()
         _, auxiliary = retrieve_auxiliary(before, symbols, max_depth, top_k, fallback)
         primary_keys = {(item["file"], item["name"]) for item in evidence}
@@ -480,14 +487,17 @@ def augment_instance(row: dict[str, str], repo_dir: Path, *, max_depth=8, top_k=
         entry["available_at_base"] = True
         selected.append(entry)
     report = before.report()
-    report["dependency_graph_built"] = include_auxiliary
+    report["dependency_graph_built"] = selection_policy == "legacy-paths" or include_auxiliary
     report["collection_config_file"] = settings.get("config_file")
     report["decode_errors"] = decode_errors
     manifest = {"base_commit": row["base_commit"], "selection_uses_gold_patch": True,
-                "selection_policy": "strict_direct_existing_object_v1",
-                "parameters": {"top_k": top_k, "direct_depth": 1, "fallback": False,
-                               "include_auxiliary": include_auxiliary, "auxiliary_max_depth": max_depth,
-                               "auxiliary_fallback": fallback if include_auxiliary else False},
+                "selection_policy": ("legacy_dependency_paths_v1" if selection_policy == "legacy-paths"
+                                     else "strict_direct_existing_object_v1"),
+                "parameters": ({"top_k": top_k, "max_depth": max_depth, "fallback": True}
+                               if selection_policy == "legacy-paths" else
+                               {"top_k": top_k, "direct_depth": 1, "fallback": False,
+                                "include_auxiliary": include_auxiliary, "auxiliary_max_depth": max_depth,
+                                "auxiliary_fallback": fallback if include_auxiliary else False}),
                 "changed_symbols": symbols, "selected_tests": selected,
                 "production_candidates": evidence, "strict_selection_audit": audit,
                 "auxiliary_candidates": auxiliary,
@@ -503,7 +513,11 @@ def augment_instance(row: dict[str, str], repo_dir: Path, *, max_depth=8, top_k=
     if not symbols:
         manifest["retrieval_reason"] = "No parsed Python production symbols changed"
     elif not retrieved:
-        manifest["retrieval_reason"] = "No unambiguous direct test-body uses of exact existing changed objects"
+        manifest["retrieval_reason"] = (
+            "No base tests reached the changed symbols within the depth limit"
+            if selection_policy == "legacy-paths" else
+            "No unambiguous direct test-body uses of exact existing changed objects"
+        )
     return retrieved, combined, manifest
 
 
@@ -542,9 +556,13 @@ def main():
     parser.add_argument("--code-output-dir", type=Path, help="Code oracle directory; defaults to retrieval_results/oracle/code/<dataset>/<repo>")
     parser.add_argument("--instance-id", action="append")
     parser.add_argument("--top-k", type=int, default=10, help="Maximum tests per variant; 0 means all")
+    parser.add_argument("--selection-policy", choices=("strict", "legacy-paths"), default="strict",
+                        help="Use direct exact matches or historical bounded dependency paths")
     parser.add_argument("--include-auxiliary", action="store_true", help="Record indirect candidates in the manifest only")
-    parser.add_argument("--max-depth", type=int, default=8, help="Depth limit for optional auxiliary diagnostics")
-    parser.add_argument("--no-fallback", action="store_true", help="Compatibility flag; primary module fallback is always disabled")
+    parser.add_argument("--max-depth", type=int, default=8,
+                        help="Dependency-path limit for legacy-paths; also used for auxiliary diagnostics")
+    parser.add_argument("--no-fallback", action="store_true",
+                        help="Disable module-proximity fallback for strict-mode auxiliary diagnostics")
     args = parser.parse_args()
     if args.top_k < 0 or args.max_depth < 1:
         parser.error("--top-k must be nonnegative and --max-depth must be positive")
@@ -565,7 +583,10 @@ def main():
         parser.error(f"No {args.repo} rows found")
     repo_dir = (args.repo_dir or ROOT / "repos" / args.repo.split("/")[1]).resolve()
     ensure_repo(repo_dir, args.clone_url or f"https://github.com/{args.repo}.git")
-    output = args.output_dir or default_output
+    output = args.output_dir or (
+        default_output / f"legacy_d{args.max_depth}"
+        if args.selection_policy == "legacy-paths" else default_output
+    )
     code_output = args.code_output_dir or code_default_paths(args.dataset, args.repo)[1]
     filenames = ["related_tests_oracle_code_base.json", "related_tests_oracle_base_augmented.json", "oracle_augmented_manifest.json"]
     outputs = [_load(output / filename) for filename in filenames]
@@ -574,8 +595,10 @@ def main():
         code_values = extract_code_instance(row, repo_dir)
         store_instance(code_output, row["instance_id"], code_values)
         print(f"{row['instance_id']}: saved {len(code_values[0])} base oracle code objects", flush=True)
-        retrieved, combined, manifest = augment_instance(row, repo_dir, max_depth=args.max_depth,
-                                                         top_k=args.top_k, include_auxiliary=args.include_auxiliary)
+        retrieved, combined, manifest = augment_instance(
+            row, repo_dir, max_depth=args.max_depth, top_k=args.top_k,
+            include_auxiliary=args.include_auxiliary, selection_policy=args.selection_policy,
+        )
         manifest["code_oracle_directory"] = str(code_output)
         for destination, value in zip(outputs, (retrieved, combined, manifest)):
             destination[row["instance_id"]] = value

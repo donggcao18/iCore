@@ -72,10 +72,31 @@ python -m scripts.test_retrieval.augment_oracle --dataset swt-verified --repo py
   --csv data/swt-bench-verified/oracle_input_pylint_pytest.csv
 ```
 
-For optional indirect-candidate diagnostics, add `--include-auxiliary`. These
-candidates appear only in the manifest, never in either generator input. Its
-`--max-depth` (default 8) applies only to auxiliary analysis. Primary same-file
-fallback is always disabled; the old `--no-fallback` flag is accepted for compatibility.
+Under the strict policy, optional indirect-candidate diagnostics are enabled
+with `--include-auxiliary`; these candidates appear only in the manifest, never
+in generator input. In strict mode, `--max-depth` (default 8) applies only to
+these diagnostics. Strict selection has no module-proximity fallback.
+
+To use the previous broad selection for actual retrieval, pass
+`--selection-policy legacy-paths`. This follows dependency edges up to eight
+steps and applies the old module-proximity fallback if no path reaches a test.
+For SymPy on SWE-bench Lite, use the dedicated launcher:
+
+```sh
+bash scripts/launchers/retrieve_oracle_tests_broad.sh
+```
+
+Or invoke the module directly:
+
+```sh
+python -m scripts.test_retrieval.augment_oracle --dataset lite --repo sympy/sympy \
+  --selection-policy legacy-paths --max-depth 8
+```
+
+Results go to `retrieval_results/oracle/test/lite/sympy/legacy_d8/` by default.
+`--top-k 0` removes the default ten-test cap. The launcher can also select a
+different dataset with `DATASET=swt-verified` if its normalized CSV contains
+SymPy rows.
 
 The separate relaxed version uses `relaxed_exact_object_paths_v1` and leaves the
 strict files intact:
