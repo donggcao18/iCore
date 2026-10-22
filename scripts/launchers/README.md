@@ -427,15 +427,17 @@ as both generation context and evaluation injection reference. No code-retrieval
 file is loaded. The model sees the bug report and the oracle test snippets;
 production fixes are used only by evaluation.
 
-Both oracle launchers default to `deepseek/deepseek-r1-0528`, using `QWEN_API_KEY`
-and `QWEN_BASE_URL` (OpenRouter by default) from `scripts/config.py`.
-Each API attempt has a 500-second timeout, overridable with `ICORE_LLM_TIMEOUT`.
+The test-only launcher defaults to `gemini-3.5-flash-lite`, using
+`LITELLM_API_KEY` and `LITELLM_BASE_URL` from `scripts/config.py`. The code-only
+launcher still defaults to `deepseek/deepseek-r1-0528`, using `QWEN_API_KEY`
+and `QWEN_BASE_URL`. Each API attempt has a 500-second timeout, overridable with
+`ICORE_LLM_TIMEOUT`.
 The elapsed-time messages every 30 seconds report the same pending request;
 they do not send another API call. Temporary API errors can trigger retries.
-Both oracle launchers now select all 15 `pytest-dev/pytest` instances with no
-default exclusions. The test-only launcher generates one candidate per instance
-at temperature 0.7. `pytest-dev__pytest-7236` has an empty augmented oracle-test
-list and remains included, using the issue alone in the test-only experiment.
+The test-only launcher selects all 15 `pytest-dev/pytest` instances with no
+default exclusions and generates one candidate per instance at temperature 0.7.
+`pytest-dev__pytest-7236` has an empty augmented oracle-test list and remains
+included, using the issue alone in the test-only experiment.
 It uses
 `data/swt-bench-verified/oracle_input_pylint_pytest.csv`, the prepared input for
 these oracle artifacts with complete reference fixes. Copy that CSV to the
@@ -443,6 +445,20 @@ server together with the oracle file. Edit the selections at the top of the
 launcher or set `MODEL`, `REPO`, `ORACLE`, `DATASET_CSV`, `SAMPLES`, and
 `OUTPUT_ROOT` in the environment. Set `EXCLUDE_INSTANCE` to omit a specific ID.
 Default oracle paths follow the selected repository's name.
+
+To run it through the Gemini gateway, set the key in the same shell and start
+the launcher:
+
+```bash
+export LITELLM_BASE_URL='https://ranges-isa-disabled-milton.trycloudflare.com/v1'
+read -r -s -p 'LiteLLM team API key: ' LITELLM_API_KEY
+echo
+export LITELLM_API_KEY
+bash scripts/launchers/run_brt_oracle_test_swt_verified.sh
+```
+
+Set `MODEL=gemini-3.8-flash` before the command to choose another configured
+Gemini model. The test-only launcher's default is `gemini-3.5-flash-lite`.
 
 Prompts, candidates, the selection CSV, execution results, and summary are saved
 under
@@ -469,7 +485,7 @@ base production-code snippets, including their class context. No test-retrieval
 JSON, patched code oracle, production fix, or reference test patch enters the
 prompt. Missing or empty code context stops the run before generation.
 
-Defaults match the test-only launcher: `deepseek/deepseek-r1-0528`, pytest, one candidate,
+Its defaults are `deepseek/deepseek-r1-0528`, pytest, one candidate,
 temperature 0.7, the prepared oracle CSV, and no excluded instances. The default
 stage generates and evaluates candidates. Evaluation uses the existing `libro`
 token-similarity strategy to choose a test insertion file without requiring a

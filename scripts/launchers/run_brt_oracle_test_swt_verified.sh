@@ -3,9 +3,9 @@ set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."
 
 # Edit these selections for the oracle-test-only experiment.
-MODEL="${MODEL:-deepseek/deepseek-r1-0528}"
+MODEL="${MODEL:-gemini-3.8-flash}"
 REPO="${REPO:-pytest-dev/pytest}"
-ORACLE="${ORACLE:-./retrieval_results/oracle/test/swt-bench-verified/${REPO##*/}/related_tests_oracle_base_augmented.json}"
+ORACLE="${ORACLE:-./retrieval_results/oracle/test/broad_selection_backup_2026-10-12/swt-bench-verified/${REPO##*/}/related_tests_oracle_base_augmented.json}"
 DATASET_CSV="${DATASET_CSV:-./data/swt-bench-verified/oracle_input_pylint_pytest.csv}"
 EXCLUDE_INSTANCE="${EXCLUDE_INSTANCE-}"
 SAMPLES="${SAMPLES:-1}"
