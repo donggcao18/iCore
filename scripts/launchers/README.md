@@ -588,6 +588,64 @@ performs both. Run this on the Linux/Conda benchmark environment with the usual
 pipeline dependencies and configured API key. Patched reference tests provide
 future solution information, so report this as an oracle diagnostic.
 
+### Scikit-learn SWT Verified oracle experiment
+
+From the Linux `icore` pipeline environment with Conda on PATH and the normal
+pipeline dependencies installed, run:
+
+```bash
+MODEL=openai/gpt-6-luna bash scripts/launchers/run_brt_oracle_sklearn_swt_verified.sh
+```
+
+The flow is: load the existing local `data/swt-bench-verified/test.csv`, select
+scikit-learn rows, install/reuse benchmark environments, extract oracle tests,
+then generate and evaluate BRTs. The launcher does not download, replace, or
+rewrite the dataset. Set `DATASET_CSV` to use another existing CSV in `data/`.
+It stops immediately if the local data is missing or the repository selection
+is invalid. The local dataset currently has 24 instances across 0.20, 0.21,
+and 0.22. Missing repository clones and Conda dependencies are downloaded
+during environment setup.
+Environment creation follows `scripts/env_setup/constants.py`; it does not
+download prebuilt Docker images. Target installation/build occurs through the
+existing evaluator. Build tools for historical scikit-learn must be available.
+
+The model reuses `QWEN_API_KEY` and `QWEN_BASE_URL`. The wrapper defaults
+`REPO_ROOT_DIR` to this checkout's `repos/`; set it explicitly to use your usual
+server clone directory. Keep benchmark checkouts free of local work, because
+evaluation resets/cleans them. Setup itself does not reset an existing clone.
+
+Use `RUN_STAGE=setup` to stop after environment preparation and oracle extraction,
+then `RUN_STAGE=run` to reuse those inputs for generation/evaluation:
+
+```bash
+RUN_STAGE=setup bash scripts/launchers/run_brt_oracle_sklearn_swt_verified.sh
+RUN_STAGE=run MODEL=openai/gpt-6-luna \
+  bash scripts/launchers/run_brt_oracle_sklearn_swt_verified.sh
+```
+
+Default mode is `ORACLE_MODE=patched`. `ORACLE_MODE=base` uses only base
+counterparts of changed tests, without augmented test-graph retrieval. Both modes
+default to the same `related_tests_oracle_base.json` insertion reference; missing
+base examples fall back to LIBRO. Patched mode can override `INJECTION=libro`.
+Use `SAMPLES` for independent candidates and `OUTPUT_ROOT` for a new experiment
+root. Changing generation/insertion inputs rejects reuse of cached patched runs.
+
+The local CSV must have normalized test patches and complete production fixes
+for reliable buggy/fixed evaluation. Some original SWT production fixes are
+truncated. If your local CSV needs repair, `scripts.prepare_swt_oracle_input`
+remains an optional, separately invoked helper; it is not part of this flow.
+It checks matching upstream metadata and patch equivalence while preserving SWT
+test patches. Point `DATASET_CSV` at its prepared output when you choose to use
+it; no fix is silently replaced by the launcher.
+
+Default patched BRT outputs:
+`retrieval_results/swt-bench-verified/openai%2Fgpt-6-luna/brt/scikit-learn/scikit-learn/oracle_test_patched_s1/`.
+Logs for Conda preparation are in
+`retrieval_results/env_setup/setup_scikit-learn_scikit-learn__<version>/setup.log`.
+These commands require network access and have not been executed against the
+benchmark server by this change. They retain the existing harness limitations,
+including no fixed-side rebuild after a production fix changes compiled sources.
+
 | Launcher | Purpose |
 | --- | --- |
 | `code_retrieval.sh`, `test_retrieval.sh` | Original replication launchers; existing limitations are documented in PROJECT_GUIDE.md. |
@@ -600,6 +658,7 @@ future solution information, so report this as an oracle diagnostic.
 | `generate_brt_swt_verified_pylint.sh` | SWT Verified Pylint oracle BRT generation. |
 | `run_brt_oracle_code_test_swt_verified.sh` | Generate with base code oracle and archived broad base-test oracle, then evaluate. |
 | `run_brt_oracle_test_patched_swt_verified.sh` | Generate from patched oracle tests, then evaluate on buggy/fixed production code. |
+| `run_brt_oracle_sklearn_swt_verified.sh` | Prepare scikit-learn SWT Verified inputs/environments, extract oracle tests, generate and evaluate. |
 
 All nine existing root launchers have moved here. Their working-directory setup,
 references to other launchers, and guide links were updated for the new location.

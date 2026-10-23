@@ -20,6 +20,7 @@ LITELLM_BASE_URL = (os.getenv('LITELLM_BASE_URL')
 API_KEY = {
     **{model: os.getenv('LITELLM_API_KEY') for model in LITELLM_MODELS},
     'deepseek/deepseek-r1-0528': os.getenv('QWEN_API_KEY'),
+    'openai/gpt-6-luna': os.getenv('QWEN_API_KEY'),
     'z-ai/glm-5.3-flash': os.getenv('QWEN_API_KEY'),
     'deepseek/deepseek-v4-flash-0731': os.getenv('QWEN_API_KEY'),
     'mistralai/mistral-small-3.2-24b-instruct': os.getenv('QWEN_API_KEY'),
@@ -36,6 +37,7 @@ API_KEY = {
 BASE_URL = {
     **{model: LITELLM_BASE_URL for model in LITELLM_MODELS},
     'deepseek/deepseek-r1-0528': os.getenv('QWEN_BASE_URL') or 'https://openrouter.ai/api/v1',
+    'openai/gpt-6-luna': os.getenv('QWEN_BASE_URL') or 'https://openrouter.ai/api/v1',
     'z-ai/glm-5.3-flash': os.getenv('QWEN_BASE_URL') or 'https://openrouter.ai/api/v1',
     'deepseek/deepseek-v4-flash-0731': os.getenv('QWEN_BASE_URL') or 'https://openrouter.ai/api/v1',
     'mistralai/mistral-small-3.2-24b-instruct': os.getenv('QWEN_BASE_URL') or 'https://openrouter.ai/api/v1',
