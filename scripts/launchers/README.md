@@ -690,6 +690,58 @@ setup/build for each instance during evaluation; it does not recreate Conda
 environments. Its default per-test timeout is 60 seconds and LLM request
 timeout is 2500 seconds.
 
+### Second generation from buggy feedback only
+
+After completing the first oracle-test run:
+
+```bash
+bash scripts/launchers/run_brt_oracle_test_second_generation.sh
+```
+
+The default source is the completed scikit-learn Luna experiment:
+`retrieval_results/broad_d8/swt-bench-verified/openai%2Fgpt-6-luna/brt/scikit-learn/scikit-learn/oracle_test_augmented_s1/execution_results.json`.
+Set `SOURCE_RUN` if the first experiment is elsewhere.
+`SOURCE_RESULTS` and `SOURCE_TESTS` can override
+individual inputs. The CSV defaults to the first run's `selections/selected.csv`
+when present, otherwise the existing local SWT Verified CSV. `ORACLE` must be
+the same base-test oracle used in the first experiment; by default it is the
+scikit-learn `legacy_d8/related_tests_oracle_base_augmented.json`.
+
+This performs one refinement pass with `openai/gpt-6-luna`:
+
+- Buggy compile/runtime errors go directly to a repair prompt.
+- Buggy `autogen_failed: false` also goes directly to regeneration: change inputs,
+  setup, or assertions to expose the reported bug, without artificial failures.
+- Other buggy results go to an issue/assertion review. A JSON verdict of
+  `matches_issue: false` triggers a replacement test; `true` keeps the original.
+- Only replacement tests are evaluated on buggy/fixed production code, using
+  the existing evaluator and the same oracle insertion reference.
+
+Generation receives only the issue, historical version, base tests, original
+candidate, and allowlisted `buggy` diagnostics. It does not use the first run's
+`fixed`, overall `success`, production patch, or developer test patch. The review
+judges whether a correct fix could make the test pass; it cannot confirm that
+without evaluation. Candidates without a usable buggy field are recorded as
+skipped. Reference patches are used only by the subsequent evaluator. There is
+no additional refinement based on second-run results.
+
+Outputs default to `<SOURCE_RUN>/second_generation/`: saved `prompts/`, cached
+`responses/`, `decisions.json`, `generated_tests/` containing replacements only,
+and a separate `execution_results.json` for their evaluation. Original artifacts
+are preserved. If every test is kept, no new evaluation is needed. Repeated
+invocations reuse replies and evaluator results; changed generation inputs
+require a separate `OUTPUT_DIR`.
+
+```bash
+STAGE=generate bash scripts/launchers/run_brt_oracle_test_second_generation.sh
+STAGE=evaluate bash scripts/launchers/run_brt_oracle_test_second_generation.sh
+```
+
+`MODEL`, `REPO`, `DATASET_CSV`, `ORACLE`, `OUTPUT_DIR`, `PYTHON`, and the existing
+LLM/test timeout variables are configurable. Evaluation still incurs the existing
+per-instance package setup/build cost, but runs only instances with replacements.
+The implementation and both prompt texts are in `scripts/refine_brt.py`.
+
 ### Scikit-learn SWT Verified oracle experiment
 
 From the Linux `icore` pipeline environment with Conda on PATH and the normal
@@ -763,6 +815,7 @@ including no fixed-side rebuild after a production fix changes compiled sources.
 | `run_brt_oracle_sklearn_swt_verified.sh` | Prepare scikit-learn SWT Verified inputs/environments, extract oracle tests, generate and evaluate. |
 | `retrieve_oracle_tests_broad_swt_verified.sh` | Retrieve broad base-test oracle contexts from local SWT Verified data; defaults to scikit-learn and eight edges. |
 | `generate_brt_oracle_test_broad_swt_verified.sh` | Generate BRTs from broad base-test oracle contexts; defaults to scikit-learn and openai/gpt-6-luna. |
+| `run_brt_oracle_test_second_generation.sh` | Refine from buggy feedback only, then evaluate regenerated candidates. |
 
 All nine existing root launchers have moved here. Their working-directory setup,
 references to other launchers, and guide links were updated for the new location.
