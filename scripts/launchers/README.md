@@ -627,6 +627,69 @@ bash scripts/launchers/retrieve_oracle_tests_broad_swt_verified.sh \
 Use the generated `legacy_d8/related_tests_oracle_base_augmented.json` as
 `ORACLE` when launching the broad BRT experiment.
 
+### Generate BRTs from the broad oracle tests
+
+After broad retrieval, generate BRT candidates with `openai/gpt-6-luna`:
+
+```bash
+bash scripts/launchers/generate_brt_oracle_test_broad_swt_verified.sh
+```
+
+This generation-only launcher defaults to scikit-learn and reads
+`retrieval_results/oracle/test/swt-bench-verified/scikit-learn/legacy_d8/related_tests_oracle_base_augmented.json`.
+The existing test-only prompt receives the issue and broad base-test context.
+It reuses the model's `QWEN_API_KEY` and `QWEN_BASE_URL` configuration. It does
+not run environment setup, retrieval, harness injection, or buggy/fixed tests.
+
+Default outputs:
+
+```text
+retrieval_results/swt-bench-verified/openai%2Fgpt-6-luna/brt/scikit-learn/scikit-learn/oracle_test_broad_d8_s1/
+```
+
+The directory contains `generated_tests/`, saved `prompts/`, a frozen oracle
+copy in `inputs/`, selected CSV/IDs in `selections/`, and `run_config.json`.
+Rerunning resumes existing nonempty candidates. Changed inputs/settings require
+a separate `OUTPUT_ROOT`. Missing oracle records stop generation; explicit
+empty test lists generate from the issue alone. No evaluation results are
+produced by this launcher.
+
+Override `MODEL`, `REPO`, `MAX_DEPTH`, `ORACLE_DIR`, `ORACLE`, `DATASET_CSV`,
+`SAMPLES`, `OUTPUT_ROOT`, or `PYTHON`. `MAX_DEPTH` chooses the input directory
+and experiment name; it does not rerun or validate retrieval. For one instance:
+
+```bash
+INSTANCE_ID=scikit-learn__scikit-learn-10908 \
+  bash scripts/launchers/generate_brt_oracle_test_broad_swt_verified.sh
+```
+
+Use a separate `OUTPUT_ROOT` to keep a single-instance trial separate from a
+full run.
+
+To generate **and evaluate** BRTs from the same broad oracle file, run:
+
+```bash
+bash scripts/launchers/run_brt_oracle_test_swt_verified.sh
+```
+
+This launcher now defaults to `openai/gpt-6-luna`, scikit-learn, the local
+`data/swt-bench-verified/test.csv`, and
+`retrieval_results/oracle/test/swt-bench-verified/scikit-learn/legacy_d8/related_tests_oracle_base_augmented.json`.
+The oracle supplies test context to the prompt and insertion references to
+the evaluator. It reuses existing benchmark environments and checkouts under
+`REPO_ROOT_DIR` (default `repos/`). The run prints the selected model, oracle
+input, and output directory before generation. The model uses the existing
+`QWEN_API_KEY` and `QWEN_BASE_URL` configuration.
+
+Its outputs are isolated from generation-only runs:
+`retrieval_results/broad_d8/swt-bench-verified/openai%2Fgpt-6-luna/brt/scikit-learn/scikit-learn/oracle_test_augmented_s1/`.
+This includes `generated_tests/`, saved `prompts/`, and
+`execution_results.json`. Override `ORACLE`, `MODEL`, `REPO`, `DATASET_CSV`,
+`SAMPLES`, or `OUTPUT_ROOT` as needed. The existing harness performs package
+setup/build for each instance during evaluation; it does not recreate Conda
+environments. Its default per-test timeout is 60 seconds and LLM request
+timeout is 2500 seconds.
+
 ### Scikit-learn SWT Verified oracle experiment
 
 From the Linux `icore` pipeline environment with Conda on PATH and the normal
@@ -699,6 +762,7 @@ including no fixed-side rebuild after a production fix changes compiled sources.
 | `run_brt_oracle_test_patched_swt_verified.sh` | Generate from patched oracle tests, then evaluate on buggy/fixed production code. |
 | `run_brt_oracle_sklearn_swt_verified.sh` | Prepare scikit-learn SWT Verified inputs/environments, extract oracle tests, generate and evaluate. |
 | `retrieve_oracle_tests_broad_swt_verified.sh` | Retrieve broad base-test oracle contexts from local SWT Verified data; defaults to scikit-learn and eight edges. |
+| `generate_brt_oracle_test_broad_swt_verified.sh` | Generate BRTs from broad base-test oracle contexts; defaults to scikit-learn and openai/gpt-6-luna. |
 
 All nine existing root launchers have moved here. Their working-directory setup,
 references to other launchers, and guide links were updated for the new location.

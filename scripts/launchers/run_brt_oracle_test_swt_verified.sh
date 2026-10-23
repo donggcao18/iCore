@@ -2,15 +2,16 @@
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."
 
-# Edit these selections for the oracle-test-only experiment.
-MODEL="${MODEL:-gemini-3.8-flash}"
-REPO="${REPO:-pytest-dev/pytest}"
-ORACLE="${ORACLE:-./retrieval_results/oracle/test/broad_selection_backup_2026-10-12/swt-bench-verified/${REPO##*/}/related_tests_oracle_base_augmented.json}"
-DATASET_CSV="${DATASET_CSV:-./data/swt-bench-verified/oracle_input_pylint_pytest.csv}"
+# Generate from broad base-test oracle context, then evaluate buggy/fixed code.
+MODEL="${MODEL:-openai/gpt-6-luna}"
+REPO="${REPO:-scikit-learn/scikit-learn}"
+ORACLE="${ORACLE:-$PWD/retrieval_results/oracle/test/swt-bench-verified/${REPO##*/}/legacy_d8/related_tests_oracle_base_augmented.json}"
+DATASET_CSV="${DATASET_CSV:-$PWD/data/swt-bench-verified/test.csv}"
+export REPO_ROOT_DIR="${REPO_ROOT_DIR:-$PWD/repos}"
 EXCLUDE_INSTANCE="${EXCLUDE_INSTANCE-}"
 SAMPLES="${SAMPLES:-1}"
-OUTPUT_ROOT="${OUTPUT_ROOT:-./retrieval_results}"
-export ICORE_LLM_TIMEOUT="${ICORE_LLM_TIMEOUT:-500}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-$PWD/retrieval_results/broad_d8}"
+export ICORE_LLM_TIMEOUT="${ICORE_LLM_TIMEOUT:-2500}"
 export ICORE_TEST_TIMEOUT="${ICORE_TEST_TIMEOUT:-60}"
 
 exec "${PYTHON:-python}" - "$MODEL" "$REPO" "$ORACLE" "$DATASET_CSV" \
@@ -73,6 +74,8 @@ manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8'
 selected_csv, env = prepare_selection(root / 'selections', rows)
 generated, results = root / 'generated_tests', root / 'execution_results.json'
 print(f'Oracle-test-only BRT experiment: {len(rows)} instances, {samples} candidate(s) each; excluded: {excluded}', flush=True)
+print(f'Model: {model}; oracle prompt/injection input: {oracle}', flush=True)
+print(f'Output directory: {root}', flush=True)
 # No --context_code_path: only the issue and this oracle test file enter prompts.
 run_module('scripts.generator.llm_query',
            '--dataset_csv', selected_csv, '--model', model, '--exp_name', 'oracle_test_augmented',
