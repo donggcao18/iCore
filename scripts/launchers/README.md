@@ -588,6 +588,45 @@ performs both. Run this on the Linux/Conda benchmark environment with the usual
 pipeline dependencies and configured API key. Patched reference tests provide
 future solution information, so report this as an oracle diagnostic.
 
+### Broad SWT Verified oracle test retrieval only
+
+After environment setup, retrieve historical broad oracle tests separately:
+
+```bash
+bash scripts/launchers/retrieve_oracle_tests_broad_swt_verified.sh
+```
+
+This defaults to scikit-learn, the existing local
+`data/swt-bench-verified/test.csv`, dependency paths of up to eight edges, and
+at most ten context tests per instance. It requires the prepared Git checkout
+under `repos/scikit-learn`; set `REPO_ROOT_DIR` or `REPO_DIR` to reuse another
+location. It performs retrieval only, without environment installation, BRT
+generation, or evaluation. Run it in the pipeline Python environment.
+
+The historical `legacy-paths` policy includes module-proximity fallback when
+no dependency path reaches a test and merges existing base counterparts of
+reference tests. The eight-edge bound applies to dependency traversal; not
+every final context snippet necessarily has a recorded path to a changed object.
+
+Default BRT context output:
+`retrieval_results/oracle/test/swt-bench-verified/scikit-learn/legacy_d8/related_tests_oracle_base_augmented.json`.
+The same directory contains `related_tests_oracle_code_base.json` (tests
+selected from production changes) and `oracle_augmented_manifest.json`
+(selection evidence). The extractor also saves code oracle artifacts under
+`retrieval_results/oracle/code/swt-bench-verified/scikit-learn/legacy_d8/`.
+
+Override `REPO`, `DATASET_CSV`, `MAX_DEPTH`, `TOP_K`, `ORACLE_DIR`,
+`CODE_ORACLE_DIR`, or `PYTHON` as needed. `TOP_K=0` removes the context-test
+count limit. Extra CLI arguments are forwarded, for example:
+
+```bash
+bash scripts/launchers/retrieve_oracle_tests_broad_swt_verified.sh \
+  --instance-id scikit-learn__scikit-learn-10908
+```
+
+Use the generated `legacy_d8/related_tests_oracle_base_augmented.json` as
+`ORACLE` when launching the broad BRT experiment.
+
 ### Scikit-learn SWT Verified oracle experiment
 
 From the Linux `icore` pipeline environment with Conda on PATH and the normal
@@ -659,6 +698,7 @@ including no fixed-side rebuild after a production fix changes compiled sources.
 | `run_brt_oracle_code_test_swt_verified.sh` | Generate with base code oracle and archived broad base-test oracle, then evaluate. |
 | `run_brt_oracle_test_patched_swt_verified.sh` | Generate from patched oracle tests, then evaluate on buggy/fixed production code. |
 | `run_brt_oracle_sklearn_swt_verified.sh` | Prepare scikit-learn SWT Verified inputs/environments, extract oracle tests, generate and evaluate. |
+| `retrieve_oracle_tests_broad_swt_verified.sh` | Retrieve broad base-test oracle contexts from local SWT Verified data; defaults to scikit-learn and eight edges. |
 
 All nine existing root launchers have moved here. Their working-directory setup,
 references to other launchers, and guide links were updated for the new location.
