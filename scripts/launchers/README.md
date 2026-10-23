@@ -742,6 +742,31 @@ LLM/test timeout variables are configurable. Evaluation still incurs the existin
 per-instance package setup/build cost, but runs only instances with replacements.
 The implementation and both prompt texts are in `scripts/refine_brt.py`.
 
+### Compare first and second generation results
+
+```bash
+python -m scripts.analyze_brt_generations "$FIRST_RUN"
+```
+
+This standard-library-only script reads the first run's `execution_results.json`
+and `second_generation/execution_results.json`. It also accepts singular
+`execution_result.json` and `execution__result.json` filenames. Set
+`--second-dir second_generation_luna` for a different refinement subdirectory.
+
+It prints one row per instance with `first_gen`, `second_gen`, and `final_result`
+columns and saves the same table to `<work_dir>/generation_comparison.csv`.
+Values are `True` (at least one candidate has the evaluator's `success: true`),
+`False` (evaluated but no F2P), or literal `None` (no results). Missing second-run
+files are allowed, including when all original tests were kept. Final results
+replace regenerated candidates with second-run outcomes and retain untouched
+first-run candidates. This reflects the actual replacement policy, so a successful
+first-run candidate can regress if its replacement fails. With multiple candidates,
+an instance is F2P if any remaining candidate succeeds.
+
+The script prints F2P counts/rates for each column plus gained/lost instances
+relative to the first run. Second-generation rates use only instances with
+second-generation results as the denominator; missing cells are counted separately.
+
 ### Scikit-learn SWT Verified oracle experiment
 
 From the Linux `icore` pipeline environment with Conda on PATH and the normal
