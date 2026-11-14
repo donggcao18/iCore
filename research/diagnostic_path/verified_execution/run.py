@@ -47,6 +47,20 @@ def write_json(path, value):
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
 
 
+def apply_snapshot_patch(tree, patch):
+    # Give the disposable export its own Git root so patch paths resolve there.
+    if not (tree / ".git").exists():
+        execution.git(tree, "init", "--quiet")
+    result = subprocess.run(
+        ["git", "-c", "core.autocrlf=false", "apply", "--recount",
+         "--whitespace=nowarn", "--verbose", "-"],
+        cwd=tree, input=patch.encode("utf-8"), capture_output=True, timeout=120,
+    )
+    diagnostic = result.stderr.decode("utf-8", errors="replace")
+    if result.returncode or any(line.startswith("Skipped patch ") for line in diagnostic.splitlines()):
+        raise RuntimeError(diagnostic.strip())
+
+
 def run_test(args, tree, selector, project, destination, trace=None):
     destination.mkdir()
     report_file = destination / "report.json"
@@ -119,8 +133,8 @@ def run_case(args, row, output):
             execution.snapshot(repo, row["base_commit"], parent=temporary)
         ) as fixed:
             for tree in (buggy, fixed):
-                execution.apply_patch(tree, row["test_patch"])
-            execution.apply_patch(fixed, row["patch"])
+                apply_snapshot_patch(tree, row["test_patch"])
+            apply_snapshot_patch(fixed, row["patch"])
             targets, unresolved = map_targets(buggy, fixed, row["patch"])
             for index, selector in enumerate(args.selector or dict.fromkeys(selectors), 1):
                 destination = output / f"test-{index:03}"
