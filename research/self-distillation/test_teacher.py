@@ -149,6 +149,19 @@ class TeacherTest(unittest.TestCase):
         self.assertEqual(result["root_reads"][0]["chain"], ["issue", "o1", "o2", "o3", "o4"])
         self.assertNotIn("Reasoning omitted", json.dumps(result))
 
+    def test_directory_search_reveals_lines_for_open(self):
+        nav = Navigation(self.snapshot, self.case.issue)
+        result = nav.action({"tool": "search_dir", "search_term": "sticky", "evidence": "issue"}, 1)
+        hit = next(row for row in result["files"] if row["path"] == "worker.py")
+        self.assertEqual(hit["line_numbers"], [1, 2])
+        with self.assertRaisesRegex(ToolError, "existing positive line number"):
+            nav.action({"tool": "open", "path": "worker.py", "line_number": 3}, 2)
+        with self.assertRaisesRegex(ToolError, "has not been shown.*search_dir: 4"):
+            nav.action({"tool": "open", "path": "cli.py", "line_number": 35}, 2)
+        window = nav.action({"tool": "open", "path": hit["path"], "line_number": 2}, 2)
+        self.assertIn("worker.py::compute", nav.inspected[window["id"]])
+        self.assertEqual(nav.chain(window["id"]), ["issue", "o1", "o2"])
+
     def test_bad_action_can_be_corrected_without_replaying_it(self):
         case = replace(self.case, issue="The command ignores `sticky` mode.")
         calls = iter(range(1, 6))

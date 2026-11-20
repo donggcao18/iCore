@@ -17,6 +17,7 @@ from scripts.test_retrieval.static_dependencies import DependencyIndex
 
 RESULT_LIMIT = 100
 SOURCE_LINES = 100
+SEARCH_LINE_LIMIT = 3
 
 
 def read_git(case, *args, payload=None):
@@ -204,9 +205,11 @@ class Navigation:
         paths, parent = self.directory_paths(dir)
         files = []
         for path in paths:
-            count = sum(term in line for line in self.snapshot.lines[path])
-            if count:
-                files.append({"path": path, "matching_lines": count})
+            matches = [number for number, line in enumerate(self.snapshot.lines[path], 1) if term in line]
+            if matches:
+                files.append({
+                    "path": path, "matching_lines": len(matches), "line_numbers": matches[:SEARCH_LINE_LIMIT],
+                })
         return self.bounded_results("files", files), (evidence, parent)
 
     def search_file(self, search_term, evidence, file=None):
@@ -235,14 +238,30 @@ class Navigation:
     def line_evidence(self, path, line_number):
         if type(line_number) is not int or not 1 <= line_number <= len(self.file_lines(path)):
             raise ToolError("line_number must be an existing positive line number in this file.")
+        search_lines = set()
+        search_parent = None
         for oid, obs in self.public.items():
+            for hit in obs.get("files", ()):
+                if hit["path"] == path:
+                    lines = hit.get("line_numbers", ())
+                    if search_parent is None and line_number in lines:
+                        search_parent = oid
+                    search_lines.update(lines)
             if obs.get("path") != path:
                 continue
             if (obs.get("line_number") == line_number
                     or obs.get("start", 1) <= line_number <= obs.get("end", 0)
                     or any(hit["line_number"] == line_number for hit in obs.get("matches", ()))):
                 return oid
-        raise ToolError("Use a line shown by search_file or in a source window, or scroll to inspect nearby lines.")
+        if search_parent is not None:
+            return search_parent
+        if search_lines:
+            examples = ", ".join(map(str, sorted(search_lines)[:SEARCH_LINE_LIMIT]))
+            raise ToolError(
+                f"Line {line_number} has not been shown for {path}. "
+                f"Use a revealed line_number from search_dir: {examples}."
+            )
+        raise ToolError("Use a line shown by a search or a source window, or omit line_number when opening a file.")
 
     def window(self, path, start):
         lines = self.file_lines(path)

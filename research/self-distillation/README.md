@@ -43,7 +43,7 @@ The pilot implements the classic SWE-agent search and windowed viewer commands a
 | Tool | Action |
 | --- | --- |
 | `find_file` | Finds files by basename or glob in the repository or a known directory. |
-| `search_dir` | Finds files containing a term and returns their matching-line counts. |
+| `search_dir` | Finds files containing a term and returns match counts and up to three matching line numbers per file. |
 | `search_file` | Shows matching lines in a known file or the currently open file. |
 | `open` | Opens a known file at the top, a supplied entry, or an observed line. |
 | `goto`, `scroll_up`, `scroll_down` | Moves the window in the open file. `goto` takes an observed line number. |
@@ -53,7 +53,7 @@ The runner reads immutable Git blobs from the pinned commit. Search terms requir
 
 When the issue supplies a usable literal, the initial input includes a valid search example drawn from the issue. Both teacher and blind runs get the same example. Rejected actions count toward the turn budget and stay in the run log. The next model call receives the rejection message alongside the last valid observation.
 
-For Pylint `6386`, `search_dir` for `--verbose` finds `pylint/config/utils.py`. `search_file` for the same term gives a line number in that file. `open` at line 209 shows the handler and the `_preprocess_options` definition. That window supports the final diagnosis about the early handling of `-v`.
+For Pylint `6386`, `search_dir` for `--verbose` finds `pylint/config/utils.py` and reveals line 209. Passing that line number to `open` shows the handler and the `_preprocess_options` definition. That window supports the diagnosis about the early handling of `-v`.
 
 Each completed rollout is flushed to `research/self-distillation/runs/<timestamp>.jsonl`, or to `--output`. A row contains the actions, bounded tool responses, root-read chains, ranked diagnosis, and metrics. The CLI prints condition totals for root reads, top-1, top-5, MRR, and rejected actions. A `review_candidate` has a correct top-ranked function and zero rejected actions. Root labels and scoring fields are held in the experiment logs, so build any eventual training inputs from the public issue and reviewed dialogue fields.
 

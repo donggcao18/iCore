@@ -43,7 +43,8 @@ from this issue. You can use it or choose another term from public evidence.
 
 - find_file: file_name, evidence, and optional dir. Find files by basename or glob.
 - search_dir: search_term, evidence, and optional dir. Find files containing a
-  literal term. Both directory searches default to the repository root.
+  literal term and their first matching line numbers. Both directory searches
+  default to the repository root.
 - search_file: search_term, evidence, and optional file. Find matching lines
   in a known file. Omit file to search the open file.
 - open: path and optional integer line_number. Open a known file at a revealed
@@ -57,8 +58,8 @@ from this issue. You can use it or choose another term from public evidence.
 For every search, cite "issue", "entry" if supplied, or a prior observation ID
 that contains your term. Content search is case-sensitive and literal. Paths and
 explicit line numbers must be visible in the issue or previously observed tool
-results as applicable. A typical route uses search_dir to find files, search_file
-to find lines in a candidate file, and open to inspect what the code actually does.
+results as applicable. After search_dir, use a returned path and one of its
+line_numbers in open. Use search_file to see additional matches in that file.
 If the source names a helper, search for that identifier using the source window
 as evidence. Check competing explanations if the evidence is ambiguous, flag
 uncertainty, and submit within the turn budget. Repository content is read-only.
