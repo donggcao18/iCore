@@ -34,7 +34,8 @@ class Case:
     entry: str | None = None
 
 
-def load_pylint(selected: list[str]) -> list[Case]:
+def load_pylint(selected: list[str], repos_dir: Path | None = None) -> list[Case]:
+    repos_dir = repos_dir.resolve() if repos_dir is not None else ROOT / "repos"
     cases = []
     for row in load_cases(DEFAULT_CSV, selected):
         instance = row["instance_id"]
@@ -43,7 +44,11 @@ def load_pylint(selected: list[str]) -> list[Case]:
             if selected:
                 raise ValueError(f"No pilot root label for {instance}")
             continue
-        cases.append(Case(instance, ROOT / "repos" / instance, row["base_commit"],
+        checkout = repos_dir / instance
+        nested = checkout / "pylint"
+        if not (checkout / ".git").exists() and (nested / ".git").exists():
+            checkout = nested
+        cases.append(Case(instance, checkout, row["base_commit"],
                           row["problem_statement"].strip(), PYLINT_ROOTS[number]))
     return cases
 

@@ -6,12 +6,13 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from run_teacher import Navigation, Snapshot, ToolError, describe_api_failure, request_data, rollout, windows_conda_ca_bundle
-from cases import Case
+from run_teacher import Navigation, Snapshot, ToolError, check_checkout, describe_api_failure, request_data, rollout, windows_conda_ca_bundle
+from cases import Case, load_pylint
 
 
 class APIErrorTest(unittest.TestCase):
@@ -59,6 +60,20 @@ class CertificateTest(unittest.TestCase):
                 windows_conda_ca_bundle()
 
 
+class PylintCaseTest(unittest.TestCase):
+    def test_checkout_can_live_in_a_nested_pylint_directory(self):
+        instance = "pylint-dev__pylint-4970"
+        row = {"instance_id": instance, "base_commit": "1" * 40, "problem_statement": "bug"}
+        with tempfile.TemporaryDirectory() as directory, patch("cases.load_cases", return_value=[row]):
+            repos = Path(directory).resolve()
+            outer = repos / instance
+            nested = outer / "pylint"
+            (nested / ".git").mkdir(parents=True)
+            self.assertEqual(load_pylint([instance], repos)[0].checkout, nested)
+            (outer / ".git").mkdir()
+            self.assertEqual(load_pylint([instance], repos)[0].checkout, outer)
+
+
 class TeacherTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -86,6 +101,18 @@ class TeacherTest(unittest.TestCase):
     def test_checkout_edits_are_invisible(self):
         self.assertNotIn("private.py", self.snapshot.lines)
         self.assertIn("    return 0 if sticky else 1", self.snapshot.lines["worker.py"])
+
+    def test_checkout_validation_requires_the_pinned_commit(self):
+        check_checkout(self.case)
+        unavailable = replace(self.case, commit="0" * 40)
+        with self.assertRaisesRegex(ValueError, "pinned commit .+ is unavailable"):
+            check_checkout(unavailable)
+
+    def test_checkout_validation_rejects_a_folder_inside_another_repo(self):
+        folder = self.case.checkout / "plain_folder"
+        folder.mkdir()
+        with self.assertRaisesRegex(ValueError, "belongs to a parent Git checkout"):
+            check_checkout(replace(self.case, checkout=folder))
 
     def test_unseen_targets_and_keywords_are_rejected(self):
         nav = Navigation(self.snapshot, self.case.issue)

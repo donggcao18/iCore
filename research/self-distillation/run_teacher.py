@@ -21,7 +21,7 @@ sys.path.insert(0, str(HERE.parents[1]))
 
 from cases import load_manifest, load_pylint
 from local_inference import DEFAULT_LOCAL_MODEL, load_local_completion
-from navigation import Navigation, Snapshot, ToolError, literal_pattern
+from navigation import Navigation, Snapshot, ToolError, check_checkout, literal_pattern
 
 
 CONDITIONS = {
@@ -245,6 +245,7 @@ def describe_api_failure(exc, *, base_url, max_tokens, completed, output):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cases", type=Path, help="Custom JSONL cases; defaults to the six local Pylint pilot cases")
+    parser.add_argument("--repos-dir", type=Path, help="Directory containing the built-in Pylint clones; defaults to repos/")
     parser.add_argument("--instance-id", action="append", default=[], help="Select case(s); repeat this option")
     parser.add_argument("--conditions", nargs="+", choices=CONDITIONS, default=["teacher"])
     parser.add_argument("--local", action="store_true", help="Run Transformers directly on the first visible CUDA GPU")
@@ -263,7 +264,10 @@ def main():
     default_model = DEFAULT_LOCAL_MODEL if args.local else DEFAULT_MODEL
     args.model = args.model or os.environ.get("TEACHER_MODEL") or default_model
     try:
-        cases = load_manifest(args.cases, args.instance_id) if args.cases else load_pylint(args.instance_id)
+        if args.cases and args.repos_dir:
+            raise ValueError("With --cases, set the checkout path in each manifest row.")
+        cases = (load_manifest(args.cases, args.instance_id) if args.cases
+                 else load_pylint(args.instance_id, args.repos_dir))
         if not cases:
             raise ValueError("No cases selected")
         if len(set(args.conditions)) != len(args.conditions):
@@ -278,6 +282,19 @@ def main():
 
 
 def run(args, cases):
+    unavailable = []
+    for case in cases:
+        try:
+            check_checkout(case)
+        except ValueError as exc:
+            unavailable.append(str(exc))
+    if unavailable:
+        lines = ["Checkout validation failed.", *unavailable]
+        if not args.cases:
+            lines.append("Prepare the pinned clones with python -m scripts.clone_pylint_verified. "
+                         "Use its --output-dir and the runner's --repos-dir to select a fresh directory.")
+        raise ValueError("\n".join(lines))
+
     if args.check:
         for case in cases:
             snapshot = Snapshot(case)

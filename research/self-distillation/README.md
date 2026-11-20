@@ -29,6 +29,13 @@ Run from the iCoRe root on the GPU server with the same PyTorch and Transformers
 python research/self-distillation/run_teacher.py --local --model 'Qwen/Qwen2.5-Coder-7B-Instruct'
 ```
 
+For each case, the runner accepts a Git clone at `repos/<instance_id>` or `repos/<instance_id>/pylint`. It checks the selected commits before loading Qwen. If a checkout is missing its pinned commit, prepare a fresh directory and point the runner at it.
+
+```bash
+python -m scripts.clone_pylint_verified --output-dir "$PWD/research/self-distillation/runs/pylint-checkouts"
+python research/self-distillation/run_teacher.py --local --model 'Qwen/Qwen2.5-Coder-7B-Instruct' --repos-dir "$PWD/research/self-distillation/runs/pylint-checkouts"
+```
+
 ## Tools and scoring
 
 The pilot implements the classic SWE-agent search and windowed viewer commands as JSON actions in the local runner. The viewer keeps an open file and shows up to 100 numbered lines. The pilot adapts the search bundles to tracked Python files, case-sensitive literal content search, and evidence checks. Its `submit` command records a localization diagnosis. [SWE-agent search bundle](https://github.com/SWE-agent/SWE-agent/blob/main/tools/search/config.yaml) · [SWE-agent windowed bundle](https://github.com/SWE-agent/SWE-agent/blob/main/tools/windowed/config.yaml)

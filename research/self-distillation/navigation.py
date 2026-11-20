@@ -19,20 +19,32 @@ RESULT_LIMIT = 100
 SOURCE_LINES = 100
 
 
-def git_sources(case):
-    command = ["git", "-C", str(case.checkout)]
+def read_git(case, *args, payload=None):
+    command = ["git", "-C", str(case.checkout), *args]
     env = {**os.environ, "GIT_NO_LAZY_FETCH": "1"}
+    result = subprocess.run(command, input=payload, capture_output=True, timeout=120, env=env)
+    if result.returncode:
+        message = result.stderr.decode(errors="replace").strip() or "Git object unavailable"
+        raise ValueError(f"{case.instance_id}: Git could not read {case.checkout} ({message})")
+    return result.stdout
 
-    def git(*args, payload=None):
-        result = subprocess.run([*command, *args], input=payload, capture_output=True,
-                                timeout=120, env=env)
-        if result.returncode:
-            message = result.stderr.decode(errors="replace").strip()
-            raise ValueError(f"{case.instance_id}: Git could not read the pinned tree: {message}")
-        return result.stdout
 
+def check_checkout(case):
+    if not case.checkout.is_dir():
+        raise ValueError(f"{case.instance_id}: checkout directory is missing: {case.checkout}")
+    if read_git(case, "rev-parse", "--show-prefix").strip():
+        raise ValueError(f"{case.instance_id}: {case.checkout} belongs to a parent Git checkout. "
+                         "Use the Pylint repository root for this case.")
+    try:
+        read_git(case, "cat-file", "-e", f"{case.commit}^{{commit}}")
+    except ValueError as exc:
+        raise ValueError(f"{case.instance_id}: pinned commit {case.commit} is unavailable in {case.checkout}") from exc
+
+
+def git_sources(case):
     blobs = defaultdict(list)
-    for record in git("ls-tree", "-rz", "--full-tree", f"{case.commit}^{{commit}}").split(b"\0"):
+    tree = read_git(case, "ls-tree", "-rz", "--full-tree", f"{case.commit}^{{commit}}")
+    for record in tree.split(b"\0"):
         if not record:
             continue
         header, path = record.split(b"\t", 1)
@@ -43,7 +55,7 @@ def git_sources(case):
         raise ValueError(f"{case.instance_id}: no tracked Python files in the pinned commit")
 
     sources = {}
-    data = io.BytesIO(git("cat-file", "--batch", payload=b"\n".join(blobs) + b"\n"))
+    data = io.BytesIO(read_git(case, "cat-file", "--batch", payload=b"\n".join(blobs) + b"\n"))
     for oid, paths in blobs.items():
         header = data.readline().split()
         if len(header) != 3 or header[:2] != [oid, b"blob"]:
