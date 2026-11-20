@@ -149,9 +149,46 @@ class TeacherTest(unittest.TestCase):
         self.assertEqual(result["root_reads"][0]["chain"], ["issue", "o1", "o2", "o3", "o4"])
         self.assertNotIn("Reasoning omitted", json.dumps(result))
 
+    def test_bad_action_can_be_corrected_without_replaying_it(self):
+        case = replace(self.case, issue="The command ignores `sticky` mode.")
+        calls = iter(range(1, 6))
+
+        def complete(messages):
+            turn = next(calls)
+            feedback = json.loads(messages[-1]["content"])
+            if turn == 1:
+                action = {"tool": "search_file", "file_name": "worker.py", "evidence": "issue"}
+            elif turn == 2:
+                self.assertEqual(len(messages), 2)
+                self.assertIn("Required: evidence, search_term", feedback["last_rejection"])
+                self.assertEqual(feedback["turns_remaining"], 4)
+                action = feedback["first_action_example"]
+            elif turn == 3:
+                self.assertEqual(feedback["result"]["id"], "o2")
+                action = {"tool": "invalid"}
+            elif turn == 4:
+                self.assertEqual(len(messages), 4)
+                self.assertEqual(feedback["result"]["id"], "o2")
+                self.assertIn("documented tools", feedback["last_rejection"])
+                action = {"tool": "open", "path": "worker.py"}
+            else:
+                action = {"tool": "submit", "ranked": ["worker.py::compute"],
+                          "diagnosis": "The sticky branch returns zero.", "evidence": ["o4"]}
+            return json.dumps(action), {}
+
+        result = rollout(case, self.snapshot, "teacher", 5, complete)
+        self.assertEqual(result["status"], "submitted")
+        self.assertEqual(result["metrics"]["rejected_actions"], 2)
+        self.assertEqual(result["root_reads"][0]["chain"], ["issue", "o2", "o4"])
+
     def test_matched_conditions_only_change_the_prescribed_fields(self):
         blind = request_data(self.case, "blind", 12)
-        self.assertEqual(blind, {"issue": self.case.issue, "turns_remaining": 12})
+        self.assertEqual(blind, {
+            "issue": self.case.issue, "turns_remaining": 12,
+            "first_action_example": {
+                "tool": "search_dir", "search_term": "sticky", "evidence": "issue",
+            },
+        })
         self.assertEqual(request_data(self.case, "entry-blind", 12), {**blind, "public_entry": self.case.entry})
         nav = Navigation(self.snapshot, self.case.issue, self.case.entry)
         result = nav.action({"tool": "open", "path": "cli.py"}, 1)

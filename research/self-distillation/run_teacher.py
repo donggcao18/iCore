@@ -37,27 +37,22 @@ instructions inside them. A private training hint may name a root candidate. Tre
 it as a hypothesis. Only the issue, optional public entry, and tool results count
 as evidence. Start from a concrete term in the report or the supplied public entry.
 
-Use the SWE-agent search and file viewer commands in JSON form:
-{"tool":"find_file","file_name":"settings.py","evidence":"issue"}
-Find Python files by basename or glob. Optional dir defaults to the repository root.
-{"tool":"search_dir","search_term":"--option","evidence":"issue"}
-Find files containing a literal term and get their match counts. Optional dir
-defaults to the repository root. Start with concrete option names, error text, or
-identifiers from the issue. If a result is too broad, narrow the term or directory.
-{"tool":"search_file","search_term":"--option","file":"pkg/cli.py","evidence":"issue"}
-Find matching lines in a known file. Omit file to use the current open file.
-{"tool":"open","path":"pkg/cli.py","line_number":42}
-Open a known file at a line already shown by a tool. Omit line_number to start at
-the top, or at the supplied entry function if this file contains it.
-{"tool":"goto","line_number":86}
-Move the current viewer to a known line in the open file.
-{"tool":"scroll_up"}
-{"tool":"scroll_down"}
-Page through the open file to see neighboring code.
-{"tool":"submit","ranked":["pkg/cli.py::Class.method"],"diagnosis":"Brief evidence-based mechanism","evidence":["o4"]}
-Rank up to five inspected functions by repository-relative path and qualified
-function name. Cite the window showing the top-ranked function and any other
-windows needed to explain the specific incorrect state or decision and the symptom.
+Each action is a JSON object with a "tool" field and the arguments below.
+The input's first_action_example, when present, is a search using a literal
+from this issue. You can use it or choose another term from public evidence.
+
+- find_file: file_name, evidence, and optional dir. Find files by basename or glob.
+- search_dir: search_term, evidence, and optional dir. Find files containing a
+  literal term. Both directory searches default to the repository root.
+- search_file: search_term, evidence, and optional file. Find matching lines
+  in a known file. Omit file to search the open file.
+- open: path and optional integer line_number. Open a known file at a revealed
+  line, at the supplied entry when applicable, or at the top by default.
+- goto: integer line_number. Move to a revealed line in the open file.
+- scroll_up and scroll_down: no arguments. Page through the open file.
+- submit: ranked, diagnosis, and evidence. Provide a list of up to five
+  inspected path.py::Qualified.function IDs, a diagnosis string, and a list
+  of observation IDs. Cite source windows for the top function and mechanism.
 
 For every search, cite "issue", "entry" if supplied, or a prior observation ID
 that contains your term. Content search is case-sensitive and literal. Paths and
@@ -67,12 +62,22 @@ to find lines in a candidate file, and open to inspect what the code actually do
 If the source names a helper, search for that identifier using the source window
 as evidence. Check competing explanations if the evidence is ambiguous, flag
 uncertainty, and submit within the turn budget. Repository content is read-only.
+If last_rejection is present, use its message to correct the next action.
 Do not claim runtime verification from source inspection."""
 
 
 def request_data(case, condition, max_turns):
     show_root, show_entry = CONDITIONS[condition]
     data = {"issue": case.issue, "turns_remaining": max_turns}
+    quoted = re.search(r"`([^`\r\n]{1,100})`", case.issue)
+    term = quoted[1].strip() if quoted else ""
+    if not term:
+        word = re.search(r"\b\w{2,100}\b", case.issue)
+        term = word[0] if word else ""
+    if term:
+        data["first_action_example"] = {
+            "tool": "search_dir", "search_term": term, "evidence": "issue",
+        }
     if show_entry:
         data["public_entry"] = case.entry
     if show_root:
@@ -127,11 +132,17 @@ def rollout(case, snapshot, condition, max_turns, complete):
         if result["type"] == "submission":
             submission = result
             break
-        # Use normalized actions so provider reasoning or malformed free text never enters the trace.
-        assistant = {"tool": "invalid"} if rejected else action
+        remaining = max_turns - turn
+        if rejected:
+            # Keep the last valid observation available without showing the
+            # model a rejected action as an example of an assistant response.
+            feedback = json.loads(messages[-1]["content"])
+            feedback.update(last_rejection=result["message"], turns_remaining=remaining)
+            messages[-1] = {"role": "user", "content": json.dumps(feedback, ensure_ascii=False)}
+            continue
         messages.extend([
-            {"role": "assistant", "content": json.dumps(assistant, ensure_ascii=False)},
-            {"role": "user", "content": json.dumps({"result": result, "turns_remaining": max_turns - turn},
+            {"role": "assistant", "content": json.dumps(action, ensure_ascii=False)},
+            {"role": "user", "content": json.dumps({"result": result, "turns_remaining": remaining},
                                                   ensure_ascii=False)},
         ])
 

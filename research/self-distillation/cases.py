@@ -12,10 +12,14 @@ from scripts.clone_pylint_verified import DEFAULT_CSV, load_cases
 
 ROOT = Path(__file__).resolve().parents[2]
 
-# Function-level candidates from the earlier iCoRe known-endpoints annotations.
+# Function-level candidates drawn from the earlier iCoRe annotations and
+# checked against the issue's entry route for 4970.
 # These labels are for the engineering pilot, not a causal benchmark.
 PYLINT_ROOTS = {
-    4970: ("pylint/checkers/similar.py::Run", "pylint/checkers/similar.py::Similar.run"),
+    # The rcfile option reaches SimilarChecker.close, which computes similarities
+    # with min_lines=0. The standalone command has a separate entry route.
+    4970: ("pylint/checkers/similar.py::SimilarChecker.close",
+           "pylint/checkers/similar.py::Similar._compute_sims"),
     6386: ("pylint/config/utils.py::_preprocess_options",),
     6903: ("pylint/lint/run.py::_query_cpu", "pylint/lint/run.py::_cpu_count"),
     7080: ("pylint/lint/expand_modules.py::expand_modules",),

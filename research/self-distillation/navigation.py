@@ -131,7 +131,11 @@ class Navigation:
             raise ToolError("Choose one of the documented tools.")
         required, optional = schemas[tool]
         if not required <= args.keys() <= required | optional:
-            raise ToolError(f"Invalid fields for {tool}.")
+            required_fields = ", ".join(sorted(required)) or "none"
+            optional_fields = ", ".join(sorted(optional)) or "none"
+            raise ToolError(
+                f"Invalid fields for {tool}. Required: {required_fields}. Optional: {optional_fields}."
+            )
         if tool == "submit":
             return self.submit(**args)
         observation = f"o{turn}"

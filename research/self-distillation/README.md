@@ -19,7 +19,7 @@ python research/self-distillation/run_teacher.py --model 'nvidia/nemotron-3.5-li
 
 On Windows, the runner recognizes the missing `ssl/cacert.pem` path set by some Conda Bash hooks and uses the same environment's `Library/ssl/cacert.pem` when available. In Git Bash you can also use the installed certifi bundle by running `export SSL_CERT_FILE="$(python -m certifi)"`.
 
-The default cohort uses original issue text from the local normalized Verified CSV and function-level candidates from the existing iCoRe annotations. `--check` prints a lexical flag for reports that mention a root function name or file. Review these flags before scoring cases where the report itself gives useful location information. If the local clones are missing, the existing `python -m scripts.clone_pylint_verified` command prepares them. [iCoRe known-endpoint annotations](../diagnostic_path/pylint_known_endpoints_inputs.jsonl)
+The default cohort uses original issue text from the local normalized Verified CSV and function-level candidates drawn from the existing iCoRe annotations. For 4970, the rcfile issue follows `SimilarChecker.close` into `Similar._compute_sims`, so those functions are the issue-only scoring candidates. The E2R regression test follows the standalone `--duplicates=0` route. `--check` prints a lexical flag for reports that mention a root function name or file. Review these flags before scoring cases where the report itself gives useful location information. If the local clones are missing, the existing `python -m scripts.clone_pylint_verified` command prepares them. [iCoRe known-endpoint annotations](../diagnostic_path/pylint_known_endpoints_inputs.jsonl)
 
 ## Run all six Pylint cases on a GPU
 
@@ -50,6 +50,8 @@ The pilot implements the classic SWE-agent search and windowed viewer commands a
 | `submit` | Ranks inspected functions by qualified name and cites source windows for a short diagnosis. |
 
 The runner reads immutable Git blobs from the pinned commit. Search terms require a citation to the issue, supplied entry, or a previous observation. `find_file` also accepts the general patterns `*` and `*.py`. Before opening a file or targeting a line, the tool checks that the path or line was revealed. Each root read has a chain of evidence IDs. The evidence gate can reject reasonable synonyms and still lets a root-informed teacher pick a promising file from a broad result list.
+
+When the issue supplies a usable literal, the initial input includes a valid search example drawn from the issue. Both teacher and blind runs get the same example. Rejected actions count toward the turn budget and stay in the run log. The next model call receives the rejection message alongside the last valid observation.
 
 For Pylint `6386`, `search_dir` for `--verbose` finds `pylint/config/utils.py`. `search_file` for the same term gives a line number in that file. `open` at line 209 shows the handler and the `_preprocess_options` definition. That window supports the final diagnosis about the early handling of `-v`.
 
