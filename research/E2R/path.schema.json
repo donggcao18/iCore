@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "steps", "summary"],
+  "properties": {
+    "status": {"type": "string", "enum": ["connected", "partial", "unresolved"]},
+    "summary": {"type": "string"},
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "symbol", "line", "link_from_previous"],
+        "properties": {
+          "path": {"type": "string"},
+          "symbol": {"type": "string"},
+          "line": {"type": "integer"},
+          "link_from_previous": {
+            "anyOf": [
+              {"type": "null"},
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "explanation", "path", "line"],
+                "properties": {
+                  "kind": {"type": "string", "enum": ["source", "runtime"]},
+                  "explanation": {"type": "string"},
+                  "path": {"type": "string"},
+                  "line": {"type": "integer"}
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
