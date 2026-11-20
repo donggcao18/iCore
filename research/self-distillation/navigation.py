@@ -122,8 +122,7 @@ class Navigation:
             "find_file": ({"file_name", "evidence"}, {"dir"}),
             "search_dir": ({"search_term", "evidence"}, {"dir"}),
             "search_file": ({"search_term", "evidence"}, {"file"}),
-            "open": ({"path"}, {"line_number"}),
-            "goto": ({"line_number"}, set()),
+            "open": ({"path"}, set()),
             "scroll_up": (set(), set()),
             "scroll_down": (set(), set()),
             "submit": ({"ranked", "diagnosis", "evidence"}, set()),
@@ -235,34 +234,6 @@ class Navigation:
             raise ToolError("The path does not name a Python file in the snapshot.")
         return self.snapshot.lines[path]
 
-    def line_evidence(self, path, line_number):
-        if type(line_number) is not int or not 1 <= line_number <= len(self.file_lines(path)):
-            raise ToolError("line_number must be an existing positive line number in this file.")
-        search_lines = set()
-        search_parent = None
-        for oid, obs in self.public.items():
-            for hit in obs.get("files", ()):
-                if hit["path"] == path:
-                    lines = hit.get("line_numbers", ())
-                    if search_parent is None and line_number in lines:
-                        search_parent = oid
-                    search_lines.update(lines)
-            if obs.get("path") != path:
-                continue
-            if (obs.get("line_number") == line_number
-                    or obs.get("start", 1) <= line_number <= obs.get("end", 0)
-                    or any(hit["line_number"] == line_number for hit in obs.get("matches", ()))):
-                return oid
-        if search_parent is not None:
-            return search_parent
-        if search_lines:
-            examples = ", ".join(map(str, sorted(search_lines)[:SEARCH_LINE_LIMIT]))
-            raise ToolError(
-                f"Line {line_number} has not been shown for {path}. "
-                f"Use a revealed line_number from search_dir: {examples}."
-            )
-        raise ToolError("Use a line shown by a search or a source window, or omit line_number when opening a file.")
-
     def window(self, path, start):
         lines = self.file_lines(path)
         start = max(1, min(start, max(1, len(lines) - SOURCE_LINES + 1)))
@@ -276,20 +247,20 @@ class Navigation:
             raise ToolError("Open a file first.")
         return self.public[self.viewer]
 
-    def open(self, path, line_number=None):
+    def open(self, path):
         path, parent = self.path_evidence(path)
-        if line_number is None:
-            entry = self.public.get("entry", {})
-            if entry.get("path") == path:
-                return self.window(path, entry["line_number"] - SOURCE_LINES // 2), (parent, "entry")
-            return self.window(path, 1), (parent,)
-        line_parent = self.line_evidence(path, line_number)
-        return self.window(path, line_number - SOURCE_LINES // 2), (parent, line_parent)
-
-    def goto(self, line_number):
-        path = self.current_view()["path"]
-        parent = self.line_evidence(path, line_number)
-        return self.window(path, line_number - SOURCE_LINES // 2), (self.viewer, parent)
+        for oid, observation in reversed(self.public.items()):
+            if observation.get("path") == path and observation.get("matches"):
+                line = observation["matches"][0]["line_number"]
+                return self.window(path, line - SOURCE_LINES // 2), (parent, oid)
+            for hit in observation.get("files", ()):
+                if hit["path"] == path and hit.get("line_numbers"):
+                    line = hit["line_numbers"][0]
+                    return self.window(path, line - SOURCE_LINES // 2), (parent, oid)
+        entry = self.public.get("entry", {})
+        if entry.get("path") == path:
+            return self.window(path, entry["line_number"] - SOURCE_LINES // 2), (parent, "entry")
+        return self.window(path, 1), (parent,)
 
     def scroll_up(self):
         view = self.current_view()

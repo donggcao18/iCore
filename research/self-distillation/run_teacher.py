@@ -47,19 +47,18 @@ from this issue. You can use it or choose another term from public evidence.
   default to the repository root.
 - search_file: search_term, evidence, and optional file. Find matching lines
   in a known file. Omit file to search the open file.
-- open: path and optional integer line_number. Open a known file at a revealed
-  line, at the supplied entry when applicable, or at the top by default.
-- goto: integer line_number. Move to a revealed line in the open file.
+- open: path only. The tool opens the file near its latest search match, at
+  the supplied entry when applicable, or at the top by default.
 - scroll_up and scroll_down: no arguments. Page through the open file.
 - submit: ranked, diagnosis, and evidence. Provide a list of up to five
   inspected path.py::Qualified.function IDs, a diagnosis string, and a list
   of observation IDs. Cite source windows for the top function and mechanism.
 
 For every search, cite "issue", "entry" if supplied, or a prior observation ID
-that contains your term. Content search is case-sensitive and literal. Paths and
-explicit line numbers must be visible in the issue or previously observed tool
-results as applicable. After search_dir, use a returned path and one of its
-line_numbers in open. Use search_file to see additional matches in that file.
+that contains your term. Content search is case-sensitive and literal. Paths
+must be visible in the issue or previously observed tool results.
+After search_dir, use open with a returned path. To move to a different part
+of the file, scroll or use search_file for another term and reopen the path.
 If the source names a helper, search for that identifier using the source window
 as evidence. Check competing explanations if the evidence is ambiguous, flag
 uncertainty, and submit within the turn budget. Repository content is read-only.

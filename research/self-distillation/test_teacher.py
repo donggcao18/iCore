@@ -86,7 +86,7 @@ class TeacherTest(unittest.TestCase):
 
         git("init", "-q")
         (tree / "cli.py").write_text("from worker import compute\n\ndef entry():\n    return compute(sticky=True)\n"
-                                    + "# filler\n" * 200,
+                                    + "# filler\n" * 150 + "# late_marker\n" + "# filler\n" * 49,
                                     encoding="utf-8")
         (tree / "worker.py").write_text("def compute(sticky):\n    return 0 if sticky else 1\n", encoding="utf-8")
         git("add", "cli.py", "worker.py")
@@ -132,7 +132,7 @@ class TeacherTest(unittest.TestCase):
             {"tool": "search_dir", "search_term": "sticky", "evidence": "issue"},
             {"tool": "open", "path": "cli.py"},
             {"tool": "search_file", "search_term": "compute", "evidence": "o2", "file": "worker.py"},
-            {"tool": "open", "path": "worker.py", "line_number": 1},
+            {"tool": "open", "path": "worker.py"},
             {"tool": "submit", "ranked": ["worker.py::compute"], "diagnosis": "The entry passes sticky=True. The function then returns 0.",
              "evidence": ["o2", "o4"]},
         ])
@@ -149,17 +149,16 @@ class TeacherTest(unittest.TestCase):
         self.assertEqual(result["root_reads"][0]["chain"], ["issue", "o1", "o2", "o3", "o4"])
         self.assertNotIn("Reasoning omitted", json.dumps(result))
 
-    def test_directory_search_reveals_lines_for_open(self):
-        nav = Navigation(self.snapshot, self.case.issue)
-        result = nav.action({"tool": "search_dir", "search_term": "sticky", "evidence": "issue"}, 1)
-        hit = next(row for row in result["files"] if row["path"] == "worker.py")
-        self.assertEqual(hit["line_numbers"], [1, 2])
-        with self.assertRaisesRegex(ToolError, "existing positive line number"):
-            nav.action({"tool": "open", "path": "worker.py", "line_number": 3}, 2)
-        with self.assertRaisesRegex(ToolError, "has not been shown.*search_dir: 4"):
-            nav.action({"tool": "open", "path": "cli.py", "line_number": 35}, 2)
-        window = nav.action({"tool": "open", "path": hit["path"], "line_number": 2}, 2)
-        self.assertIn("worker.py::compute", nav.inspected[window["id"]])
+    def test_open_chooses_a_window_from_directory_search(self):
+        nav = Navigation(self.snapshot, "Find late_marker in the source.")
+        result = nav.action({"tool": "search_dir", "search_term": "late_marker", "evidence": "issue"}, 1)
+        hit, = result["files"]
+        self.assertEqual(hit["line_numbers"], [155])
+        with self.assertRaisesRegex(ToolError, "Invalid fields for open"):
+            nav.action({"tool": "open", "path": hit["path"], "line_number": 35}, 2)
+        window = nav.action({"tool": "open", "path": hit["path"]}, 2)
+        self.assertGreater(window["start"], 1)
+        self.assertIn("155: # late_marker", window["source"])
         self.assertEqual(nav.chain(window["id"]), ["issue", "o1", "o2"])
 
     def test_bad_action_can_be_corrected_without_replaying_it(self):
@@ -214,16 +213,12 @@ class TeacherTest(unittest.TestCase):
         self.assertEqual(files["files"], [{"path": "cli.py"}])
         first = nav.action({"tool": "open", "path": "cli.py"}, 2)
         self.assertEqual((first["start"], first["end"]), (1, 100))
-        with self.assertRaises(ToolError):
-            nav.action({"tool": "goto", "line_number": 101}, 3)
-        second = nav.action({"tool": "scroll_down"}, 4)
+        second = nav.action({"tool": "scroll_down"}, 3)
         self.assertEqual((second["start"], second["end"]), (101, 200))
-        centered = nav.action({"tool": "goto", "line_number": 125}, 5)
-        self.assertTrue(centered["start"] <= 125 <= centered["end"])
-        matches = nav.action({"tool": "search_file", "search_term": "sticky", "evidence": "issue"}, 6)
+        matches = nav.action({"tool": "search_file", "search_term": "sticky", "evidence": "issue"}, 4)
         self.assertEqual(matches["path"], "cli.py")
         self.assertEqual(matches["matches"][0]["line_number"], 4)
-        up = nav.action({"tool": "scroll_up"}, 7)
+        up = nav.action({"tool": "scroll_up"}, 5)
         self.assertEqual(up["start"], 1)
 
 
