@@ -20,6 +20,7 @@ DEFAULT_MODEL = "nvidia/nemotron-3.5-lightning:free"
 sys.path.insert(0, str(HERE.parents[1]))
 
 from cases import load_manifest, load_pylint
+from local_inference import DEFAULT_LOCAL_MODEL, load_local_completion
 from navigation import Navigation, Snapshot, ToolError, literal_pattern
 
 
@@ -246,18 +247,21 @@ def main():
     parser.add_argument("--cases", type=Path, help="Custom JSONL cases; defaults to the six local Pylint pilot cases")
     parser.add_argument("--instance-id", action="append", default=[], help="Select case(s); repeat this option")
     parser.add_argument("--conditions", nargs="+", choices=CONDITIONS, default=["teacher"])
-    parser.add_argument("--model", default=os.environ.get("TEACHER_MODEL", DEFAULT_MODEL))
+    parser.add_argument("--local", action="store_true", help="Run Transformers directly on the first visible CUDA GPU")
+    parser.add_argument("--model", help="Model ID or, with --local, a path to downloaded model weights")
     parser.add_argument("--base-url", default=os.environ.get("TEACHER_BASE_URL"), help="OpenAI-compatible API base URL")
     parser.add_argument("--api-key-env", default="TEACHER_API_KEY", help="Environment variable name, not a key")
     parser.add_argument("--disable-thinking", action="store_true", help="Send vLLM/SGLang enable_thinking=false")
     parser.add_argument("--temperature", type=float, default=0.2)
     parser.add_argument("--max-turns", type=positive_int, default=12)
-    parser.add_argument("--max-tokens", type=positive_int, default=4096, help="Maximum generation tokens per API call")
+    parser.add_argument("--max-tokens", type=positive_int, default=4096, help="Maximum generation tokens per turn")
     parser.add_argument("--repeats", type=positive_int, default=1)
     parser.add_argument("--timeout", type=positive_int, default=120, help="API request timeout in seconds")
     parser.add_argument("--output", type=Path, help="New JSONL path; defaults to runs/<UTC timestamp>.jsonl")
     parser.add_argument("--check", action="store_true", help="Validate cases and pinned Git source without an API call")
     args = parser.parse_args()
+    default_model = DEFAULT_LOCAL_MODEL if args.local else DEFAULT_MODEL
+    args.model = args.model or os.environ.get("TEACHER_MODEL") or default_model
     try:
         cases = load_manifest(args.cases, args.instance_id) if args.cases else load_pylint(args.instance_id)
         if not cases:
@@ -283,6 +287,14 @@ def run(args, cases):
                               "entry_is_root": case.entry in case.roots}, ensure_ascii=False), flush=True)
         return
 
+    if args.local:
+        if args.disable_thinking:
+            raise ValueError("--disable-thinking is a gateway option. For local inference, omit --disable-thinking.")
+        print(f"Loading {args.model} on the first visible CUDA GPU", flush=True)
+        complete = load_local_completion(args.model, temperature=args.temperature, max_tokens=args.max_tokens)
+        run_rollouts(args, cases, complete)
+        return
+
     if not args.base_url or not args.base_url.startswith(("http://", "https://")):
         raise ValueError("Set TEACHER_BASE_URL or pass --base-url for your OpenAI-compatible endpoint.")
     key = os.environ.get(args.api_key_env)
@@ -293,12 +305,6 @@ def run(args, cases):
     except ImportError as exc:
         raise ValueError("Install the OpenAI SDK with python -m pip install openai.") from exc
 
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-    output = args.output or HERE / "runs" / f"{stamp}.jsonl"
-    output.parent.mkdir(parents=True, exist_ok=True)
-    records = []
-    parameters = {"model": args.model, "tool_interface": "swe-agent-read-only", "temperature": args.temperature,
-                  "max_tokens": args.max_tokens, "max_turns": args.max_turns, "disable_thinking": args.disable_thinking}
     options = {"extra_body": {"chat_template_kwargs": {"enable_thinking": False}}} if args.disable_thinking else {}
     bundle = windows_conda_ca_bundle()
     client_options = {}
@@ -306,7 +312,7 @@ def run(args, cases):
         context = ssl.create_default_context(cafile=str(bundle))
         client_options["http_client"] = DefaultHttpxClient(verify=context)
     with OpenAI(api_key=key, base_url=args.base_url, timeout=args.timeout, max_retries=2,
-                **client_options) as client, output.open("x", encoding="utf-8") as handle:
+                **client_options) as client:
         def complete(messages):
             response = client.chat.completions.create(
                 model=args.model, messages=messages, temperature=args.temperature,
@@ -318,6 +324,18 @@ def run(args, cases):
             usage = response.usage.model_dump() if response.usage else {}
             return choice.message.content, {"finish_reason": choice.finish_reason, **usage}
 
+        run_rollouts(args, cases, complete, api_errors=(APIError,))
+
+
+def run_rollouts(args, cases, complete, *, api_errors=()):
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    output = args.output or HERE / "runs" / f"{stamp}.jsonl"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    records = []
+    parameters = {"model": args.model, "backend": "transformers" if args.local else "api",
+                  "tool_interface": "swe-agent-read-only", "temperature": args.temperature,
+                  "max_tokens": args.max_tokens, "max_turns": args.max_turns, "disable_thinking": args.disable_thinking}
+    with output.open("x", encoding="utf-8") as handle:
         for case in cases:
             snapshot = Snapshot(case)
             for repeat in range(1, args.repeats + 1):
@@ -325,7 +343,7 @@ def run(args, cases):
                     print(f"{case.instance_id} {condition} repeat {repeat}", flush=True)
                     try:
                         result = rollout(case, snapshot, condition, args.max_turns, complete)
-                    except APIError as exc:
+                    except api_errors as exc:
                         raise ValueError(describe_api_failure(
                             exc, base_url=args.base_url, max_tokens=args.max_tokens,
                             completed=len(records), output=output,

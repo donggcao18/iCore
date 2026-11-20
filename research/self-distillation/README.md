@@ -21,6 +21,14 @@ On Windows, the runner recognizes the missing `ssl/cacert.pem` path set by some 
 
 The default cohort uses original issue text from the local normalized Verified CSV and function-level candidates from the existing iCoRe annotations. `--check` prints a lexical flag for reports that mention a root function name or file. Review these flags before scoring cases where the report itself gives useful location information. If the local clones are missing, the existing `python -m scripts.clone_pylint_verified` command prepares them. [iCoRe known-endpoint annotations](../diagnostic_path/pylint_known_endpoints_inputs.jsonl)
 
+## Run all six Pylint cases on a GPU
+
+Run from the iCoRe root on the GPU server with the same PyTorch and Transformers environment that ran `test_qwen.py`. Local mode loads the model once on the first visible CUDA GPU. With `--instance-id` omitted, it runs the six bundled cases in teacher mode. The runner writes each completed rollout to the usual JSONL output.
+
+```bash
+python research/self-distillation/run_teacher.py --local --model 'Qwen/Qwen2.5-Coder-7B-Instruct'
+```
+
 ## Tools and scoring
 
 The pilot implements the classic SWE-agent search and windowed viewer commands as JSON actions in the local runner. The viewer keeps an open file and shows up to 100 numbered lines. The pilot adapts the search bundles to tracked Python files, case-sensitive literal content search, and evidence checks. Its `submit` command records a localization diagnosis. [SWE-agent search bundle](https://github.com/SWE-agent/SWE-agent/blob/main/tools/search/config.yaml) · [SWE-agent windowed bundle](https://github.com/SWE-agent/SWE-agent/blob/main/tools/windowed/config.yaml)
