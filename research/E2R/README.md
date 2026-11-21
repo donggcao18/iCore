@@ -40,3 +40,21 @@ A Codex run also saves `path.json`, `codex-events.jsonl`, and
 `codex-stderr.log`. A failure is reported in the instance's `error.log`.
 The path follows the [output schema](path.schema.json) and records the
 evidence for each step. A connected path may be based on source inspection.
+
+## Prepare pytest cases
+
+Use the local clone at `repos/pytest` and the same normalized CSV. The
+preparer exports the tracked Python source at each base revision, applies its
+test patch, and resolves every `FAIL_TO_PASS` selector. It selects base-side
+root-cause candidates using the reference production patch. The diagnostic
+source stays at the buggy revision with the test patch applied.
+
+```sh
+python research/E2R/prepare_pytest.py
+```
+
+Use `--instance-id pytest-dev__pytest-7324` for a single instance. The runner
+prints the directory containing `inputs.jsonl`, per-test `input.json` files,
+and source excerpts. Follow the same [agent guide](DIAGNOSTIC_PATH.md) to save
+`path.json` beside each input. This source preparation does not require the
+historical pytest runtime or the non-Python files from the partial clone.

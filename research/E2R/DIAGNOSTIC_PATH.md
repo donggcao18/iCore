@@ -1,6 +1,6 @@
 # Construct a diagnostic path
 
-The working directory contains the Pylint source from the supplied buggy
+The working directory contains the target repository source from the supplied buggy
 `base_commit`, with the reference test patch applied. The case input gives you
 the entry test selector and a supplied root-cause candidate.
 

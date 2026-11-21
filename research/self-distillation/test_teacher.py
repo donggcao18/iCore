@@ -85,17 +85,24 @@ class TeacherTest(unittest.TestCase):
             return subprocess.check_output(["git", "-C", str(tree), *args], text=True).strip()
 
         git("init", "-q")
-        (tree / "cli.py").write_text("from worker import compute\n\ndef entry():\n    return compute(sticky=True)\n"
-                                    + "# filler\n" * 150 + "# late_marker\n" + "# filler\n" * 49,
-                                    encoding="utf-8")
+        (tree / "cli.py").write_text(
+            "from worker import compute\n\nclass Command:\n"
+            + "    # filler\n" * 150 + "    def entry(self):\n        return compute(sticky=True)\n",
+            encoding="utf-8",
+        )
         (tree / "worker.py").write_text("def compute(sticky):\n    return 0 if sticky else 1\n", encoding="utf-8")
-        git("add", "cli.py", "worker.py")
+        package = tree / "pkg"
+        package.mkdir()
+        (package / "entry.py").write_text("from .helpers import helper as local_helper\n", encoding="utf-8")
+        (package / "helpers.py").write_text("def helper():\n    return 1\n", encoding="utf-8")
+        git("add", "cli.py", "worker.py", "pkg")
         git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgSign=false",
             "commit", "-qm", "Buggy snapshot")
         commit = git("rev-parse", "HEAD")
         (tree / "worker.py").write_text("def compute(sticky):\n    return 1\n", encoding="utf-8")
         (tree / "private.py").write_text("answer = 'hidden'\n", encoding="utf-8")
-        cls.case = Case("fixture", tree, commit, "sticky mode returns zero", ("worker.py::compute",), "cli.py::entry")
+        cls.case = Case("fixture", tree, commit, "sticky mode returns zero",
+                        ("worker.py::compute",), "cli.py::Command.entry")
         cls.snapshot = Snapshot(cls.case)
 
     def test_checkout_edits_are_invisible(self):
@@ -114,27 +121,31 @@ class TeacherTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "belongs to a parent Git checkout"):
             check_checkout(replace(self.case, checkout=folder))
 
-    def test_unseen_targets_and_keywords_are_rejected(self):
+    def test_unseen_targets_and_names_are_rejected(self):
         nav = Navigation(self.snapshot, self.case.issue)
         for action in (
-            {"tool": "search_dir", "search_term": "compute", "evidence": "issue"},
-            {"tool": "search_dir", "search_term": "compute", "evidence": "private_training_hint"},
-            {"tool": "search_file", "search_term": "sticky", "evidence": "issue", "file": "worker.py"},
-            {"tool": "open", "path": "worker.py"},
-            {"tool": "open", "path": "../worker.py"},
-            {"tool": "submit", "ranked": ["worker.py::compute"], "diagnosis": "Known", "evidence": ["issue"]},
+            {"tool": "GetImportOfFile", "file": "worker.py"},
+            {"tool": "GetImportOfFile", "file": "../worker.py"},
+            {"tool": "SearchFunction", "file": "worker.py", "function": "compute"},
+            {"ranked": ["worker.py::compute"], "diagnosis": "Known", "evidence": ["issue"]},
+            {"tool": "Exit"},
         ):
             with self.subTest(action=action), self.assertRaises(ToolError):
                 nav.action(action, 1)
+        nav.action({"tool": "GetRepoStructure"}, 2)
+        with self.assertRaisesRegex(ToolError, "Choose a symbol shown"):
+            nav.action({"tool": "SearchFunction", "file": "worker.py", "function": "compute"}, 3)
 
     def test_issue_to_root_trajectory(self):
         actions = iter([
-            {"tool": "search_dir", "search_term": "sticky", "evidence": "issue"},
-            {"tool": "open", "path": "cli.py"},
-            {"tool": "search_file", "search_term": "compute", "evidence": "o2", "file": "worker.py"},
-            {"tool": "open", "path": "worker.py"},
-            {"tool": "submit", "ranked": ["worker.py::compute"], "diagnosis": "The entry passes sticky=True. The function then returns 0.",
-             "evidence": ["o2", "o4"]},
+            {"tool": "GetRepoStructure"},
+            {"tool": "GetImportOfFile", "file": "cli.py"},
+            {"tool": "SearchClass", "file": "cli.py", "class": "Command"},
+            {"tool": "SearchClassMethod", "file": "cli.py", "class": "Command", "method": "entry"},
+            {"tool": "SearchFunction", "file": "worker.py", "function": "compute"},
+            {"tool": "Exit"},
+            {"ranked": ["worker.py::compute"], "diagnosis": "The entry passes sticky=True. The function then returns 0.",
+             "evidence": ["o4", "o5"]},
         ])
 
         def complete(messages):
@@ -143,38 +154,48 @@ class TeacherTest(unittest.TestCase):
             self.assertNotIn("public_entry", initial)
             return "<think>Reasoning omitted</think>\n" + json.dumps(next(actions)), {}
 
-        result = rollout(self.case, self.snapshot, "teacher", 5, complete)
+        result = rollout(self.case, self.snapshot, "teacher", 7, complete)
         self.assertEqual(result["status"], "submitted")
         self.assertTrue(result["metrics"]["review_candidate"])
-        self.assertEqual(result["root_reads"][0]["chain"], ["issue", "o1", "o2", "o3", "o4"])
+        self.assertEqual(result["root_reads"][0]["chain"], ["issue", "o1", "o2", "o5"])
+        self.assertEqual(result["turns"][-2]["result"]["type"], "exit")
         self.assertNotIn("Reasoning omitted", json.dumps(result))
 
-    def test_open_chooses_a_window_from_directory_search(self):
-        nav = Navigation(self.snapshot, "Find late_marker in the source.")
-        result = nav.action({"tool": "search_dir", "search_term": "late_marker", "evidence": "issue"}, 1)
-        hit, = result["files"]
-        self.assertEqual(hit["line_numbers"], [155])
-        with self.assertRaisesRegex(ToolError, "Invalid fields for open"):
-            nav.action({"tool": "open", "path": hit["path"], "line_number": 35}, 2)
-        window = nav.action({"tool": "open", "path": hit["path"]}, 2)
-        self.assertGreater(window["start"], 1)
-        self.assertIn("155: # late_marker", window["source"])
-        self.assertEqual(nav.chain(window["id"]), ["issue", "o1", "o2"])
+    def test_class_lists_methods_beyond_the_source_limit(self):
+        nav = Navigation(self.snapshot, "Command handles sticky mode in cli.py.")
+        result = nav.action({"tool": "SearchClass", "file": "cli.py", "class": "Command"}, 1)
+        self.assertTrue(result["truncated"])
+        self.assertIn("Command.entry", result["members"])
+        self.assertNotIn(self.case.entry, result["inspected"])
+        with self.assertRaisesRegex(ToolError, "Use SearchClassMethod"):
+            nav.action({"tool": "SearchFunction", "file": "cli.py", "function": "Command.entry"}, 2)
+        method = nav.action({"tool": "SearchClassMethod", "file": "cli.py", "class": "Command",
+                             "method": "entry"}, 2)
+        self.assertIn(self.case.entry, method["inspected"])
+        self.assertIn("155:         return compute(sticky=True)", method["source"])
+        self.assertEqual(nav.chain(method["id"]), ["issue", "o1", "o2"])
+
+    def test_import_observation_resolves_relative_imports(self):
+        nav = Navigation(self.snapshot, "Inspect pkg/entry.py.")
+        result = nav.action({"tool": "GetImportOfFile", "file": "pkg/entry.py"}, 1)
+        self.assertEqual(result["imports"][0]["targets"], [{"file": "pkg/helpers.py", "symbol": "pkg/helpers.py::helper"}])
+        helper = nav.action({"tool": "SearchFunction", "file": "pkg/helpers.py", "function": "helper"}, 2)
+        self.assertEqual(nav.chain(helper["id"]), ["issue", "o1", "o2"])
 
     def test_bad_action_can_be_corrected_without_replaying_it(self):
-        case = replace(self.case, issue="The command ignores `sticky` mode.")
-        calls = iter(range(1, 6))
+        case = replace(self.case, issue="The command ignores sticky mode in worker.py.")
+        calls = iter(range(1, 7))
 
         def complete(messages):
             turn = next(calls)
             feedback = json.loads(messages[-1]["content"])
             if turn == 1:
-                action = {"tool": "search_file", "file_name": "worker.py", "evidence": "issue"}
+                action = {"tool": "GetImportOfFile", "file_name": "worker.py"}
             elif turn == 2:
                 self.assertEqual(len(messages), 2)
-                self.assertIn("Required: evidence, search_term", feedback["last_rejection"])
-                self.assertEqual(feedback["turns_remaining"], 4)
-                action = feedback["first_action_example"]
+                self.assertIn("Required: file", feedback["last_rejection"])
+                self.assertEqual(feedback["turns_remaining"], 5)
+                action = {"tool": "GetImportOfFile", "file": "worker.py"}
             elif turn == 3:
                 self.assertEqual(feedback["result"]["id"], "o2")
                 action = {"tool": "invalid"}
@@ -182,44 +203,40 @@ class TeacherTest(unittest.TestCase):
                 self.assertEqual(len(messages), 4)
                 self.assertEqual(feedback["result"]["id"], "o2")
                 self.assertIn("documented tools", feedback["last_rejection"])
-                action = {"tool": "open", "path": "worker.py"}
+                action = {"tool": "SearchFunction", "file": "worker.py", "function": "compute"}
+            elif turn == 5:
+                action = {"tool": "Exit"}
             else:
-                action = {"tool": "submit", "ranked": ["worker.py::compute"],
+                action = {"ranked": ["worker.py::compute"],
                           "diagnosis": "The sticky branch returns zero.", "evidence": ["o4"]}
             return json.dumps(action), {}
 
-        result = rollout(case, self.snapshot, "teacher", 5, complete)
+        result = rollout(case, self.snapshot, "teacher", 6, complete)
         self.assertEqual(result["status"], "submitted")
         self.assertEqual(result["metrics"]["rejected_actions"], 2)
         self.assertEqual(result["root_reads"][0]["chain"], ["issue", "o2", "o4"])
 
     def test_matched_conditions_only_change_the_prescribed_fields(self):
         blind = request_data(self.case, "blind", 12)
-        self.assertEqual(blind, {
-            "issue": self.case.issue, "turns_remaining": 12,
-            "first_action_example": {
-                "tool": "search_dir", "search_term": "sticky", "evidence": "issue",
-            },
-        })
+        self.assertEqual(blind, {"issue": self.case.issue, "turns_remaining": 12})
         self.assertEqual(request_data(self.case, "entry-blind", 12), {**blind, "public_entry": self.case.entry})
         nav = Navigation(self.snapshot, self.case.issue, self.case.entry)
-        result = nav.action({"tool": "open", "path": "cli.py"}, 1)
+        result = nav.action({"tool": "SearchClassMethod", "file": "cli.py", "class": "Command",
+                             "method": "entry"}, 1)
         self.assertIn(self.case.entry, nav.inspected[result["id"]])
         self.assertEqual(nav.chain(result["id"]), ["entry", "o1"])
 
-    def test_window_commands_use_the_open_file(self):
-        nav = Navigation(self.snapshot, "The sticky option in cli.py is ignored.")
-        files = nav.action({"tool": "find_file", "file_name": "cli.py", "evidence": "issue"}, 1)
-        self.assertEqual(files["files"], [{"path": "cli.py"}])
-        first = nav.action({"tool": "open", "path": "cli.py"}, 2)
-        self.assertEqual((first["start"], first["end"]), (1, 100))
-        second = nav.action({"tool": "scroll_down"}, 3)
-        self.assertEqual((second["start"], second["end"]), (101, 200))
-        matches = nav.action({"tool": "search_file", "search_term": "sticky", "evidence": "issue"}, 4)
-        self.assertEqual(matches["path"], "cli.py")
-        self.assertEqual(matches["matches"][0]["line_number"], 4)
-        up = nav.action({"tool": "scroll_up"}, 5)
-        self.assertEqual(up["start"], 1)
+    def test_exit_requires_an_evidence_backed_final_answer(self):
+        nav = Navigation(self.snapshot, "compute in worker.py returns zero.")
+        source = nav.action({"tool": "SearchFunction", "file": "worker.py", "function": "compute"}, 1)
+        nav.action({"tool": "Exit"}, 2)
+        with self.assertRaisesRegex(ToolError, "After Exit"):
+            nav.action({"tool": "GetRepoStructure"}, 3)
+        final = {"ranked": ["worker.py::compute"], "diagnosis": "The sticky branch returns zero."}
+        with self.assertRaisesRegex(ToolError, "cite source reads"):
+            nav.action({**final, "evidence": ["issue"]}, 4)
+        answer = nav.action({**final, "evidence": [source["id"]]}, 5)
+        self.assertEqual(answer["type"], "submission")
 
 
 if __name__ == "__main__":

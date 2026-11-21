@@ -29,7 +29,7 @@ ENDPOINTS = ROOT / "research/diagnostic_path/pylint_known_endpoints_inputs.jsonl
 @contextmanager
 def snapshot(source: Path, commit: str):
     """Check out a base tree through a disposable Git index."""
-    with tempfile.TemporaryDirectory(prefix="e2r-pylint-", dir=REPOS) as directory:
+    with tempfile.TemporaryDirectory(prefix="e2r-", dir=REPOS) as directory:
         temp = Path(directory)
         tree = temp / "repo"
         tree.mkdir()
@@ -71,8 +71,8 @@ def load_root_causes(path: Path) -> dict:
     return roots
 
 
-def check_selector(tree: Path, selector: str) -> None:
-    """Verify the test function exists in the patched source without importing it."""
+def check_selector(tree: Path, selector: str) -> ast.FunctionDef | ast.AsyncFunctionDef:
+    """Resolve the test function in the patched source without importing it."""
     filename, *symbols = selector.split("[", 1)[0].split("::")
     if not symbols:
         raise ValueError(f"Expected a test function selector, got {selector}")
@@ -88,6 +88,14 @@ def check_selector(tree: Path, selector: str) -> None:
             raise ValueError(f"Cannot find {symbol!r} in the patched entry {selector}")
     if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
         raise ValueError(f"Selector does not end at a test function: {selector}")
+    return node
+
+
+def apply_test_patch(tree: Path, patch: bytes) -> None:
+    # Give git apply a local root so it cannot resolve paths under iCoRe.
+    git(tree, "init", "--quiet")
+    git(tree, "-c", "core.autocrlf=false", "apply", "--recount",
+        "--whitespace=nowarn", "-", input=patch)
 
 
 def run_agent(args: argparse.Namespace, tree: Path, output: Path, prompt: str) -> None:
@@ -132,10 +140,7 @@ def run_case(row: dict, cause: dict, args: argparse.Namespace, output: Path, gui
     if not patch.strip() or not selectors:
         raise ValueError(f"Missing test patch or FAIL_TO_PASS entry for {instance}")
     with snapshot(source, base_commit) as tree:
-        # Give git apply a local root so it cannot resolve paths under iCoRe.
-        git(tree, "init", "--quiet")
-        git(tree, "-c", "core.autocrlf=false", "apply", "--recount",
-            "--whitespace=nowarn", "-", input=patch)
+        apply_test_patch(tree, patch)
         for selector in selectors:
             check_selector(tree, selector)
 

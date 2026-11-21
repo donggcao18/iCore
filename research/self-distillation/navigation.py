@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import io
 import os
 import re
@@ -9,15 +10,21 @@ import subprocess
 import tokenize
 import warnings
 from collections import defaultdict
-from fnmatch import fnmatchcase
+from importlib.util import resolve_name
 from pathlib import PurePosixPath
 
-from scripts.test_retrieval.static_dependencies import DependencyIndex
+from scripts.test_retrieval.static_dependencies import DependencyIndex, module_name
 
 
-RESULT_LIMIT = 100
 SOURCE_LINES = 100
-SEARCH_LINE_LIMIT = 3
+TOOL_FIELDS = {
+    "GetRepoStructure": (),
+    "GetImportOfFile": ("file",),
+    "SearchClass": ("file", "class"),
+    "SearchFunction": ("file", "function"),
+    "SearchClassMethod": ("file", "class", "method"),
+    "Exit": (),
+}
 
 
 def read_git(case, *args, payload=None):
@@ -90,13 +97,54 @@ class Snapshot:
             self.index = DependencyIndex(sources)
         self.lines = {path: source.splitlines() for path, source in sources.items()}
         self.scopes = defaultdict(list)
+        self.children = defaultdict(list)
+        self.structure = defaultdict(list)
+        for path in self.lines:
+            parsed = PurePosixPath(path)
+            self.structure[parsed.parent.as_posix()].append(parsed.name)
         for symbol in self.index.symbols.values():
+            self.children[symbol.parent].append(symbol)
             if symbol.kind == "function":
                 self.scopes[symbol.file].append(symbol)
         for label in (*case.roots, case.entry):
             if label is not None and (label not in self.index.symbols
                                       or self.index.symbols[label].kind != "function"):
                 raise ValueError(f"{case.instance_id}: {label!r} is not a function in {case.commit}")
+
+    def imports_of(self, module):
+        package = module_name(module.file)
+        if PurePosixPath(module.file).name != "__init__.py":
+            package = package.rpartition(".")[0]
+        imports = (node for node in ast.walk(module.node) if isinstance(node, (ast.Import, ast.ImportFrom)))
+        for node in sorted(imports, key=lambda node: (node.lineno, node.col_offset)):
+            row = {"line_number": node.lineno, "text": ast.unparse(node), "targets": []}
+            for alias in node.names:
+                target = self.import_target(node, alias.name, package)
+                if target is None:
+                    continue
+                module_id = self.index.modules.get(target)
+                if module_id is None and isinstance(node, ast.ImportFrom):
+                    module_id = self.index.modules.get(target.rpartition(".")[0])
+                if module_id is None:
+                    continue
+                path = self.index.symbols[module_id].file
+                match = {"file": path}
+                symbol_id = self.index.exports.get(target)
+                if symbol_id and self.index.symbols[symbol_id].file == path:
+                    match["symbol"] = symbol_id
+                row["targets"].append(match)
+            yield row
+
+    @staticmethod
+    def import_target(node, name, package):
+        if isinstance(node, ast.Import):
+            return name
+        prefix = "." * node.level + (node.module or "")
+        try:
+            module = resolve_name(prefix, package)
+        except ImportError:
+            return None
+        return ".".join(filter(None, [module, name]))
 
 
 class ToolError(ValueError):
@@ -107,46 +155,41 @@ class Navigation:
     def __init__(self, snapshot, issue, entry=None):
         self.snapshot = snapshot
         self.public = {"issue": {"type": "issue", "text": issue}}
-        self.viewer = None
         self.inspected = {}
         self.parents = {}
+        self.exited = False
         if entry:
             symbol = snapshot.index.symbols[entry]
             self.public["entry"] = {"type": "entry", "path": symbol.file,
                                     "line_number": symbol.node.lineno, "symbol": entry}
 
     def action(self, action, turn):
+        if self.exited:
+            if action.keys() != {"ranked", "diagnosis", "evidence"}:
+                raise ToolError("After Exit, return ranked, diagnosis, and evidence as one JSON object.")
+            return self.submit(**action)
         tool = action.get("tool")
-        args = {key: value for key, value in action.items() if key != "tool"}
-        schemas = {
-            "find_file": ({"file_name", "evidence"}, {"dir"}),
-            "search_dir": ({"search_term", "evidence"}, {"dir"}),
-            "search_file": ({"search_term", "evidence"}, {"file"}),
-            "open": ({"path"}, set()),
-            "scroll_up": (set(), set()),
-            "scroll_down": (set(), set()),
-            "submit": ({"ranked", "diagnosis", "evidence"}, set()),
-        }
-        if not isinstance(tool, str) or tool not in schemas:
-            raise ToolError("Choose one of the documented tools.")
-        required, optional = schemas[tool]
-        if not required <= args.keys() <= required | optional:
-            required_fields = ", ".join(sorted(required)) or "none"
-            optional_fields = ", ".join(sorted(optional)) or "none"
-            raise ToolError(
-                f"Invalid fields for {tool}. Required: {required_fields}. Optional: {optional_fields}."
-            )
-        if tool == "submit":
-            return self.submit(**args)
+        if not isinstance(tool, str) or tool not in TOOL_FIELDS:
+            raise ToolError("Choose one of the documented tools. Call Exit before giving the final answer.")
+        fields = TOOL_FIELDS[tool]
+        if action.keys() != {"tool", *fields}:
+            raise ToolError(f"Invalid fields for {tool}. Required: {', '.join(fields) or 'none'}.")
+        if tool == "Exit":
+            if not any(self.inspected.values()):
+                raise ToolError("Inspect at least one function or method before calling Exit.")
+            self.exited = True
+            return {"type": "exit", "message": "Return the final JSON object with ranked, diagnosis, and evidence."}
+
+        args = [action[field] for field in fields]
+        result, parents = getattr(self, tool)(*args)
         observation = f"o{turn}"
-        result, parents = getattr(self, tool)(**args)
         if result["type"] == "source":
-            self.viewer = observation
             self.inspected[observation] = {
-                symbol.id for symbol in self.snapshot.scopes.get(result["path"], ())
+                symbol.id for symbol in self.snapshot.scopes[result["path"]]
                 if result["start"] <= symbol.node.lineno
                 and symbol.node.body[0].lineno <= result["end"]
             }
+            result["inspected"] = sorted(self.inspected[observation])
         self.public[observation] = result
         self.parents[observation] = tuple(dict.fromkeys(parents))
         return {"id": observation, **result}
@@ -156,119 +199,106 @@ class Navigation:
             raise ToolError("Use an evidence ID from the issue, supplied entry, or prior tool results.")
         return self.public[evidence]
 
-    def check_term(self, term, evidence, *, allow_glob=False):
-        origin = self.observation(evidence)
-        if not isinstance(term, str) or not 1 <= len(term.strip()) <= 100 or "\n" in term or "\r" in term:
-            raise ToolError("Use a search term of 1–100 characters on one line.")
-        term = term.strip()
-        if allow_glob and term in {"*", "*.py"}:
-            return term
-        exposed = [origin.get("text", ""), origin.get("path", ""), origin.get("symbol", ""),
-                   *origin.get("source", ()), *(row["path"] for row in origin.get("files", ())),
-                   *(row["text"] for row in origin.get("matches", ()))]
-        pattern = literal_pattern(term)
-        if not any(pattern.search(value) for value in exposed):
-            raise ToolError("The search term must appear in the cited public evidence.")
-        return term
+    def path_evidence(self, path):
+        message = "Use the exact Python path shown by GetRepoStructure, an import, the issue, or the supplied entry."
+        if not isinstance(path, str) or path not in self.snapshot.lines:
+            raise ToolError(message)
+        if self.public.get("entry", {}).get("path") == path:
+            return "entry"
+        if literal_pattern(path).search(self.public["issue"]["text"]):
+            return "issue"
+        for oid, result in reversed(self.public.items()):
+            if result.get("path") == path or any(
+                target["file"] == path for row in result.get("imports", ()) for target in row["targets"]
+            ):
+                return oid
+            if result["type"] == "structure":
+                directory, name = path.rsplit("/", 1) if "/" in path else (".", path)
+                if name in result["directories"].get(directory, ()):
+                    return oid
+        raise ToolError(message)
 
-    def path_evidence(self, path, *, directory=False):
-        if not isinstance(path, str) or not path or "\\" in path or ":" in path:
-            raise ToolError("Use a repository-relative path with forward slashes.")
-        parsed = PurePosixPath(path)
-        if parsed.is_absolute() or ".." in parsed.parts:
-            raise ToolError("Use a repository-relative path inside the snapshot.")
-        path = parsed.as_posix()
-        if directory and path == ".":
-            return path, "issue"
-        for oid, obs in self.public.items():
-            paths = [obs.get("path", ""), *(row["path"] for row in obs.get("files", ()))]
-            if any(seen == path or (directory and seen.startswith(path + "/")) for seen in paths):
-                return path, oid
-            if obs["type"] == "issue" and literal_pattern(path).search(obs["text"]):
-                return path, oid
-        raise ToolError("Use a path shown in the issue, supplied entry, or prior tool results.")
+    def symbol_evidence(self, path, name):
+        pattern = literal_pattern(name)
+        for oid, result in reversed(self.public.items()):
+            if result["type"] == "issue" and pattern.search(result["text"]):
+                return oid
+            if result.get("path") == path:
+                if (result.get("symbol") == f"{path}::{name}"
+                        or f"{path}::{name}" in result.get("inspected", ())
+                        or name in result.get("definitions", ())
+                        or name in result.get("members", ())
+                        or any(pattern.search(line) for line in result.get("source", ()))):
+                    return oid
+            if any(target.get("symbol") == f"{path}::{name}"
+                   for row in result.get("imports", ()) for target in row["targets"]):
+                return oid
+        raise ToolError("Choose a symbol shown in the issue, supplied entry, imports, declarations, or source.")
 
-    def directory_paths(self, directory):
-        path, parent = self.path_evidence(directory, directory=True)
-        prefix = "" if path == "." else path + "/"
-        return (file for file in self.snapshot.lines if file.startswith(prefix)), parent
+    def GetRepoStructure(self):
+        return {"type": "structure", "directories": dict(self.snapshot.structure)}, ("issue",)
 
-    def find_file(self, file_name, evidence, dir="."):
-        term = self.check_term(file_name, evidence, allow_glob=True)
-        paths, parent = self.directory_paths(dir)
-        files = [{"path": path} for path in paths if fnmatchcase(PurePosixPath(path).name, term)]
-        return self.bounded_results("files", files), (evidence, parent)
+    def GetImportOfFile(self, file):
+        parent = self.path_evidence(file)
+        module_id = f"{file}::<module>"
+        module = self.snapshot.index.symbols.get(module_id)
+        if module is None:
+            raise ToolError("This Python file could not be parsed at the pinned commit.")
+        definitions = [symbol.name for symbol in self.snapshot.children[module_id]
+                       if symbol.kind in {"function", "class"}]
+        return {"type": "imports", "path": file, "imports": list(self.snapshot.imports_of(module)),
+                "definitions": definitions}, (parent,)
 
-    def search_dir(self, search_term, evidence, dir="."):
-        term = self.check_term(search_term, evidence)
-        paths, parent = self.directory_paths(dir)
-        files = []
-        for path in paths:
-            matches = [number for number, line in enumerate(self.snapshot.lines[path], 1) if term in line]
-            if matches:
-                files.append({
-                    "path": path, "matching_lines": len(matches), "line_numbers": matches[:SEARCH_LINE_LIMIT],
-                })
-        return self.bounded_results("files", files), (evidence, parent)
+    def SearchClass(self, file, class_name):
+        return self.read_symbol(file, class_name, kind="class")
 
-    def search_file(self, search_term, evidence, file=None):
-        term = self.check_term(search_term, evidence)
-        if file is None:
-            path, parent = self.current_view()["path"], self.viewer
-        else:
-            path, parent = self.path_evidence(file)
-        matches = [{"line_number": number, "text": line[:240]}
-                   for number, line in enumerate(self.file_lines(path), 1) if term in line]
-        return {"path": path, **self.bounded_results("matches", matches)}, (evidence, parent)
+    def SearchFunction(self, file, function):
+        return self.read_symbol(file, function, kind="function")
+
+    def SearchClassMethod(self, file, class_name, method):
+        self.validate_name(class_name)
+        self.validate_name(method)
+        if "." in method:
+            raise ToolError("Supply the class and the unqualified method name as separate fields.")
+        return self.read_symbol(file, f"{class_name}.{method}", kind="function", class_name=class_name)
 
     @staticmethod
-    def bounded_results(key, rows):
-        result = {"type": key, "total": len(rows), key: rows}
-        if len(rows) > RESULT_LIMIT:
-            result[key] = []
-            result["message"] = "Too many results. Narrow the search or select a smaller directory."
-        return result
+    def validate_name(name):
+        if not isinstance(name, str) or not all(part.isidentifier() for part in name.split(".")):
+            raise ToolError("Supply an exact Python name using dots for nested definitions.")
 
-    def file_lines(self, path):
-        if path not in self.snapshot.lines:
-            raise ToolError("The path does not name a Python file in the snapshot.")
-        return self.snapshot.lines[path]
-
-    def window(self, path, start):
-        lines = self.file_lines(path)
-        start = max(1, min(start, max(1, len(lines) - SOURCE_LINES + 1)))
-        end = min(start + SOURCE_LINES - 1, len(lines))
-        source = [f"{number}: {line[:240]}" for number, line in enumerate(lines[start - 1:end], start)]
-        return {"type": "source", "path": path, "start": start, "end": end, "source": source,
-                "total_lines": len(lines)}
-
-    def current_view(self):
-        if self.viewer is None:
-            raise ToolError("Open a file first.")
-        return self.public[self.viewer]
-
-    def open(self, path):
-        path, parent = self.path_evidence(path)
-        for oid, observation in reversed(self.public.items()):
-            if observation.get("path") == path and observation.get("matches"):
-                line = observation["matches"][0]["line_number"]
-                return self.window(path, line - SOURCE_LINES // 2), (parent, oid)
-            for hit in observation.get("files", ()):
-                if hit["path"] == path and hit.get("line_numbers"):
-                    line = hit["line_numbers"][0]
-                    return self.window(path, line - SOURCE_LINES // 2), (parent, oid)
-        entry = self.public.get("entry", {})
-        if entry.get("path") == path:
-            return self.window(path, entry["line_number"] - SOURCE_LINES // 2), (parent, "entry")
-        return self.window(path, 1), (parent,)
-
-    def scroll_up(self):
-        view = self.current_view()
-        return self.window(view["path"], view["start"] - SOURCE_LINES), (self.viewer,)
-
-    def scroll_down(self):
-        view = self.current_view()
-        return self.window(view["path"], view["start"] + SOURCE_LINES), (self.viewer,)
+    def read_symbol(self, file, name, *, kind, class_name=None):
+        path_parent = self.path_evidence(file)
+        self.validate_name(name)
+        try:
+            symbol_parent = self.symbol_evidence(file, name)
+            parents = (path_parent, symbol_parent)
+        except ToolError:
+            if class_name is None:
+                raise
+            # Source may show the class and a bare method name on separate lines.
+            parents = (path_parent, self.symbol_evidence(file, class_name),
+                       self.symbol_evidence(file, name.rsplit(".", 1)[1]))
+        index = self.snapshot.index.symbols
+        symbol = index.get(f"{file}::{name}")
+        if symbol is None or symbol.kind != kind:
+            raise ToolError("No matching definition in this file. Use the exact name from public evidence.")
+        parent = index[symbol.parent]
+        if class_name is not None and (parent.kind != "class" or parent.name != class_name):
+            raise ToolError("The method must be defined directly on the named class.")
+        if kind == "function" and class_name is None and parent.kind == "class":
+            raise ToolError("Use SearchClassMethod for a method defined on a class.")
+        start = max(symbol.start, symbol.node.lineno - SOURCE_LINES // 4)
+        end = min(symbol.end, start + SOURCE_LINES - 1)
+        source = [f"{number}: {line[:240]}"
+                  for number, line in enumerate(self.snapshot.lines[file][start - 1:end], start)]
+        result = {"type": "source", "path": file, "symbol": symbol.id, "start": start, "end": end,
+                  "source": source, "total_lines": len(self.snapshot.lines[file]),
+                  "truncated": start > symbol.start or end < symbol.end}
+        if kind == "class":
+            result["members"] = [member.name for member in self.snapshot.children[symbol.id]
+                                 if member.kind in {"function", "class"}]
+        return result, parents
 
     def submit(self, ranked, diagnosis, evidence):
         if not isinstance(ranked, list) or not 1 <= len(ranked) <= 5:
